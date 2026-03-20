@@ -10,25 +10,16 @@ const BlankLayout = Loadable(lazy(() => import('../layouts/blank/BlankLayout')))
 /* ****Pages***** */
 const ModernDash = Loadable(lazy(() => import('../views/dashboard/Modern')));
 
-/* ****Apps***** */
-const Calendar = Loadable(lazy(() => import('../views/apps/calendar/BigCalendar')));
-const Email = Loadable(lazy(() => import('../views/apps/email/Email')));
-const Tickets = Loadable(lazy(() => import('../views/apps/tickets/Tickets')));
+
 const UserProfile = Loadable(lazy(() => import('../views/apps/user-profile/UserProfile')));
 
-// Pages
-const RollbaseCASL = Loadable(lazy(() => import('../views/pages/rollbaseCASL/RollbaseCASL')));
-const Treeview = Loadable(lazy(() => import('../views/pages/treeview/Treeview')));
-const Pricing = Loadable(lazy(() => import('../views/pages/pricing/Pricing')));
+
+
 const AccountSetting = Loadable(
   lazy(() => import('../views/pages/account-setting/AccountSetting')),
 );
-const Faq = Loadable(lazy(() => import('../views/pages/faq/Faq')));
 
-// widget
-const WidgetCards = Loadable(lazy(() => import('../views/widgets/cards/WidgetCards')));
-const WidgetBanners = Loadable(lazy(() => import('../views/widgets/banners/WidgetBanners')));
-const WidgetCharts = Loadable(lazy(() => import('../views/widgets/charts/WidgetCharts')));
+
 
 // form elements
 const MuiAutoComplete = Loadable(
@@ -75,14 +66,7 @@ const MuiTypography = Loadable(lazy(() => import('../views/ui-components/MuiTypo
 // ── Authentication ─────────────────────────────────────────────────────────
 const LoginAdminOnly = Loadable(lazy(() => import('../views/authentication/auth2/LoginAdminOnly')));
 const LoginCustomerOrderPortal = Loadable(lazy(() => import('../views/authentication/auth2/LoginCustomerOrderPortal')));
-const Login = Loadable(lazy(() => import('../views/authentication/auth1/Login')));
-const Login2 = Loadable(lazy(() => import('../views/authentication/auth2/Login2')));
-const Register = Loadable(lazy(() => import('../views/authentication/auth1/Register')));
-const Register2 = Loadable(lazy(() => import('../views/authentication/auth2/Register2')));
-const ForgotPassword = Loadable(lazy(() => import('../views/authentication/auth1/ForgotPassword')));
-const ForgotPassword2 = Loadable(
-  lazy(() => import('../views/authentication/auth2/ForgotPassword2')),
-);
+
 const Error = Loadable(lazy(() => import('../views/authentication/Error')));
 
 // ── NEW: Admin pages ───────────────────────────────────────────────────────
@@ -139,15 +123,8 @@ const Router = [
 
       // ── EXISTING: kept exactly as before ──────────────────────────────
       { path: '/dashboards/modern', exact: true, element: <ModernDash /> },
-      { path: '/apps/calendar',     element: <Calendar /> },
-      { path: '/apps/email',        element: <Email /> },
-      { path: '/apps/tickets',      element: <Tickets /> },
       { path: '/user-profile',      element: <UserProfile /> },
-      { path: '/pages/casl',        element: <RollbaseCASL /> },
-      { path: '/pages/treeview',    element: <Treeview /> },
-      { path: '/pages/pricing',     element: <Pricing /> },
       { path: '/pages/account-settings', element: <AccountSetting /> },
-      { path: '/pages/faq',         element: <Faq /> },
       { path: '/forms/form-elements/autocomplete', element: <MuiAutoComplete /> },
       { path: '/forms/form-elements/button',       element: <MuiButton /> },
       { path: '/forms/form-elements/checkbox',     element: <MuiCheckbox /> },
@@ -180,9 +157,7 @@ const Router = [
       { path: '/ui-components/tooltip',            element: <MuiTooltip /> },
       { path: '/ui-components/transfer-list',      element: <MuiTransferList /> },
       { path: '/ui-components/typography',         element: <MuiTypography /> },
-      { path: '/widgets/cards',                    element: <WidgetCards /> },
-      { path: '/widgets/banners',                  element: <WidgetBanners /> },
-      { path: '/widgets/charts',                   element: <WidgetCharts /> },
+     
 
       { path: '*', element: <Navigate to="/auth/404" /> },
     ],
