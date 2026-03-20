@@ -10,7 +10,7 @@ const CurrentValue = () => {
   const primary = theme.palette.primary.main;
   const primarylight = theme.palette.primary.light;
   const secondary = theme.palette.secondary.main;
-  const textColor = theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.8)' : '#2A3547';
+  const textColor = '#2A3547';
 
   // chart
   const optionscolumnchart = {
@@ -68,7 +68,7 @@ const CurrentValue = () => {
       },
     },
     tooltip: {
-      theme: theme.palette.mode === 'dark' ? 'dark' : 'light',
+      theme: 'light',
       fillSeriesColor: false,
     },
   };
@@ -139,7 +139,7 @@ const CurrentValue = () => {
       },
     },
     tooltip: {
-      theme: theme.palette.mode === 'dark' ? 'dark' : 'light',
+      theme: 'light',
       fillSeriesColor: false,
     },
   };
@@ -205,7 +205,7 @@ const CurrentValue = () => {
       show: false,
     },
     tooltip: {
-      theme: theme.palette.mode === 'dark' ? 'dark' : 'light',
+      theme: 'light',
       fillSeriesColor: false,
     },
   };

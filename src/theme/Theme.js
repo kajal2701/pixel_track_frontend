@@ -1,35 +1,31 @@
 import _ from 'lodash';
 import { createTheme } from '@mui/material/styles';
-import { useSelector } from 'react-redux';
-import { useEffect } from 'react';
 import components from './Components';
 import typography from './Typography';
-import { shadows, darkshadows } from './Shadows';
-import { DarkThemeColors } from './DarkThemeColors';
+import { shadows } from './Shadows';
 import { LightThemeColors } from './LightThemeColors';
 import * as locales from '@mui/material/locale';
-import { baseDarkTheme, baselightTheme } from './DefaultColors';
+import { baselightTheme } from './DefaultColors';
 
 export const BuildTheme = (config = {}) => {
   const themeOptions = LightThemeColors.find((theme) => theme.name === config.theme);
-  const darkthemeOptions = DarkThemeColors.find((theme) => theme.name === config.theme);
-  const customizer = useSelector((state) => state.customizer);
-  const defaultTheme = customizer.activeMode === 'dark' ? baseDarkTheme : baselightTheme;
-  const defaultShadow = customizer.activeMode === 'dark' ? darkshadows : shadows;
-  const themeSelect = customizer.activeMode === 'dark' ? darkthemeOptions : themeOptions;
+  const defaultTheme = baselightTheme;
+  const defaultShadow = shadows;
+  const themeSelect = themeOptions;
 
   const baseMode = {
     palette: {
-      mode: customizer.activeMode,
+      mode: 'light',
     },
     shape: {
-      borderRadius: customizer.borderRadius,
+      borderRadius: 12,
     },
     shadows: defaultShadow,
     typography: typography,
   };
+  
   const theme = createTheme(
-    _.merge({}, baseMode, defaultTheme, locales[customizer.isLanguage], themeSelect, {
+    _.merge({}, baseMode, defaultTheme, locales['enUS'], themeSelect, {
       direction: config.direction,
     }),
   );
@@ -38,15 +34,10 @@ export const BuildTheme = (config = {}) => {
 };
 
 const ThemeSettings = () => {
-  const activDir = useSelector((state) => state.customizer.activeDir);
-  const activeTheme = useSelector((state) => state.customizer.activeTheme);
   const theme = BuildTheme({
-    direction: activDir,
-    theme: activeTheme,
+    direction: 'ltr',
+    theme: 'PIXEL_THEME', // Default light theme
   });
-  useEffect(() => {
-    document.dir = activDir;
-  }, [activDir]);
 
   return theme;
 };

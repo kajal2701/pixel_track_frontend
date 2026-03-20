@@ -75,7 +75,7 @@ const Views = () => {
       },
     },
     tooltip: {
-      theme: theme.palette.mode === 'dark' ? 'dark' : 'light',
+      theme: 'light',
     },
   };
   const seriescolumnchart = [

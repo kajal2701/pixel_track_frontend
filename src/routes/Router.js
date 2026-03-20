@@ -72,7 +72,9 @@ const MuiTooltip = Loadable(lazy(() => import('../views/ui-components/MuiTooltip
 const MuiTransferList = Loadable(lazy(() => import('../views/ui-components/MuiTransferList')));
 const MuiTypography = Loadable(lazy(() => import('../views/ui-components/MuiTypography')));
 
-// authentication
+// ── Authentication ─────────────────────────────────────────────────────────
+const LoginAdminOnly = Loadable(lazy(() => import('../views/authentication/auth2/LoginAdminOnly')));
+const LoginCustomerOrderPortal = Loadable(lazy(() => import('../views/authentication/auth2/LoginCustomerOrderPortal')));
 const Login = Loadable(lazy(() => import('../views/authentication/auth1/Login')));
 const Login2 = Loadable(lazy(() => import('../views/authentication/auth2/Login2')));
 const Register = Loadable(lazy(() => import('../views/authentication/auth1/Register')));
@@ -83,72 +85,104 @@ const ForgotPassword2 = Loadable(
 );
 const Error = Loadable(lazy(() => import('../views/authentication/Error')));
 
+// ── NEW: Admin pages ───────────────────────────────────────────────────────
+
+const Orders        = Loadable(lazy(() => import('../views/admin/orders/Orders')));
+const InventoryList = Loadable(lazy(() => import('../views/admin/inventory/InventoryList')));
+const InventoryNew  = Loadable(lazy(() => import('../views/admin/inventory/InventoryNew')));
+const ProductionList = Loadable(lazy(() => import('../views/admin/production/ProductionList')));
+const ProductionNew  = Loadable(lazy(() => import('../views/admin/production/ProductionNew')));
+const CustomerList  = Loadable(lazy(() => import('../views/admin/customers/CustomerList')));
+const CustomerNew   = Loadable(lazy(() => import('../views/admin/customers/CustomerNew')));
+const Invoices      = Loadable(lazy(() => import('../views/admin/invoices/Invoices')));
+const Reports       = Loadable(lazy(() => import('../views/admin/reports/Reports')));
+
+// ── NEW: Customer order portal pages ──────────────────────────────────────
+const PlaceOrder    = Loadable(lazy(() => import('../views/order/PlaceOrder')));
+// const OrderHistory  = Loadable(lazy(() => import('../views/order/OrderHistory')));
+
 const Router = [
+  // ── Blank layout: auth pages ────────────────────────────────────────────
   {
     path: '/',
     element: <BlankLayout />,
     children: [
-      { path: '/', element: <Login2 /> },
-      { path: '/auth/404', element: <Error /> },
-      { path: '/auth/login', element: <Login /> },
-      { path: '/auth/login2', element: <Login2 /> },
-      { path: '/auth/register', element: <Register /> },
-      { path: '/auth/register2', element: <Register2 /> },
-      { path: '/auth/forgot-password', element: <ForgotPassword /> },
-      { path: '/auth/forgot-password2', element: <ForgotPassword2 /> },
-      { path: '*', element: <Navigate to="/auth/404" /> },
+      { path: '/',              element: <LoginAdminOnly /> },
+      { path: '/admin-login',   element: <LoginAdminOnly /> },
+      { path: '/login',         element: <LoginCustomerOrderPortal /> },
+      { path: '/auth/404',      element: <Error /> },
+      { path: '*',              element: <Navigate to="/auth/404" /> },
     ],
   },
+
+  // ── Full layout: all dashboard + NEW admin + order routes ────────────────
   {
     path: '/',
     element: <FullLayout />,
     children: [
+
+      // ── NEW: Admin routes ──────────────────────────────────────────────
+      // { path: '/admin/dashboard',      element: <Dashboard /> },
+      { path: '/admin/orders',         element: <Orders /> },
+      { path: '/admin/inventory',      element: <InventoryList /> },
+      { path: '/admin/inventory/new',  element: <InventoryNew /> },
+      { path: '/admin/production',     element: <ProductionList /> },
+      { path: '/admin/production/new', element: <ProductionNew /> },
+      { path: '/admin/customers',      element: <CustomerList /> },
+      { path: '/admin/customers/new',  element: <CustomerNew /> },
+      { path: '/admin/invoices',       element: <Invoices /> },
+      { path: '/admin/reports',        element: <Reports /> },
+
+      // ── NEW: Customer order portal routes ──────────────────────────────
+      { path: '/order/new',            element: <PlaceOrder /> },
+      // { path: '/order/history',        element: <OrderHistory /> },
+
+      // ── EXISTING: kept exactly as before ──────────────────────────────
       { path: '/dashboards/modern', exact: true, element: <ModernDash /> },
-      { path: '/apps/calendar', element: <Calendar /> },
-      { path: '/apps/email', element: <Email /> },
-      { path: '/apps/tickets', element: <Tickets /> },
-      { path: '/user-profile', element: <UserProfile /> },
-      { path: '/pages/casl', element: <RollbaseCASL /> },
-      { path: '/pages/treeview', element: <Treeview /> },
-      { path: '/pages/pricing', element: <Pricing /> },
+      { path: '/apps/calendar',     element: <Calendar /> },
+      { path: '/apps/email',        element: <Email /> },
+      { path: '/apps/tickets',      element: <Tickets /> },
+      { path: '/user-profile',      element: <UserProfile /> },
+      { path: '/pages/casl',        element: <RollbaseCASL /> },
+      { path: '/pages/treeview',    element: <Treeview /> },
+      { path: '/pages/pricing',     element: <Pricing /> },
       { path: '/pages/account-settings', element: <AccountSetting /> },
-      { path: '/pages/faq', element: <Faq /> },
+      { path: '/pages/faq',         element: <Faq /> },
       { path: '/forms/form-elements/autocomplete', element: <MuiAutoComplete /> },
-      { path: '/forms/form-elements/button', element: <MuiButton /> },
-      { path: '/forms/form-elements/checkbox', element: <MuiCheckbox /> },
-      { path: '/forms/form-elements/radio', element: <MuiRadio /> },
-      { path: '/forms/form-elements/slider', element: <MuiSlider /> },
-      { path: '/forms/form-elements/date-time', element: <MuiDateTime /> },
-      { path: '/forms/form-elements/switch', element: <MuiSwitch /> },
-      { path: '/forms/form-elements/switch', element: <MuiSwitch /> },
-      { path: '/forms/quill-editor', element: <QuillEditor /> },
-      { path: '/forms/form-layouts', element: <FormLayouts /> },
-      { path: '/forms/form-horizontal', element: <FormHorizontal /> },
-      { path: '/forms/form-vertical', element: <FormVertical /> },
-      { path: '/forms/form-custom', element: <FormCustom /> },
-      { path: '/forms/form-wizard', element: <FormWizard /> },
-      { path: '/forms/form-validation', element: <FormValidation /> },
-      { path: '/tables/basic', element: <BasicTable /> },
-      { path: '/tables/collapsible', element: <CollapsibleTable /> },
-      { path: '/tables/enhanced', element: <EnhancedTable /> },
-      { path: '/tables/fixed-header', element: <FixedHeaderTable /> },
-      { path: '/tables/pagination', element: <PaginationTable /> },
-      { path: '/tables/search', element: <SearchTable /> },
-      { path: '/ui-components/alert', element: <MuiAlert /> },
-      { path: '/ui-components/accordion', element: <MuiAccordion /> },
-      { path: '/ui-components/avatar', element: <MuiAvatar /> },
-      { path: '/ui-components/chip', element: <MuiChip /> },
-      { path: '/ui-components/dialog', element: <MuiDialog /> },
-      { path: '/ui-components/list', element: <MuiList /> },
-      { path: '/ui-components/popover', element: <MuiPopover /> },
-      { path: '/ui-components/rating', element: <MuiRating /> },
-      { path: '/ui-components/tabs', element: <MuiTabs /> },
-      { path: '/ui-components/tooltip', element: <MuiTooltip /> },
-      { path: '/ui-components/transfer-list', element: <MuiTransferList /> },
-      { path: '/ui-components/typography', element: <MuiTypography /> },
-      { path: '/widgets/cards', element: <WidgetCards /> },
-      { path: '/widgets/banners', element: <WidgetBanners /> },
-      { path: '/widgets/charts', element: <WidgetCharts /> },
+      { path: '/forms/form-elements/button',       element: <MuiButton /> },
+      { path: '/forms/form-elements/checkbox',     element: <MuiCheckbox /> },
+      { path: '/forms/form-elements/radio',        element: <MuiRadio /> },
+      { path: '/forms/form-elements/slider',       element: <MuiSlider /> },
+      { path: '/forms/form-elements/date-time',    element: <MuiDateTime /> },
+      { path: '/forms/form-elements/switch',       element: <MuiSwitch /> },
+      { path: '/forms/quill-editor',               element: <QuillEditor /> },
+      { path: '/forms/form-layouts',               element: <FormLayouts /> },
+      { path: '/forms/form-horizontal',            element: <FormHorizontal /> },
+      { path: '/forms/form-vertical',              element: <FormVertical /> },
+      { path: '/forms/form-custom',                element: <FormCustom /> },
+      { path: '/forms/form-wizard',                element: <FormWizard /> },
+      { path: '/forms/form-validation',            element: <FormValidation /> },
+      { path: '/tables/basic',                     element: <BasicTable /> },
+      { path: '/tables/collapsible',               element: <CollapsibleTable /> },
+      { path: '/tables/enhanced',                  element: <EnhancedTable /> },
+      { path: '/tables/fixed-header',              element: <FixedHeaderTable /> },
+      { path: '/tables/pagination',                element: <PaginationTable /> },
+      { path: '/tables/search',                    element: <SearchTable /> },
+      { path: '/ui-components/alert',              element: <MuiAlert /> },
+      { path: '/ui-components/accordion',          element: <MuiAccordion /> },
+      { path: '/ui-components/avatar',             element: <MuiAvatar /> },
+      { path: '/ui-components/chip',               element: <MuiChip /> },
+      { path: '/ui-components/dialog',             element: <MuiDialog /> },
+      { path: '/ui-components/list',               element: <MuiList /> },
+      { path: '/ui-components/popover',            element: <MuiPopover /> },
+      { path: '/ui-components/rating',             element: <MuiRating /> },
+      { path: '/ui-components/tabs',               element: <MuiTabs /> },
+      { path: '/ui-components/tooltip',            element: <MuiTooltip /> },
+      { path: '/ui-components/transfer-list',      element: <MuiTransferList /> },
+      { path: '/ui-components/typography',         element: <MuiTypography /> },
+      { path: '/widgets/cards',                    element: <WidgetCards /> },
+      { path: '/widgets/banners',                  element: <WidgetBanners /> },
+      { path: '/widgets/charts',                   element: <WidgetCharts /> },
 
       { path: '*', element: <Navigate to="/auth/404" /> },
     ],
