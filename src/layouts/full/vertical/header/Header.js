@@ -2,16 +2,16 @@ import React from 'react';
 import { IconButton, Box, AppBar, useMediaQuery, Toolbar, styled, Stack } from '@mui/material';
 import PropTypes from 'prop-types';
 import { useSelector, useDispatch } from 'react-redux';
-import { toggleSidebar, toggleMobileSidebar } from 'src/store/customizer/CustomizerSlice';
 import { IconMenu2 } from '@tabler/icons';
 
 // components
 import Profile from './Profile';
-import MobileRightSidebar from './MobileRightSidebar';
+
+// Redux actions
+import { toggleSidebar, toggleMobileSidebar } from 'src/store/customizer/CustomizerSlice';
 
 const Header = () => {
   const lgUp = useMediaQuery((theme) => theme.breakpoints.up('lg'));
-  const lgDown = useMediaQuery((theme) => theme.breakpoints.down('lg'));
 
   // drawer
   const customizer = useSelector((state) => state.customizer);
@@ -45,7 +45,6 @@ const Header = () => {
 
         <Box flexGrow={1} />
         <Stack spacing={1} direction="row" alignItems="center">
-          {lgDown ? <MobileRightSidebar /> : null}
           <Profile />
         </Stack>
       </ToolbarStyled>

@@ -11,17 +11,33 @@ const InventoryNew = () => {
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
-    name: '',
-    sku: '',
-    category: '',
-    description: '',
-    price: '',
-    stock: '',
-    minStock: '',
-    status: 'active',
+    // Search by color
+    color: '',
     supplier: '',
-    weight: '',
-    dimensions: '',
+    colorCode: '',
+    price: '',
+    state: 'Available',
+    
+    // Inventory Types
+    type: 'Full Roll', // Full Roll, Slitted, Ready Channel
+    
+    // Full Roll fields
+    size: '',
+    quantity: '',
+    possibleFeet: '',
+    
+    // Slitted fields
+    slittedQuantity: '',
+    slittedSize: '',
+    slittedPossibleFeet: '',
+    
+    // Ready Channel fields
+    readyChannelHoleDistance: '8 inches', // 8/9 inches
+    readyChannelPieces: '',
+    readyChannelLength: '',
+    
+    // Additional info
+    notes: ''
   });
 
   const handleInputChange = (field) => (event) => {
@@ -52,7 +68,7 @@ const InventoryNew = () => {
             Back to Inventory
           </Button>
           <Typography variant="h4" sx={{ fontWeight: 700, color: palette.text.primary }}>
-            Add New Item
+            Add New Inventory Item
           </Typography>
         </Box>
 
@@ -67,87 +83,48 @@ const InventoryNew = () => {
                 </Typography>
               </Grid>
               
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} md={4}>
                 <TextField
                   fullWidth
-                  label="Product Name"
-                  value={formData.name}
-                  onChange={handleInputChange('name')}
+                  label="Color"
+                  value={formData.color}
+                  onChange={handleInputChange('color')}
+                  placeholder="e.g., White, Black, Red"
                   required
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
                 />
               </Grid>
               
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} md={4}>
                 <TextField
                   fullWidth
-                  label="SKU"
-                  value={formData.sku}
-                  onChange={handleInputChange('sku')}
+                  label="Supplier"
+                  value={formData.supplier}
+                  onChange={handleInputChange('supplier')}
+                  placeholder="e.g., Supplier A"
                   required
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
                 />
               </Grid>
               
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Category</InputLabel>
-                  <Select
-                    value={formData.category}
-                    onChange={handleInputChange('category')}
-                    label="Category"
-                    required
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                  >
-                    <MenuItem value="lighting">Lighting</MenuItem>
-                    <MenuItem value="accessories">Accessories</MenuItem>
-                    <MenuItem value="power">Power</MenuItem>
-                    <MenuItem value="controllers">Controllers</MenuItem>
-                    <MenuItem value="other">Other</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Status</InputLabel>
-                  <Select
-                    value={formData.status}
-                    onChange={handleInputChange('status')}
-                    label="Status"
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                  >
-                    <MenuItem value="active">Active</MenuItem>
-                    <MenuItem value="inactive">Inactive</MenuItem>
-                    <MenuItem value="discontinued">Discontinued</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              
-              <Grid item xs={12}>
+              <Grid item xs={12} md={4}>
                 <TextField
                   fullWidth
-                  label="Description"
-                  multiline
-                  rows={3}
-                  value={formData.description}
-                  onChange={handleInputChange('description')}
+                  label="Color Code"
+                  value={formData.colorCode}
+                  onChange={handleInputChange('colorCode')}
+                  placeholder="e.g., WH001, BK002"
+                  required
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
                 />
               </Grid>
-
-              {/* Pricing & Stock */}
-              <Grid item xs={12}>
-                <Typography variant="h6" sx={{ mt: 2, mb: 2, color: palette.primary.main, fontWeight: 600 }}>
-                  Pricing & Stock
-                </Typography>
-              </Grid>
               
-              <Grid item xs={12} md={3}>
+              <Grid item xs={12} md={4}>
                 <TextField
                   fullWidth
-                  label="Price ($)"
+                  label="Price per Foot ($)"
                   type="number"
+                  step="0.01"
                   value={formData.price}
                   onChange={handleInputChange('price')}
                   required
@@ -158,64 +135,207 @@ const InventoryNew = () => {
                 />
               </Grid>
               
-              <Grid item xs={12} md={3}>
-                <TextField
-                  fullWidth
-                  label="Current Stock"
-                  type="number"
-                  value={formData.stock}
-                  onChange={handleInputChange('stock')}
-                  required
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                />
+              <Grid item xs={12} md={4}>
+                <FormControl fullWidth>
+                  <InputLabel>State</InputLabel>
+                  <Select
+                    value={formData.state}
+                    onChange={handleInputChange('state')}
+                    label="State"
+                    required
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                  >
+                    <MenuItem value="Available">Available</MenuItem>
+                    <MenuItem value="Low Stock">Low Stock</MenuItem>
+                    <MenuItem value="Out of Stock">Out of Stock</MenuItem>
+                  </Select>
+                </FormControl>
               </Grid>
               
-              <Grid item xs={12} md={3}>
-                <TextField
-                  fullWidth
-                  label="Min Stock Level"
-                  type="number"
-                  value={formData.minStock}
-                  onChange={handleInputChange('minStock')}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                />
-              </Grid>
-              
-              <Grid item xs={12} md={3}>
-                <TextField
-                  fullWidth
-                  label="Supplier"
-                  value={formData.supplier}
-                  onChange={handleInputChange('supplier')}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                />
+              <Grid item xs={12} md={4}>
+                <FormControl fullWidth>
+                  <InputLabel>Inventory Type</InputLabel>
+                  <Select
+                    value={formData.type}
+                    onChange={handleInputChange('type')}
+                    label="Inventory Type"
+                    required
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                  >
+                    <MenuItem value="Full Roll">Full Roll</MenuItem>
+                    <MenuItem value="Slitted">Slitted</MenuItem>
+                    <MenuItem value="Ready Channel">Ready Channel</MenuItem>
+                  </Select>
+                </FormControl>
               </Grid>
 
-              {/* Physical Properties */}
+              {/* Full Roll Information */}
+              {formData.type === 'Full Roll' && (
+                <>
+                  <Grid item xs={12}>
+                    <Typography variant="h6" sx={{ mt: 2, mb: 2, color: palette.primary.main, fontWeight: 600 }}>
+                      Full Roll Information
+                    </Typography>
+                  </Grid>
+                  
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Size"
+                      value={formData.size}
+                      onChange={handleInputChange('size')}
+                      placeholder="e.g., 100ft"
+                      required
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Quantity"
+                      type="number"
+                      value={formData.quantity}
+                      onChange={handleInputChange('quantity')}
+                      placeholder="Number of rolls"
+                      required
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Possible Feet"
+                      type="number"
+                      value={formData.possibleFeet}
+                      onChange={handleInputChange('possibleFeet')}
+                      placeholder="Total feet available"
+                      required
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                    />
+                  </Grid>
+                </>
+              )}
+
+              {/* Slitted Information */}
+              {formData.type === 'Slitted' && (
+                <>
+                  <Grid item xs={12}>
+                    <Typography variant="h6" sx={{ mt: 2, mb: 2, color: palette.primary.main, fontWeight: 600 }}>
+                      Slitted Roll Information
+                    </Typography>
+                  </Grid>
+                  
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Quantity"
+                      type="number"
+                      value={formData.slittedQuantity}
+                      onChange={handleInputChange('slittedQuantity')}
+                      placeholder="Number of slitted pieces"
+                      required
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Size"
+                      value={formData.slittedSize}
+                      onChange={handleInputChange('slittedSize')}
+                      placeholder="e.g., 50ft, 25ft"
+                      required
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Possible Feet"
+                      type="number"
+                      value={formData.slittedPossibleFeet}
+                      onChange={handleInputChange('slittedPossibleFeet')}
+                      placeholder="Total feet available"
+                      required
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                    />
+                  </Grid>
+                </>
+              )}
+
+              {/* Ready Channel Information */}
+              {formData.type === 'Ready Channel' && (
+                <>
+                  <Grid item xs={12}>
+                    <Typography variant="h6" sx={{ mt: 2, mb: 2, color: palette.primary.main, fontWeight: 600 }}>
+                      Ready Channel Information
+                    </Typography>
+                  </Grid>
+                  
+                  <Grid item xs={12} md={4}>
+                    <FormControl fullWidth>
+                      <InputLabel>Hole Distance</InputLabel>
+                      <Select
+                        value={formData.readyChannelHoleDistance}
+                        onChange={handleInputChange('readyChannelHoleDistance')}
+                        label="Hole Distance"
+                        required
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                      >
+                        <MenuItem value="8 inches">8 inches center-to-center</MenuItem>
+                        <MenuItem value="9 inches">9 inches center-to-center</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Pieces"
+                      type="number"
+                      value={formData.readyChannelPieces}
+                      onChange={handleInputChange('readyChannelPieces')}
+                      placeholder="Number of pieces"
+                      required
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Length (feet)"
+                      type="number"
+                      value={formData.readyChannelLength}
+                      onChange={handleInputChange('readyChannelLength')}
+                      placeholder="Total length in feet"
+                      required
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                    />
+                  </Grid>
+                </>
+              )}
+
+              {/* Additional Information */}
               <Grid item xs={12}>
                 <Typography variant="h6" sx={{ mt: 2, mb: 2, color: palette.primary.main, fontWeight: 600 }}>
-                  Physical Properties
+                  Additional Information
                 </Typography>
               </Grid>
               
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="Weight (kg)"
-                  type="number"
-                  value={formData.weight}
-                  onChange={handleInputChange('weight')}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                />
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Dimensions (L x W x H)"
-                  placeholder="e.g., 10 x 5 x 3 cm"
-                  value={formData.dimensions}
-                  onChange={handleInputChange('dimensions')}
+                  label="Notes"
+                  multiline
+                  rows={3}
+                  value={formData.notes}
+                  onChange={handleInputChange('notes')}
+                  placeholder="Additional notes about this inventory item..."
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
                 />
               </Grid>
@@ -237,7 +357,7 @@ const InventoryNew = () => {
                     startIcon={<Save />}
                     sx={{ borderRadius: '8px' }}
                   >
-                    Save Item
+                    Save Inventory Item
                   </Button>
                 </Box>
               </Grid>
