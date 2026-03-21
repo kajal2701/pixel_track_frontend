@@ -1,16 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { NavLink } from 'react-router-dom';
-// mui imports
 import {
-  ListItemIcon,
-  ListItem,
-  List,
-  styled,
-  ListItemText,
-  Chip,
-  useTheme,
-  Typography,
+  ListItemIcon, ListItem, List, styled,
+  ListItemText, Chip, useTheme, Typography,
 } from '@mui/material';
 import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
@@ -20,8 +13,12 @@ const NavItem = ({ item, level, pathDirect, onClick, hideMenu }) => {
   const Icon = item.icon;
   const theme = useTheme();
   const { t } = useTranslation();
-  const itemIcon =
-    level > 1 ? <Icon stroke={1.5} size="1rem" /> : <Icon stroke={1.5} size="1.3rem" />;
+
+  const itemIcon = level > 1
+    ? <Icon stroke={1.5} size="1rem" />
+    : <Icon stroke={1.5} size="1.3rem" />;
+
+  const isSelected = pathDirect === item.href;
 
   const ListItemStyled = styled(ListItem)(() => ({
     whiteSpace: 'nowrap',
@@ -29,18 +26,23 @@ const NavItem = ({ item, level, pathDirect, onClick, hideMenu }) => {
     padding: '8px 10px',
     borderRadius: `${customizer.borderRadius}px`,
     backgroundColor: level > 1 ? 'transparent !important' : 'inherit',
-    color:
-      level > 1 && pathDirect === item.href ? `${theme.palette.primary.main}!important` : theme.palette.text.secondary,
+    color: level > 1 && isSelected
+      ? `${theme.palette.primary.main}!important`
+      : theme.palette.text.secondary,
     paddingLeft: hideMenu ? '10px' : level > 2 ? `${level * 15}px` : '10px',
+
     '&:hover': {
-      backgroundColor: theme.palette.primary.light,
-      color: theme.palette.primary.main,
+      backgroundColor: isSelected
+        ? '#142B21'              // dark green when active — same as NavCollapse
+        : 'rgba(27,58,45,0.08)', // very subtle tint when not active — same as NavCollapse
+      color: isSelected ? 'white' : '#1B3A2D',
     },
+
     '&.Mui-selected': {
       color: 'white',
       backgroundColor: theme.palette.primary.main,
       '&:hover': {
-        backgroundColor: theme.palette.primary.main,
+        backgroundColor: '#142B21', // same dark green
         color: 'white',
       },
     },
@@ -54,7 +56,7 @@ const NavItem = ({ item, level, pathDirect, onClick, hideMenu }) => {
         to={item.href}
         href={item.external ? item.href : ''}
         disabled={item.disabled}
-        selected={pathDirect === item.href}
+        selected={isSelected}
         target={item.external ? '_blank' : ''}
         onClick={onClick}
       >
@@ -62,28 +64,26 @@ const NavItem = ({ item, level, pathDirect, onClick, hideMenu }) => {
           sx={{
             minWidth: '36px',
             p: '3px 0',
-            color:
-              level > 1 && pathDirect === item.href
-                ? `${theme.palette.primary.main}!important`
-                : 'inherit',
+            color: level > 1 && isSelected
+              ? `${theme.palette.primary.main}!important`
+              : 'inherit',
           }}
         >
           {itemIcon}
         </ListItemIcon>
+
         <ListItemText>
           {hideMenu ? '' : <>{t(`${item.title}`)}</>}
           <br />
-          {item.subtitle ? (
-            <Typography variant="caption">{hideMenu ? '' : item.subtitle}</Typography>
-          ) : (
-            ''
-          )}
+          {item.subtitle
+            ? <Typography variant="caption">{hideMenu ? '' : item.subtitle}</Typography>
+            : ''}
         </ListItemText>
 
         {!item.chip || hideMenu ? null : (
           <Chip
             color={item.chipColor}
-            variant={item.variant ? item.variant : 'filled'}
+            variant={item.variant || 'filled'}
             size="small"
             label={item.chip}
           />
@@ -94,11 +94,11 @@ const NavItem = ({ item, level, pathDirect, onClick, hideMenu }) => {
 };
 
 NavItem.propTypes = {
-  item: PropTypes.object,
-  level: PropTypes.number,
+  item:       PropTypes.object,
+  level:      PropTypes.number,
   pathDirect: PropTypes.any,
-  hideMenu: PropTypes.any,
-  onClick: PropTypes.func,
+  hideMenu:   PropTypes.any,
+  onClick:    PropTypes.func,
 };
 
 export default NavItem;
