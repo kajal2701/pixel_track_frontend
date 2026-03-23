@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, Card, Typography, TextField, Button, InputAdornment, IconButton } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
+import { useNavigate } from 'react-router-dom';
 import PageContainer from 'src/components/container/PageContainer';
 import Logo from 'src/assets/images/logos/logo.png';
 
@@ -9,6 +10,16 @@ const LoginCustomerOrderPortal = () => {
   const [showCode, setShowCode] = React.useState(false);
   const theme = useTheme();
   const { palette } = theme;
+  const navigate = useNavigate();
+
+  const handleLogin = () => {
+    // Set user type in localStorage
+    localStorage.setItem('userType', 'customer');
+    localStorage.setItem('isAuthenticated', 'true');
+    
+    // Navigate to customer order history
+    navigate('/order/history');
+  };
 
   // ── Shared input style ─────────────────────────────────────
   const inputSx = {
@@ -198,7 +209,7 @@ const LoginCustomerOrderPortal = () => {
                 variant="contained"
                 color="primary"
                 size="large"
-                href="/admin/orders"
+                onClick={handleLogin}
                 sx={{
                   borderRadius: '10px',
                   fontWeight: 700,

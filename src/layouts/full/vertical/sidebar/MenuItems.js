@@ -32,9 +32,11 @@ import {
 
 import { uniqueId } from 'lodash';
 
-const Menuitems = [
+// Get user type from localStorage
+const getUserType = () => localStorage.getItem('userType');
 
-
+// Admin menu items
+const adminMenuItems = [
   {
     id: uniqueId(),
     title: 'Dashboard',
@@ -119,7 +121,10 @@ const Menuitems = [
     icon: IconCurrencyDollar,
     href: '/admin/reports',
   },
+];
 
+// Customer menu items
+const customerMenuItems = [
   {
     id: uniqueId(),
     title: 'Place New Order',
@@ -132,9 +137,26 @@ const Menuitems = [
     icon: IconTicket,
     href: '/order/history',
   },
-
-
-
 ];
 
+// Function to get menu items based on user type
+const getMenuItemsFunction = () => {
+  const userType = getUserType();
+  
+  switch (userType) {
+    case 'admin':
+      return adminMenuItems;
+    case 'customer':
+      return customerMenuItems;
+    default:
+      // If no user type, return empty array or default items
+      return [];
+  }
+};
+
+// Export function to get menu items dynamically
+export const getMenuItems = getMenuItemsFunction;
+
+// For backward compatibility, export the current menu items
+const Menuitems = getMenuItems();
 export default Menuitems;

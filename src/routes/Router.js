@@ -2,10 +2,10 @@ import React, { lazy } from 'react';
 import { Navigate } from 'react-router-dom';
 
 import Loadable from '../layouts/full/shared/loadable/Loadable';
+import ProtectedRoute from '../components/auth/ProtectedRoute';
 
 const FullLayout = Loadable(lazy(() => import('../layouts/full/FullLayout')));
 const BlankLayout = Loadable(lazy(() => import('../layouts/blank/BlankLayout')));
-
 
 
 const UserProfile = Loadable(lazy(() => import('../views/apps/user-profile/UserProfile')));
@@ -67,20 +67,20 @@ const Router = [
     children: [
 
       // ── NEW: Admin routes ──────────────────────────────────────────────
-      { path: '/admin/dashboard',      element: <Dashboard /> },
-      { path: '/admin/orders',         element: <Orders /> },
-      { path: '/admin/inventory',      element: <InventoryList /> },
-      { path: '/admin/inventory/new',  element: <InventoryNew /> },
-      { path: '/admin/production',     element: <ProductionList /> },
-      { path: '/admin/production/new', element: <ProductionNew /> },
-      { path: '/admin/customers',      element: <CustomerList /> },
-      { path: '/admin/customers/new',  element: <CustomerNew /> },
-      { path: '/admin/invoices',       element: <Invoices /> },
-      { path: '/admin/reports',        element: <Reports /> },
+      { path: '/admin/dashboard',      element: <ProtectedRoute allowedUserType="admin"><Dashboard /></ProtectedRoute> },
+      { path: '/admin/orders',         element: <ProtectedRoute allowedUserType="admin"><Orders /></ProtectedRoute> },
+      { path: '/admin/inventory',      element: <ProtectedRoute allowedUserType="admin"><InventoryList /></ProtectedRoute> },
+      { path: '/admin/inventory/new',  element: <ProtectedRoute allowedUserType="admin"><InventoryNew /></ProtectedRoute> },
+      { path: '/admin/production',     element: <ProtectedRoute allowedUserType="admin"><ProductionList /></ProtectedRoute> },
+      { path: '/admin/production/new', element: <ProtectedRoute allowedUserType="admin"><ProductionNew /></ProtectedRoute> },
+      { path: '/admin/customers',      element: <ProtectedRoute allowedUserType="admin"><CustomerList /></ProtectedRoute> },
+      { path: '/admin/customers/new',  element: <ProtectedRoute allowedUserType="admin"><CustomerNew /></ProtectedRoute> },
+      { path: '/admin/invoices',       element: <ProtectedRoute allowedUserType="admin"><Invoices /></ProtectedRoute> },
+      { path: '/admin/reports',        element: <ProtectedRoute allowedUserType="admin"><Reports /></ProtectedRoute> },
 
       // ── NEW: Customer order portal routes ──────────────────────────────
-      { path: '/order/new',            element: <PlaceOrder /> },
-      { path: '/order/history',        element: <OrderHistory /> },
+      { path: '/order/new',            element: <ProtectedRoute allowedUserType="customer"><PlaceOrder /></ProtectedRoute> },
+      { path: '/order/history',        element: <ProtectedRoute allowedUserType="customer"><OrderHistory /></ProtectedRoute> },
 
       // ── EXISTING: kept exactly as before ──────────────────────────────
       { path: '/user-profile',      element: <UserProfile /> },
