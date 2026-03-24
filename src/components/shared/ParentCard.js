@@ -7,14 +7,14 @@ const ParentCard = ({ title, children, footer }) => {
   const customizer = useSelector((state) => state.customizer);
   return (
     <Card
-      sx={{ padding: 0 }}
+     sx={{ padding: 0, minWidth: 0, overflow: 'hidden' }}
       elevation={customizer.isCardShadow ? 9 : 0}
       variant={!customizer.isCardShadow ? 'outlined' : undefined}
     >
       <CardHeader title={title} />
       <Divider />
 
-      <CardContent>{children}</CardContent>
+       <CardContent sx={{ padding: "24px", minWidth: 0 }}> {children}</CardContent>
       {footer ? (
         <>
           <Divider />

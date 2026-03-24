@@ -17,7 +17,7 @@ const PageWrapper = styled('div')(() => ({
   paddingBottom: '60px',
   flexDirection: 'column',
   zIndex: 1,
-  width: '100%',
+minWidth: 0,  
   backgroundColor: 'transparent',
 }));
 
@@ -56,12 +56,14 @@ const FullLayout = () => {
         <Container
           sx={{
             maxWidth: customizer.isLayout === 'boxed' ? 'lg' : '100%!important',
+            overflow: 'hidden',   // ← ADD
+            minWidth: 0,  
           }}
         >
           {/* ------------------------------------------- */}
           {/* Page Route */}
           {/* ------------------------------------------- */}
-          <Box sx={{ minHeight: 'calc(100vh - 170px)' }}>
+          <Box sx={{ minHeight: 'calc(100vh - 170px)',  minWidth: 0 }}>
             <Outlet />
           </Box>
           {/* ------------------------------------------- */}

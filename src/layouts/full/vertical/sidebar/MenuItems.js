@@ -18,58 +18,58 @@ const getUserType = () => localStorage.getItem('userType');
 
 // Admin menu items
 const adminMenuItems = [
-  {
-    id: uniqueId(),
-    title: 'Dashboard',
-    icon: IconAperture,
-    href: '/admin/dashboard',
-  },
+  // {
+  //   id: uniqueId(),
+  //   title: 'Dashboard',
+  //   icon: IconAperture,
+  //   href: '/admin/dashboard',
+  // },
   {
     id: uniqueId(),
     title: 'Orders',
     icon: IconBorderAll,
     href: '/admin/orders',
   },
-  {
-    id: uniqueId(),
-    title: 'Inventory',
-    icon: IconBox,
-    href: '/admin/inventory',
-    children: [
-      {
-        id: uniqueId(),
-        title: 'Inventory List',
-        icon: IconPoint,
-        href: '/admin/inventory',
-      },
-      {
-        id: uniqueId(),
-        title: 'Add New',
-        icon: IconPoint,
-        href: '/admin/inventory/new',
-      },
-    ],
-  },
-  {
-    id: uniqueId(),
-    title: 'Production',
-    icon: IconFiles,
-    href: '/admin/production',
-    children: [
-      {
-        id: uniqueId(),
-        title: 'Production List',
-        icon: IconPoint,
-        href: '/admin/production',
-      },
-      {
-        id: uniqueId(),
-        title: 'New Production',
-        icon: IconPoint,
-        href: '/admin/production/new',
-      },
-    ],
-  },
+  // {
+  //   id: uniqueId(),
+  //   title: 'Inventory',
+  //   icon: IconBox,
+  //   href: '/admin/inventory',
+  //   children: [
+  //     {
+  //       id: uniqueId(),
+  //       title: 'Inventory List',
+  //       icon: IconPoint,
+  //       href: '/admin/inventory',
+  //     },
+  //     {
+  //       id: uniqueId(),
+  //       title: 'Add New',
+  //       icon: IconPoint,
+  //       href: '/admin/inventory/new',
+  //     },
+  //   ],
+  // },
+  // {
+  //   id: uniqueId(),
+  //   title: 'Production',
+  //   icon: IconFiles,
+  //   href: '/admin/production',
+  //   children: [
+  //     {
+  //       id: uniqueId(),
+  //       title: 'Production List',
+  //       icon: IconPoint,
+  //       href: '/admin/production',
+  //     },
+  //     {
+  //       id: uniqueId(),
+  //       title: 'New Production',
+  //       icon: IconPoint,
+  //       href: '/admin/production/new',
+  //     },
+  //   ],
+  // },
   {
     id: uniqueId(),
     title: 'Customers',
@@ -90,18 +90,18 @@ const adminMenuItems = [
       },
     ],
   },
-  {
-    id: uniqueId(),
-    title: 'Invoices',
-    icon: IconCurrencyDollar,
-    href: '/admin/invoices',
-  },
-  {
-    id: uniqueId(),
-    title: 'Reports',
-    icon: IconCurrencyDollar,
-    href: '/admin/reports',
-  },
+  // {
+  //   id: uniqueId(),
+  //   title: 'Invoices',
+  //   icon: IconCurrencyDollar,
+  //   href: '/admin/invoices',
+  // },
+  // {
+  //   id: uniqueId(),
+  //   title: 'Reports',
+  //   icon: IconCurrencyDollar,
+  //   href: '/admin/reports',
+  // },
 ];
 
 // Customer menu items

@@ -13,84 +13,77 @@ const OrderHistory = () => {
   const { palette } = theme;
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
 
-  // Sample order data
+  // Sample order data matching admin table structure
   const orders = [
     { 
-      id: 'ORD-2024-001', 
-      orderDate: '2024-03-15',
+      id: 1, 
+      orderNumber: 'ORD-2024-001', 
+      date: '2024-03-15', 
       customerName: 'ABC Construction',
-      customerNumber: 'CUST-001',
-      items: [
-        { type: 'Full Roll', color: 'White', quantity: 1, lengthInFeet: 216, pricePerFoot: 2.50 }
-      ],
-      totalAmount: 540.00,
-      status: 'completed',
-      deliveryDate: '2024-03-18',
-      paymentStatus: 'paid'
+      companyName: 'ABC Construction',
+      color: 'White', 
+      finalOrder: '216 ft', 
+      status: 'Confirmed', 
+      notes: 'Delivery by end of month',
+      email: 'contact@abcconstruction.com'
     },
     { 
-      id: 'ORD-2024-002', 
-      orderDate: '2024-03-16',
+      id: 2, 
+      orderNumber: 'ORD-2024-002', 
+      date: '2024-03-16', 
       customerName: 'XYZ Interiors',
-      customerNumber: 'CUST-002',
-      items: [
-        { type: 'Full Roll', color: 'Black', quantity: 1, lengthInFeet: 144, pricePerFoot: 2.50 }
-      ],
-      totalAmount: 360.00,
-      status: 'in-progress',
-      deliveryDate: '2024-03-20',
-      paymentStatus: 'pending'
+      companyName: 'XYZ Interiors',
+      color: 'Black', 
+      finalOrder: '144 ft', 
+      status: 'Pending', 
+      notes: 'Ready for production',
+      email: 'orders@xyzinteriors.com'
     },
     { 
-      id: 'ORD-2024-003', 
-      orderDate: '2024-03-17',
+      id: 3, 
+      orderNumber: 'ORD-2024-003', 
+      date: '2024-03-17', 
       customerName: 'Home Renovations Ltd',
-      customerNumber: 'CUST-003',
-      items: [
-        { type: 'Ready Channel', color: 'Red', quantity: 2, lengthInFeet: 96, pricePerFoot: 3.00, holeDistance: '8 inches' }
-      ],
-      totalAmount: 576.00,
-      status: 'pending',
-      deliveryDate: '2024-03-22',
-      paymentStatus: 'pending'
+      companyName: 'Home Renovations Ltd',
+      color: 'Red', 
+      finalOrder: '288 ft', 
+      status: 'Ready', 
+      notes: 'Awaiting delivery',
+      email: 'info@homerenovations.com'
     },
     { 
-      id: 'ORD-2024-004', 
-      orderDate: '2024-03-18',
+      id: 4, 
+      orderNumber: 'ORD-2024-004', 
+      date: '2024-03-18', 
       customerName: 'Commercial Spaces Inc',
-      customerNumber: 'CUST-004',
-      items: [
-        { type: 'Slitted', color: 'Gray', quantity: 3, lengthInFeet: 50, pricePerFoot: 2.25 }
-      ],
-      totalAmount: 337.50,
-      status: 'completed',
-      deliveryDate: '2024-03-19',
-      paymentStatus: 'paid'
+      companyName: 'Commercial Spaces Inc',
+      color: 'Gray', 
+      finalOrder: '150 ft', 
+      status: 'Pending', 
+      notes: 'Large commercial project',
+      email: 'alice.brown@commercialspaces.com'
     },
     { 
-      id: 'ORD-2024-005', 
-      orderDate: '2024-03-19',
+      id: 5, 
+      orderNumber: 'ORD-2024-005', 
+      date: '2024-03-19', 
       customerName: 'Residential Builders',
-      customerNumber: 'CUST-005',
-      items: [
-        { type: 'Full Roll', color: 'Blue', quantity: 1, lengthInFeet: 168, pricePerFoot: 2.40 }
-      ],
-      totalAmount: 403.20,
-      status: 'shipped',
-      deliveryDate: '2024-03-21',
-      paymentStatus: 'paid'
+      companyName: 'Residential Builders',
+      color: 'Blue', 
+      finalOrder: '168 ft', 
+      status: 'Confirmed', 
+      notes: 'New residential project',
+      email: 'mike.wilson@residentialbuilders.com'
     }
   ];
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'completed': return 'success';
-      case 'in-progress': return 'warning';
-      case 'pending': return 'info';
-      case 'shipped': return 'primary';
-      case 'cancelled': return 'error';
+      case 'Confirmed': return 'success';
+      case 'Pending': return 'warning';
+      case 'Ready': return 'info';
+      case 'Cancelled': return 'error';
       default: return 'default';
     }
   };
@@ -104,81 +97,85 @@ const OrderHistory = () => {
     }
   };
 
-  const filteredOrders = orders.filter(order =>
-    order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.customerNumber.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const filteredOrdersByStatus = filteredOrders.filter(order => {
-    if (filterStatus === 'all') return true;
-    return order.status === filterStatus;
+  const filteredOrders = orders.filter(order => {
+    const matchesSearch = 
+      order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.color.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.status.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    return matchesSearch;
   });
 
-  // DataTable column definitions
+  // DataTable column definitions matching admin table
   const columns = [
     { 
-      field: 'id', 
+      field: 'orderNumber', 
       label: 'Order #', 
       bold: true, 
-      width: '12%' 
+      width: '150px', 
+      minWidth: '150px' 
     },
     { 
-      field: 'orderDate', 
-      label: 'Order Date', 
-      width: '10%' 
+      field: 'date', 
+      label: 'Date', 
+      width: '120px', 
+      minWidth: '120px' 
     },
     { 
       field: 'customerName', 
       label: 'Customer', 
-      width: '18%' 
-    },
-    { 
-      field: 'customerNumber', 
-      label: 'Customer #', 
-      muted: true, 
-      width: '10%' 
-    },
-    { 
-      field: 'items', 
-      label: 'Items', 
-      width: '25%' 
-    },
-    { 
-      field: 'totalAmount', 
-      label: 'Total', 
-      type: 'text', 
-      prefix: '$', 
       bold: true, 
-      width: '10%' 
+      width: '150px', 
+      minWidth: '150px' 
     },
     { 
-      field: 'status', 
-      label: 'Status', 
-      type: 'chip', 
-      chipColor: getStatusColor, 
-      width: '8%' 
+      field: 'companyName', 
+      label: 'Company', 
+      muted: true, 
+      width: '170px', 
+      minWidth: '170px' 
     },
     { 
-      field: 'paymentStatus', 
-      label: 'Payment', 
+      field: 'color', 
+      label: 'Color', 
       type: 'chip', 
-      chipColor: getPaymentStatusColor, 
-      width: '8%' 
+      chipColor: () => 'primary', 
+      width: '120px', 
+      minWidth: '120px' 
+    },
+    { 
+      field: 'finalOrder', 
+      label: 'Final Order', 
+      bold: true, 
+      width: '130px', 
+      minWidth: '130px' 
+    },
+    {
+      field: 'status',
+      label: 'Status',
+      type: 'chip',
+      chipColor: (v) => ({ Confirmed: 'success', Pending: 'warning', Ready: 'info', Cancelled: 'error' }[v] || 'default'),
+      width: '120px', minWidth: '120px',
+    },
+    { 
+      field: 'notes', 
+      label: 'Notes', 
+      width: '220px', 
+      minWidth: '220px' 
     },
     { 
       field: 'actions', 
       label: 'Actions', 
-      width: '19%' 
+      width: '160px', 
+      minWidth: '160px' 
     }
   ];
 
   // Format rows for DataTable with action buttons
-  const rows = filteredOrdersByStatus.map(order => ({
+  const rows = filteredOrders.map(order => ({
     ...order,
-    items: order.items.map(item => 
-      `${item.quantity}× ${item.color} ${item.type}${item.holeDistance ? ` (${item.holeDistance})` : ''}`
-    ).join(', '),
     actions: (
       <Stack direction="row" gap={0.5} flexWrap="wrap">
         <IconButton 
@@ -197,57 +194,23 @@ const OrderHistory = () => {
         >
           <Receipt fontSize="small" />
         </IconButton>
-        <IconButton 
-          size="small" 
-          sx={{ color: palette.success.main }}
-          onClick={() => handleTrackOrder(order)}
-          title="Track Order"
-        >
-          <Download fontSize="small" />
-        </IconButton>
-        {order.status === 'pending' && (
-          <IconButton 
-            size="small" 
-            sx={{ color: palette.warning.main }}
-            onClick={() => handleModifyOrder(order)}
-            title="Modify Order"
-          >
-            <FilterList fontSize="small" />
-          </IconButton>
-        )}
       </Stack>
     )
   }));
 
   const handleViewOrder = (order) => {
-    const itemsList = order.items.map(item => 
-      `${item.quantity} × ${item.color} ${item.type} (${item.lengthInFeet}ft) @ $${item.pricePerFoot}/ft${item.holeDistance ? ` - ${item.holeDistance}` : ''} = $${(item.quantity * item.lengthInFeet * item.pricePerFoot).toFixed(2)}`
-    ).join('\n');
-    
-    alert(`Order Details:\n\nOrder #: ${order.id}\nOrder Date: ${order.orderDate}\nCustomer: ${order.customerName} (${order.customerNumber})\nStatus: ${order.status.toUpperCase()}\nPayment: ${order.paymentStatus.toUpperCase()}\nDelivery Date: ${order.deliveryDate}\nTotal Amount: $${order.totalAmount.toFixed(2)}\n\nItems:\n${itemsList}`);
+    alert(`Order Details:\n\nOrder #: ${order.orderNumber}\nDate: ${order.date}\nCustomer: ${order.customerName}\nCompany: ${order.companyName}\nColor: ${order.color}\nFinal Order: ${order.finalOrder}\nStatus: ${order.status}\nNotes: ${order.notes}\nEmail: ${order.email}`);
   };
 
   const handleDownloadInvoice = (order) => {
-    alert(`Downloading invoice for order ${order.id}`);
-  };
-
-  const handleTrackOrder = (order) => {
-    alert(`Tracking order ${order.id} - Status: ${order.status}`);
-  };
-
-  const handleModifyOrder = (order) => {
-    if (window.confirm(`Do you want to modify order ${order.id}?`)) {
-      navigate(`/order/new`);
-    }
+    alert(`Downloading invoice for order ${order.orderNumber}`);
   };
 
   // Calculate summary statistics
   const totalOrders = filteredOrders.length;
-  const completedOrders = filteredOrders.filter(order => order.status === 'completed').length;
-  const pendingOrders = filteredOrders.filter(order => order.status === 'pending').length;
-  const totalSpent = filteredOrders
-    .filter(order => order.paymentStatus === 'paid')
-    .reduce((sum, order) => sum + order.totalAmount, 0);
+  const confirmedOrders = filteredOrders.filter(order => order.status === 'Confirmed').length;
+  const pendingOrders = filteredOrders.filter(order => order.status === 'Pending').length;
+  const readyOrders = filteredOrders.filter(order => order.status === 'Ready').length;
 
   return (
     <PageContainer title="Order History" description="View and track your orders">
@@ -262,9 +225,7 @@ const OrderHistory = () => {
       >
         <Typography variant="h4" fontWeight={700}>Order History</Typography>
         <Stack direction="row" gap={1} flexWrap="wrap">
-          <Button variant="outlined" startIcon={<FilterList />} sx={{ borderRadius: '8px' }}>
-            Filter
-          </Button>
+         
           <Button 
             variant="contained" 
             startIcon={<Receipt />} 
@@ -276,11 +237,11 @@ const OrderHistory = () => {
         </Stack>
       </Stack>
 
-      {/* Search and Filter Bar */}
-      <Stack direction={{ xs: 'column', md: 'row' }} gap={2} mb={3} alignItems="center">
+      {/* Search Bar */}
+      <Box mb={3}>
         <TextField
           fullWidth
-          placeholder="Search orders by order #, customer, or customer number..."
+          placeholder="Search by order number, customer, company, color or status..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           InputProps={{
@@ -292,67 +253,7 @@ const OrderHistory = () => {
           }}
           sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
         />
-        <FormControl sx={{ minWidth: 120 }}>
-          <InputLabel>Status</InputLabel>
-          <Select
-            value={filterStatus}
-            label="Status"
-            onChange={(e) => setFilterStatus(e.target.value)}
-            size="medium"
-          >
-            <MenuItem value="all">All Status</MenuItem>
-            <MenuItem value="pending">Pending</MenuItem>
-            <MenuItem value="in-progress">In Progress</MenuItem>
-            <MenuItem value="shipped">Shipped</MenuItem>
-            <MenuItem value="completed">Completed</MenuItem>
-            <MenuItem value="cancelled">Cancelled</MenuItem>
-          </Select>
-        </FormControl>
-      </Stack>
-
-      {/* Order Summary Cards */}
-      <Grid container spacing={3} mb={3}>
-        <Grid item xs={12} sm={3}>
-          <ChildCard title="Total Orders">
-            <Typography variant="h4" fontWeight="600" color="primary.main">
-              {totalOrders}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              All time orders
-            </Typography>
-          </ChildCard>
-        </Grid>
-        <Grid item xs={12} sm={3}>
-          <ChildCard title="Completed">
-            <Typography variant="h4" fontWeight="600" color="success.main">
-              {completedOrders}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              Delivered orders
-            </Typography>
-          </ChildCard>
-        </Grid>
-        <Grid item xs={12} sm={3}>
-          <ChildCard title="Pending">
-            <Typography variant="h4" fontWeight="600" color="warning.main">
-              {pendingOrders}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              Awaiting processing
-            </Typography>
-          </ChildCard>
-        </Grid>
-        <Grid item xs={12} sm={3}>
-          <ChildCard title="Total Spent">
-            <Typography variant="h4" fontWeight="600" color="info.main">
-              ${totalSpent.toFixed(2)}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              Total order value
-            </Typography>
-          </ChildCard>
-        </Grid>
-      </Grid>
+      </Box>
 
       {/* Orders Table */}
       <ParentCard title="Order History">

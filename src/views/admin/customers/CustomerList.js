@@ -4,15 +4,12 @@ import { Search, Add, Edit, Delete, Visibility, FilterList, Email, Phone } from 
 import { useTheme } from '@mui/material/styles';
 import PageContainer from '../../../components/container/PageContainer';
 import ParentCard from '../../../components/shared/ParentCard';
-import ChildCard from '../../../components/shared/ChildCard';
 import DataTable from '../../../components/shared/DataTable';
 
 const CustomerList = () => {
   const theme = useTheme();
   const { palette } = theme;
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [filterChannelType, setFilterChannelType] = useState('all');
 
   // Sample customer data matching specifications
   const customers = [
@@ -83,22 +80,7 @@ const CustomerList = () => {
     }
   ];
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'active': return 'success';
-      case 'vip': return 'warning';
-      case 'inactive': return 'error';
-      default: return 'default';
-    }
-  };
-
-  const getChannelTypeColor = (type) => {
-    switch (type) {
-      case 'Commercial': return 'info';
-      case 'Residential': return 'primary';
-      default: return 'default';
-    }
-  };
+ 
 
   const filteredCustomers = customers.filter(customer => {
     const matchesSearch = 
@@ -108,67 +90,49 @@ const CustomerList = () => {
       customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.phoneNumber.includes(searchTerm);
     
-    const matchesStatus = filterStatus === 'all' || customer.status === filterStatus;
-    const matchesChannelType = filterChannelType === 'all' || customer.channelType === filterChannelType;
-    
-    return matchesSearch && matchesStatus && matchesChannelType;
+    return matchesSearch;
   });
 
   // DataTable column definitions
   const columns = [
     { 
       field: 'companyName', 
-      label: 'Company', 
+      label: 'Company Name', 
       bold: true, 
-      width: '18%' 
+      width: '20%',
+      minWidth: '150px'
     },
     { 
       field: 'customerNumber', 
-      label: 'Customer #', 
+      label: 'Customer Number', 
       type: 'text', 
       muted: true, 
-      width: '12%' 
+      width: '15%',
+      minWidth: '120px'
     },
     { 
       field: 'contactPersonName', 
       label: 'Contact Person', 
-      width: '15%' 
+      width: '15%',
+      minWidth: '150px'
     },
     { 
       field: 'email', 
       label: 'Email', 
-      width: '20%' 
+      width: '20%',
+      minWidth: '200px'
     },
     { 
       field: 'phoneNumber', 
-      label: 'Phone', 
-      width: '12%' 
-    },
-    { 
-      field: 'pricePerFoot', 
-      label: 'Price/Foot', 
-      type: 'text', 
-      prefix: '$', 
-      width: '10%' 
-    },
-    { 
-      field: 'channelType', 
-      label: 'Channel Type', 
-      type: 'chip', 
-      chipColor: getChannelTypeColor, 
-      width: '10%' 
-    },
-    { 
-      field: 'status', 
-      label: 'Status', 
-      type: 'chip', 
-      chipColor: getStatusColor, 
-      width: '8%' 
+      label: 'Phone Number', 
+      width: '15%',
+      minWidth: '130px'
     },
     { 
       field: 'actions', 
       label: 'Actions', 
-      width: '15%' 
+      width: '15%',
+      minWidth: '100px'
     }
   ];
 
@@ -179,27 +143,11 @@ const CustomerList = () => {
       <Stack direction="row" gap={0.5} flexWrap="wrap">
         <IconButton 
           size="small" 
-          sx={{ color: palette.info.main }}
-          onClick={() => handleViewCustomer(customer)}
-          title="View Details"
-        >
-          <Visibility fontSize="small" />
-        </IconButton>
-        <IconButton 
-          size="small" 
           sx={{ color: palette.primary.main }}
           onClick={() => handleEditCustomer(customer)}
           title="Edit Customer"
         >
           <Edit fontSize="small" />
-        </IconButton>
-        <IconButton 
-          size="small" 
-          sx={{ color: palette.success.main }}
-          onClick={() => handleEmailCustomer(customer)}
-          title="Send Email"
-        >
-          <Email fontSize="small" />
         </IconButton>
         <IconButton 
           size="small" 
@@ -213,18 +161,13 @@ const CustomerList = () => {
     )
   }));
 
-  const handleViewCustomer = (customer) => {
-    alert(`Customer Details:\n\nCompany: ${customer.companyName}\nCustomer Number: ${customer.customerNumber}\nContact Person: ${customer.contactPersonName}\nEmail: ${customer.email}\nPhone: ${customer.phoneNumber}\nPrice per Foot: $${customer.pricePerFoot}\nChannel Type: ${customer.channelType}\nStatus: ${customer.status}\n\nNotes: ${customer.notes || 'No notes'}\nJoined: ${customer.joinDate}`);
-  };
+
 
   const handleEditCustomer = (customer) => {
     alert(`Edit customer: ${customer.companyName}`);
   };
 
-  const handleEmailCustomer = (customer) => {
-    window.open(`mailto:${customer.email}?subject=Prixel Track Order Inquiry`);
-  };
-
+ 
   const handleDeleteCustomer = (customer) => {
     if (window.confirm(`Are you sure you want to delete customer ${customer.companyName}?`)) {
       alert(`Customer ${customer.companyName} deleted!`);
@@ -244,17 +187,15 @@ const CustomerList = () => {
       >
         <Typography variant="h4" fontWeight={700}>Customer Management</Typography>
         <Stack direction="row" gap={1} flexWrap="wrap">
-          <Button variant="outlined" startIcon={<FilterList />} sx={{ borderRadius: '8px' }}>
-            Filter
-          </Button>
+        
           <Button variant="contained" startIcon={<Add />} href="/admin/customers/new" sx={{ borderRadius: '8px' }}>
             Add Customer
           </Button>
         </Stack>
       </Stack>
 
-      {/* Search and Filter Bar */}
-      <Stack direction={{ xs: 'column', md: 'row' }} gap={2} mb={3} alignItems="center">
+      {/* Search Bar */}
+      <Box mb={3}>
         <TextField
           fullWidth
           placeholder="Search customers by company, customer number, contact person, email, or phone..."
@@ -269,68 +210,9 @@ const CustomerList = () => {
           }}
           sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
         />
-        <FormControl sx={{ minWidth: 120 }}>
-          <InputLabel>Status</InputLabel>
-          <Select
-            value={filterStatus}
-            label="Status"
-            onChange={(e) => setFilterStatus(e.target.value)}
-            size="medium"
-          >
-            <MenuItem value="all">All Status</MenuItem>
-            <MenuItem value="active">Active</MenuItem>
-            <MenuItem value="vip">VIP</MenuItem>
-            <MenuItem value="inactive">Inactive</MenuItem>
-          </Select>
-        </FormControl>
-        <FormControl sx={{ minWidth: 140 }}>
-          <InputLabel>Channel Type</InputLabel>
-          <Select
-            value={filterChannelType}
-            label="Channel Type"
-            onChange={(e) => setFilterChannelType(e.target.value)}
-            size="medium"
-          >
-            <MenuItem value="all">All Types</MenuItem>
-            <MenuItem value="Residential">Residential</MenuItem>
-            <MenuItem value="Commercial">Commercial</MenuItem>
-          </Select>
-        </FormControl>
-      </Stack>
+      </Box>
 
-      {/* Customer Summary Cards */}
-      <Grid container spacing={3} mb={3}>
-        <Grid item xs={12} sm={4}>
-          <ChildCard title="Total Customers">
-            <Typography variant="h4" fontWeight="600" color="primary.main">
-              {customers.length}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              Active customer accounts
-            </Typography>
-          </ChildCard>
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <ChildCard title="Commercial Clients">
-            <Typography variant="h4" fontWeight="600" color="info.main">
-              {customers.filter(c => c.channelType === 'Commercial').length}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              Business customers
-            </Typography>
-          </ChildCard>
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <ChildCard title="Residential Clients">
-            <Typography variant="h4" fontWeight="600" color="success.main">
-              {customers.filter(c => c.channelType === 'Residential').length}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              Home owners
-            </Typography>
-          </ChildCard>
-        </Grid>
-      </Grid>
+    
 
       {/* Customers Table */}
       <ParentCard title="Customer Management">

@@ -18,7 +18,7 @@ const LoginAdminOnly = () => {
     localStorage.setItem('isAuthenticated', 'true');
     
     // Navigate to admin dashboard
-    navigate('/admin/dashboard');
+    navigate('/admin/orders');
   };
 
   const inputSx = {

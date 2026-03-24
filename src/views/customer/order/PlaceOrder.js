@@ -3,6 +3,7 @@ import { Box, Typography, Button, TextField, Paper, Grid, FormControl, InputLabe
 import { Save, Cancel, ShoppingCart, Add, Remove } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
 import PageContainer from '../../../components/container/PageContainer';
 import ParentCard from '../../../components/shared/ParentCard';
 import ChildCard from '../../../components/shared/ChildCard';
@@ -12,22 +13,11 @@ const PlaceOrder = () => {
   const { palette } = theme;
   const navigate = useNavigate();
   
-  const [formData, setFormData] = useState({
-    customerName: '',
-    customerNumber: '',
-    email: '',
-    phone: '',
-    orderType: 'full-roll', // full-roll, slitted, ready-channel
-    color: '',
-    colorCode: '',
-    quantity: 1,
-    lengthInFeet: '',
-    pricePerFoot: 2.50,
-    holeDistance: '8 inches', // 8 or 9 inches for ready channel
-    deliveryAddress: '',
-    specialInstructions: '',
-    totalAmount: 0
-  });
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
 
   const [orderItems, setOrderItems] = useState([]);
 
@@ -40,105 +30,21 @@ const PlaceOrder = () => {
     { name: 'Gray', code: '#808080', pricePerFoot: 2.25 }
   ];
 
-  const handleInputChange = (field) => (event) => {
-    const value = event.target.value;
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-
-    // Update price per foot when color changes
-    if (field === 'color') {
-      const selectedColor = availableColors.find(c => c.name === value);
-      if (selectedColor) {
-        setFormData(prev => ({
-          ...prev,
-          colorCode: selectedColor.code,
-          pricePerFoot: selectedColor.pricePerFoot
-        }));
-      }
-    }
-
-    // Calculate total when quantity or length changes
-    if (field === 'quantity' || field === 'lengthInFeet') {
-      calculateTotal();
-    }
-  };
-
-  const calculateTotal = () => {
-    const quantity = parseFloat(formData.quantity) || 0;
-    const length = parseFloat(formData.lengthInFeet) || 0;
-    const price = formData.pricePerFoot || 0;
-    const total = quantity * length * price;
-    setFormData(prev => ({ ...prev, totalAmount: total }));
-  };
-
-  const addToOrder = () => {
-    if (formData.color && formData.lengthInFeet && formData.quantity) {
-      const newItem = {
-        id: Date.now(),
-        type: formData.orderType,
-        color: formData.color,
-        colorCode: formData.colorCode,
-        quantity: formData.quantity,
-        lengthInFeet: formData.lengthInFeet,
-        pricePerFoot: formData.pricePerFoot,
-        holeDistance: formData.holeDistance,
-        total: formData.totalAmount
-      };
-      
-      setOrderItems(prev => [...prev, newItem]);
-      resetForm();
-    }
-  };
-
-  const removeFromOrder = (id) => {
-    setOrderItems(prev => prev.filter(item => item.id !== id));
-  };
-
-  const resetForm = () => {
-    setFormData({
-      customerName: '',
-      customerNumber: '',
-      email: '',
-      phone: '',
-      orderType: 'full-roll',
-      color: '',
-      colorCode: '',
-      quantity: 1,
-      lengthInFeet: '',
-      pricePerFoot: 2.50,
-      holeDistance: '8 inches',
-      deliveryAddress: '',
-      specialInstructions: '',
-      totalAmount: 0
-    });
-  };
-
-  const calculateGrandTotal = () => {
-    return orderItems.reduce((sum, item) => sum + item.total, 0);
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (orderItems.length === 0) {
-      alert('Please add at least one item to your order');
-      return;
-    }
+  const onSubmit = (data) => {
+    // Generate order number
+    const orderNumber = `ORD-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`;
     
     const order = {
-      customerInfo: {
-        name: formData.customerName,
-        number: formData.customerNumber,
-        email: formData.email,
-        phone: formData.phone
-      },
-      items: orderItems,
-      deliveryAddress: formData.deliveryAddress,
-      specialInstructions: formData.specialInstructions,
-      grandTotal: calculateGrandTotal(),
-      orderDate: new Date().toISOString(),
-      status: 'pending'
+      orderNumber: orderNumber,
+      date: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
+      customerName: data.customerName,
+      companyName: data.companyName,
+      color: data.color,
+      finalOrder: data.finalOrder,
+      status: 'Pending',
+      notes: data.notes,
+      email: data.email,
+      phone: data.phone
     };
     
     console.log('New order:', order);
@@ -148,48 +54,80 @@ const PlaceOrder = () => {
 
   return (
     <PageContainer title="Place Order" description="Create a new pixel track order">
-      <Stack spacing={3}>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <Stack spacing={3}>
         {/* Customer Information */}
         <ParentCard title="Customer Information">
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
+              <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                Customer Name
+              </Typography>
               <TextField
                 fullWidth
-                label="Customer Name"
-                value={formData.customerName}
-                onChange={handleInputChange('customerName')}
-                required
+                type="text"
+                variant="outlined"
+                placeholder="Enter customer name"
+                {...register('customerName', { required: 'Customer name is required' })}
+                error={!!errors.customerName}
+                helperText={errors.customerName?.message}
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
               />
             </Grid>
             <Grid item xs={12} md={6}>
+              <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                Company Name
+              </Typography>
               <TextField
                 fullWidth
-                label="Customer Number"
-                value={formData.customerNumber}
-                onChange={handleInputChange('customerNumber')}
-                placeholder="e.g., CUST-001"
+                type="text"
+                variant="outlined"
+                placeholder="Enter company name"
+                {...register('companyName', { required: 'Company name is required' })}
+                error={!!errors.companyName}
+                helperText={errors.companyName?.message}
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
               />
             </Grid>
             <Grid item xs={12} md={6}>
+              <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                Email
+              </Typography>
               <TextField
                 fullWidth
-                label="Email"
                 type="email"
-                value={formData.email}
-                onChange={handleInputChange('email')}
-                required
+                variant="outlined"
+                placeholder="Enter email address"
+                {...register('email', { 
+                  required: 'Email is required',
+                  pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                    message: 'Must be a valid email format'
+                  }
+                })}
+                error={!!errors.email}
+                helperText={errors.email?.message}
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
               />
             </Grid>
             <Grid item xs={12} md={6}>
+              <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                Phone Number
+              </Typography>
               <TextField
                 fullWidth
-                label="Phone"
-                value={formData.phone}
-                onChange={handleInputChange('phone')}
-                placeholder="+1 (555) 123-4567"
+                type="text"
+                variant="outlined"
+                placeholder="Enter phone number"
+                {...register('phone', { 
+                  required: 'Phone number is required',
+                  pattern: {
+                    value: /^\d{3}-\d{3}-\d{4}$/,
+                    message: 'Pattern: 000-000-0000 (e.g., 123-456-7890)'
+                  }
+                })}
+                error={!!errors.phone}
+                helperText={errors.phone?.message || 'Pattern: 000-000-0000 (e.g., 123-456-7890)'}
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
               />
             </Grid>
@@ -199,30 +137,21 @@ const PlaceOrder = () => {
         {/* Order Configuration */}
         <ParentCard title="Order Configuration">
           <Grid container spacing={3}>
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={6}>
+              <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                Color
+              </Typography>
               <FormControl fullWidth>
-                <InputLabel>Order Type</InputLabel>
+                <InputLabel>Select color</InputLabel>
                 <Select
-                  value={formData.orderType}
-                  onChange={handleInputChange('orderType')}
-                  label="Order Type"
+                  {...register('color', { required: 'Color is required' })}
+                  error={!!errors.color}
+                  label="Select color"
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
                 >
-                  <MenuItem value="full-roll">Full Roll</MenuItem>
-                  <MenuItem value="slitted">Slitted</MenuItem>
-                  <MenuItem value="ready-channel">Ready Channel</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <FormControl fullWidth>
-                <InputLabel>Color</InputLabel>
-                <Select
-                  value={formData.color}
-                  onChange={handleInputChange('color')}
-                  label="Color"
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                >
+                  <MenuItem value="">
+                    <em>Select color</em>
+                  </MenuItem>
                   {availableColors.map(color => (
                     <MenuItem key={color.name} value={color.name}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -235,232 +164,75 @@ const PlaceOrder = () => {
                             borderRadius: '4px'
                           }}
                         />
-                        {color.name} (${color.pricePerFoot}/ft)
+                        {color.name}
                       </Box>
                     </MenuItem>
                   ))}
                 </Select>
+                {errors.color && (
+                  <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1 }}>
+                    {errors.color.message}
+                  </Typography>
+                )}
               </FormControl>
             </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label="Price per Foot"
-                type="number"
-                value={formData.pricePerFoot}
-                disabled
-                InputProps={{
-                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                }}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-              />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label="Quantity"
-                type="number"
-                value={formData.quantity}
-                onChange={handleInputChange('quantity')}
-                required
-                InputProps={{
-                  inputProps: { min: 1 }
-                }}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-              />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label="Length (feet)"
-                type="number"
-                value={formData.lengthInFeet}
-                onChange={handleInputChange('lengthInFeet')}
-                required
-                InputProps={{
-                  inputProps: { min: 1 }
-                }}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-              />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              {formData.orderType === 'ready-channel' && (
-                <FormControl fullWidth>
-                  <InputLabel>Hole Distance</InputLabel>
-                  <Select
-                    value={formData.holeDistance}
-                    onChange={handleInputChange('holeDistance')}
-                    label="Hole Distance"
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                  >
-                    <MenuItem value="8 inches">8 inches</MenuItem>
-                    <MenuItem value="9 inches">9 inches</MenuItem>
-                  </Select>
-                </FormControl>
-              )}
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Total Amount"
-                value={formData.totalAmount.toFixed(2)}
-                disabled
-                InputProps={{
-                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                }}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-              />
-            </Grid>
-          </Grid>
-          
-          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={addToOrder}
-              sx={{ borderRadius: '8px' }}
-            >
-              Add to Order
-            </Button>
-          </Box>
-        </ParentCard>
-
-        {/* Order Summary */}
-        <ParentCard title="Order Summary">
-          {orderItems.length === 0 ? (
-            <Box sx={{ textAlign: 'center', py: 4 }}>
-              <Typography variant="body1" color="textSecondary">
-                No items added to order yet
+            <Grid item xs={12} md={6}>
+              <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                Final Order
               </Typography>
-            </Box>
-          ) : (
-            <Stack spacing={2}>
-              {orderItems.map((item) => (
-                <Card key={item.id} sx={{ p: 2 }}>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center">
-                    <Box>
-                      <Typography variant="h6" fontWeight={600}>
-                        {item.color} {item.type}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        {item.quantity} × {item.lengthInFeet}ft @ ${item.pricePerFoot}/ft
-                      </Typography>
-                      {item.type === 'ready-channel' && (
-                        <Typography variant="body2" color="textSecondary">
-                          Hole Distance: {item.holeDistance}
-                        </Typography>
-                      )}
-                    </Box>
-                    <Stack direction="row" alignItems="center" gap={1}>
-                      <Typography variant="h6" fontWeight={600}>
-                        ${item.total.toFixed(2)}
-                      </Typography>
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => removeFromOrder(item.id)}
-                      >
-                        <Remove />
-                      </IconButton>
-                    </Stack>
-                  </Stack>
-                </Card>
-              ))}
-              
-              <Box sx={{ mt: 2, pt: 2, borderTop: `1px solid ${palette.divider}` }}>
-                <Typography variant="h5" fontWeight={700} textAlign="right">
-                  Grand Total: ${calculateGrandTotal().toFixed(2)}
-                </Typography>
-              </Box>
-            </Stack>
-          )}
-        </ParentCard>
-
-        {/* Delivery Information */}
-        <ParentCard title="Delivery Information">
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Delivery Address"
-                multiline
-                rows={2}
-                value={formData.deliveryAddress}
-                onChange={handleInputChange('deliveryAddress')}
-                placeholder="Enter complete delivery address..."
+                type="text"
+                variant="outlined"
+                placeholder="e.g., 216 ft"
+                {...register('finalOrder', { required: 'Final order is required' })}
+                error={!!errors.finalOrder}
+                helperText={errors.finalOrder?.message}
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
               />
             </Grid>
             <Grid item xs={12}>
+              <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                Notes
+              </Typography>
               <TextField
                 fullWidth
-                label="Special Instructions"
                 multiline
                 rows={3}
-                value={formData.specialInstructions}
-                onChange={handleInputChange('specialInstructions')}
-                placeholder="Any special delivery or handling instructions..."
+                variant="outlined"
+                placeholder="Add any special instructions or notes..."
+                {...register('notes', { required: 'Notes are required' })}
+                error={!!errors.notes}
+                helperText={errors.notes?.message}
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
               />
             </Grid>
           </Grid>
         </ParentCard>
 
-        {/* Order Statistics */}
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={4}>
-            <ChildCard title="Items in Order">
-              <Typography variant="h4" fontWeight="600" color="primary.main">
-                {orderItems.length}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Total items
-              </Typography>
-            </ChildCard>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <ChildCard title="Total Feet">
-              <Typography variant="h4" fontWeight="600" color="info.main">
-                {orderItems.reduce((sum, item) => sum + (item.quantity * item.lengthInFeet), 0)}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Total feet ordered
-              </Typography>
-            </ChildCard>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <ChildCard title="Order Value">
-              <Typography variant="h4" fontWeight="600" color="success.main">
-                ${calculateGrandTotal().toFixed(2)}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Total order value
-              </Typography>
-            </ChildCard>
-          </Grid>
-        </Grid>
-
-        {/* Actions */}
-        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+        {/* Submit Order */}
+        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mt: 3 }}>
           <Button
             variant="outlined"
+            size="large"
             startIcon={<Cancel />}
             onClick={() => navigate('/order/history')}
-            sx={{ borderRadius: '8px' }}
+            sx={{ borderRadius: '8px', px: 4, py: 1.5 }}
           >
             Cancel
           </Button>
           <Button
+            type="submit"
             variant="contained"
-            startIcon={<ShoppingCart />}
-            onClick={handleSubmit}
-            disabled={orderItems.length === 0}
-            sx={{ borderRadius: '8px' }}
+            size="large"
+            startIcon={<Save />}
+            sx={{ borderRadius: '8px', px: 4, py: 1.5 }}
           >
             Place Order
           </Button>
         </Box>
-      </Stack>
+        </Stack>
+      </form>
     </PageContainer>
   );
 };

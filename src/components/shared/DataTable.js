@@ -98,14 +98,17 @@ const DataTable = ({ rows = [], columns = [], defaultRows = 5 }) => {
     : rows;
 
   return (
-    <Paper variant="outlined">
-      {/* ↓ No minWidth, no whiteSpace:nowrap — table stays within container */}
-      <TableContainer sx={{ width: '100%', overflowX: 'auto' }}>
-        <Table sx={{ tableLayout: 'fixed', width: '100%' }} aria-label="data table">
+
+    <Paper variant="outlined"  sx={{ width: '100%', overflow: 'hidden', minWidth: 0 }} >
+      <TableContainer sx={{ width: "100%", overflowX: "auto" }} >
+        <Table sx={{ minWidth: 1340, tableLayout: 'fixed' }} aria-label="data table">
           <TableHead>
             <TableRow>
               {columns.map((col) => (
-                <TableCell key={col.field} sx={{ width: col.width, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <TableCell key={col.field} sx={{
+                  width: col.minWidth,
+                  minWidth: col.minWidth,
+                }}>
                   <Typography variant="h6">{col.label}</Typography>
                 </TableCell>
               ))}
@@ -115,7 +118,12 @@ const DataTable = ({ rows = [], columns = [], defaultRows = 5 }) => {
             {visibleRows.map((row, rowIdx) => (
               <TableRow key={row.id ?? rowIdx} hover>
                 {columns.map((col) => (
-                  <TableCell key={col.field} sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <TableCell key={col.field} sx={{
+    width: col.minWidth,
+    minWidth: col.minWidth,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  }}>
                     {renderCell(col, row)}
                   </TableCell>
                 ))}
@@ -155,17 +163,17 @@ DataTable.propTypes = {
   rows: PropTypes.array.isRequired,
   columns: PropTypes.arrayOf(
     PropTypes.shape({
-      field:       PropTypes.string.isRequired,
-      label:       PropTypes.string.isRequired,
-      type:        PropTypes.oneOf(['text', 'avatar', 'chip']),
-      render:      PropTypes.func,
+      field: PropTypes.string.isRequired,
+      label: PropTypes.string.isRequired,
+      type: PropTypes.oneOf(['text', 'avatar', 'chip']),
+      render: PropTypes.func,
       avatarField: PropTypes.string,
-      chipColor:   PropTypes.func,
-      prefix:      PropTypes.string,
-      bold:        PropTypes.bool,
-      muted:       PropTypes.bool,
-      width:       PropTypes.string,
-      align:       PropTypes.string,
+      chipColor: PropTypes.func,
+      prefix: PropTypes.string,
+      bold: PropTypes.bool,
+      muted: PropTypes.bool,
+      width: PropTypes.string,
+      align: PropTypes.string,
     })
   ).isRequired,
   defaultRows: PropTypes.number,

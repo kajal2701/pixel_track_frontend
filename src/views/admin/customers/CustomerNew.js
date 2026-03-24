@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Box, Typography, Button, TextField, Paper, Grid, FormControl, InputLabel, InputAdornment, Select, MenuItem, Checkbox, FormControlLabel } from '@mui/material';
+import React from 'react';
+import { Box, Typography, Button, TextField, Paper, Grid } from '@mui/material';
 import { Save, Cancel, ArrowBack } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
 import PageContainer from '../../../components/container/PageContainer';
 
 const CustomerNew = () => {
@@ -10,39 +11,14 @@ const CustomerNew = () => {
   const { palette } = theme;
   const navigate = useNavigate();
   
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    company: '',
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    country: '',
-    status: 'active',
-    notes: '',
-    sendWelcomeEmail: true,
-  });
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
 
-  const handleInputChange = (field) => (event) => {
-    setFormData({
-      ...formData,
-      [field]: event.target.value
-    });
-  };
-
-  const handleCheckboxChange = (field) => (event) => {
-    setFormData({
-      ...formData,
-      [field]: event.target.checked
-    });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('New customer:', formData);
+  const onSubmit = (data) => {
+    console.log('New customer:', data);
     // Handle form submission here
     navigate('/admin/customers');
   };
@@ -67,190 +43,107 @@ const CustomerNew = () => {
 
         {/* Form */}
         <Paper sx={{ p: 3, borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit(onSubmit)}>
             <Grid container spacing={3}>
-              {/* Personal Information */}
               <Grid item xs={12}>
                 <Typography variant="h6" sx={{ mb: 2, color: palette.primary.main, fontWeight: 600 }}>
-                  Personal Information
+                  Customer Information
                 </Typography>
               </Grid>
               
               <Grid item xs={12} md={6}>
+                <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                  Company Name
+                </Typography>
                 <TextField
                   fullWidth
-                  label="First Name"
-                  value={formData.firstName}
-                  onChange={handleInputChange('firstName')}
-                  required
+                  type="text"
+                  variant="outlined"
+                  placeholder="Enter company name"
+                  {...register('company_name', { required: 'Company name is required' })}
+                  error={!!errors.company_name}
+                  helperText={errors.company_name?.message}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
                 />
               </Grid>
               
               <Grid item xs={12} md={6}>
+                <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                  Customer Number
+                </Typography>
                 <TextField
                   fullWidth
-                  label="Last Name"
-                  value={formData.lastName}
-                  onChange={handleInputChange('lastName')}
-                  required
+                  type="text"
+                  variant="outlined"
+                  placeholder="e.g., CUST-001"
+                  {...register('customer_number', { required: 'Customer number is required' })}
+                  error={!!errors.customer_number}
+                  helperText={errors.customer_number?.message}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
                 />
               </Grid>
               
               <Grid item xs={12} md={6}>
+                <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                  Contact Person Name
+                </Typography>
                 <TextField
                   fullWidth
-                  label="Email Address"
+                  type="text"
+                  variant="outlined"
+                  placeholder="Enter contact person name"
+                  {...register('contact_name', { required: 'Contact person name is required' })}
+                  error={!!errors.contact_name}
+                  helperText={errors.contact_name?.message}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                />
+              </Grid>
+              
+              <Grid item xs={12} md={6}>
+                <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                  Email
+                </Typography>
+                <TextField
+                  fullWidth
                   type="email"
-                  value={formData.email}
-                  onChange={handleInputChange('email')}
-                  required
+                  variant="outlined"
+                  placeholder="Enter email address"
+                  {...register('email', { 
+                    required: 'Email is required',
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: 'Must be a valid email format'
+                    }
+                  })}
+                  error={!!errors.email}
+                  helperText={errors.email?.message}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
                 />
               </Grid>
               
               <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Phone Number"
-                  value={formData.phone}
-                  onChange={handleInputChange('phone')}
-                  placeholder="+1 (555) 123-4567"
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                />
-              </Grid>
-
-              {/* Company Information */}
-              <Grid item xs={12}>
-                <Typography variant="h6" sx={{ mt: 2, mb: 2, color: palette.primary.main, fontWeight: 600 }}>
-                  Company Information
+                <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                  Phone Number
                 </Typography>
-              </Grid>
-              
-              <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="Company Name"
-                  value={formData.company}
-                  onChange={handleInputChange('company')}
+                  type="text"
+                  variant="outlined"
+                  placeholder="000-000-0000"
+                  {...register('phone', { 
+                    required: 'Phone number is required',
+                    maxLength: {
+                      value: 12,
+                      message: 'Max length: 12 characters'
+                    },
+                    pattern: {
+                      value: /^\d{3}-\d{3}-\d{4}$/,
+                      message: 'Pattern: 000-000-0000 (e.g., 123-456-7890)'
+                    }
+                  })}
+                  error={!!errors.phone}
+                  helperText={errors.phone?.message || 'Pattern: 000-000-0000 (e.g., 123-456-7890)'}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                />
-              </Grid>
-
-              {/* Address Information */}
-              <Grid item xs={12}>
-                <Typography variant="h6" sx={{ mt: 2, mb: 2, color: palette.primary.main, fontWeight: 600 }}>
-                  Address Information
-                </Typography>
-              </Grid>
-              
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Street Address"
-                  value={formData.address}
-                  onChange={handleInputChange('address')}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                />
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="City"
-                  value={formData.city}
-                  onChange={handleInputChange('city')}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                />
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="State/Province"
-                  value={formData.state}
-                  onChange={handleInputChange('state')}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                />
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="ZIP/Postal Code"
-                  value={formData.zipCode}
-                  onChange={handleInputChange('zipCode')}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                />
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Country</InputLabel>
-                  <Select
-                    value={formData.country}
-                    onChange={handleInputChange('country')}
-                    label="Country"
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                  >
-                    <MenuItem value="US">United States</MenuItem>
-                    <MenuItem value="CA">Canada</MenuItem>
-                    <MenuItem value="UK">United Kingdom</MenuItem>
-                    <MenuItem value="AU">Australia</MenuItem>
-                    <MenuItem value="DE">Germany</MenuItem>
-                    <MenuItem value="FR">France</MenuItem>
-                    <MenuItem value="OTHER">Other</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              {/* Account Settings */}
-              <Grid item xs={12}>
-                <Typography variant="h6" sx={{ mt: 2, mb: 2, color: palette.primary.main, fontWeight: 600 }}>
-                  Account Settings
-                </Typography>
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Account Status</InputLabel>
-                  <Select
-                    value={formData.status}
-                    onChange={handleInputChange('status')}
-                    label="Account Status"
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                  >
-                    <MenuItem value="active">Active</MenuItem>
-                    <MenuItem value="inactive">Inactive</MenuItem>
-                    <MenuItem value="vip">VIP</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Notes"
-                  multiline
-                  rows={3}
-                  value={formData.notes}
-                  onChange={handleInputChange('notes')}
-                  placeholder="Additional notes about this customer..."
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                />
-              </Grid>
-              
-              <Grid item xs={12}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={formData.sendWelcomeEmail}
-                      onChange={handleCheckboxChange('sendWelcomeEmail')}
-                      color="primary"
-                    />
-                  }
-                  label="Send welcome email to customer"
                 />
               </Grid>
 
