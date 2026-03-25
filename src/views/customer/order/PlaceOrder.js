@@ -1,116 +1,101 @@
-import React, { useState } from 'react';
-import { Box, Typography, Button, TextField, Grid, FormControl, RadioGroup, FormControlLabel, Radio, Select, MenuItem, InputLabel, Stack } from '@mui/material';
+import React from 'react';
+import {
+  Box, Typography, Button, TextField, Grid, FormControl,
+  RadioGroup, FormControlLabel, Radio, Select, MenuItem,
+  InputLabel, Stack, CircularProgress,
+} from '@mui/material';
 import { Save, Cancel } from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
+import toast from 'react-hot-toast';
 import PageContainer from '../../../components/container/PageContainer';
 import ParentCard from '../../../components/shared/ParentCard';
+import orderService from 'src/services/orderService';
+import { AVAILABLE_COLORS, calculateTotalPieces, calculateFinalLength } from 'src/utils/helpers';
 
 const PlaceOrder = () => {
-  const theme = useTheme();
-  const { palette } = theme;
   const navigate = useNavigate();
-  
+  const [loading, setLoading] = React.useState(false);
+
+  const customer = JSON.parse(localStorage.getItem('customerData'));
+
   const {
     register,
     handleSubmit,
     formState: { errors },
     watch,
-    setValue,
+    control,
   } = useForm({
     defaultValues: {
-      channelType: 'Residential',
-      color: 'IRON ORE (TKGM670)',
-      holeDistance: 8,
+      channelType:   'Residential',
+      color:         'IRON ORE (TKGM670)',
+      holeDistance:  1,       // ← default 1
       channelLength: '6 Hole (4 Feet)',
-      totalLength: 10.36
-    }
+      totalLength:   0,       // ← default 0
+    },
   });
 
-  // Available colors
-  const availableColors = [
-    'IRON ORE (TKGM670)',
-    'WHITE',
-    'BLACK',
-    'RED',
-    'BLUE',
-    'GRAY'
-  ];
-
-  // Watch form values for calculations
-  const channelType = watch('channelType');
-  const selectedColor = watch('color');
-  const holeDistance = watch('holeDistance');
   const channelLength = watch('channelLength');
-  const totalLength = watch('totalLength');
+  const totalLength   = watch('totalLength');
 
-  // Calculate total pieces and final order length
-  const calculateTotalPieces = () => {
-    const length = parseFloat(totalLength) || 10.36;
-    const pieceLength = channelLength === '6 Hole (4 Feet)' ? 4 : 6.67;
-    return Math.ceil(length / pieceLength);
-  };
+  // ── Calculations ──
+  const totalPieces = calculateTotalPieces(totalLength, channelLength);
+  const finalLength = calculateFinalLength(totalLength, channelLength);
 
-  const calculateFinalOrderLength = () => {
-    const pieces = calculateTotalPieces();
-    const pieceLength = channelLength === '6 Hole (4 Feet)' ? 4 : 6.67;
-    return pieces * pieceLength;
-  };
+  // ── Submit → POST /api/orders ──
+  const onSubmit = async (data) => {
+    if (!customer?.id) {
+      toast.error('Please login to place an order.');
+      navigate('/login');
+      return;
+    }
 
-  const totalPieces = calculateTotalPieces();
-  const finalOrderLength = calculateFinalOrderLength();
-
-  const onSubmit = (data) => {
-    // Generate order number
-    const orderNumber = `ORD-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`;
-    
-    const order = {
-      orderNumber: orderNumber,
-      date: new Date().toISOString().split('T')[0],
-      channelType: data.channelType,
-      color: data.color,
-      holeDistance: data.holeDistance,
-      channelLength: data.channelLength,
-      totalLength: data.totalLength,
-      totalPieces: totalPieces,
-      finalOrderLength: finalOrderLength,
-      status: 'Pending'
-    };
-    
-    console.log('New order:', order);
-    alert('Order placed successfully!');
-    navigate('/order/history');
+    setLoading(true);
+    try {
+      const payload = {
+        customer_id:    customer.id,
+        channel_type:   data.channelType,
+        color:          data.color,
+        hole_distance:  Number(data.holeDistance),
+        channel_length: data.channelLength,
+        total_length:   Number(data.totalLength),
+        total_pieces:   totalPieces,
+        final_length:   finalLength,
+      };
+      await orderService.createOrder(payload);
+      toast.success('Order placed successfully!');
+      navigate('/order/history');
+    } catch (err) {
+      toast.error(err.message || 'Failed to place order.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <PageContainer title="Place Order" description="Create a new pixel track order">
       <form onSubmit={handleSubmit(onSubmit)}>
         <Stack spacing={3}>
-          {/* Order Configuration */}
           <ParentCard title="Order Configuration">
             <Grid container spacing={3}>
+
               {/* Channel Type */}
               <Grid item xs={12}>
                 <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
                   Channel Type *
                 </Typography>
                 <FormControl component="fieldset">
-                  <RadioGroup
-                    row
-                    {...register('channelType', { required: 'Channel type is required' })}
-                  >
-                    <FormControlLabel 
-                      value="Residential" 
-                      control={<Radio />} 
-                      label="Residential" 
-                    />
-                    <FormControlLabel 
-                      value="Commercial" 
-                      control={<Radio />} 
-                      label="Commercial" 
-                    />
-                  </RadioGroup>
+                  <Controller
+                    name="channelType"
+                    control={control}
+                    rules={{ required: 'Channel type is required' }}
+                    render={({ field }) => (
+                      <RadioGroup row {...field}>
+                        <FormControlLabel value="Residential" control={<Radio />} label="Residential" />
+                        <FormControlLabel value="Commercial"  control={<Radio />} label="Commercial" />
+                      </RadioGroup>
+                    )}
+                  />
                   {errors.channelType && (
                     <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1 }}>
                       {errors.channelType.message}
@@ -119,23 +104,21 @@ const PlaceOrder = () => {
                 </FormControl>
               </Grid>
 
-              {/* Select Color */}
+              {/* Color */}
               <Grid item xs={12} md={6}>
                 <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
                   Select Color *
                 </Typography>
-                <FormControl fullWidth>
-                  <InputLabel>Select color</InputLabel>
+                <FormControl fullWidth variant="outlined">
                   <Select
+                    value={watch('color')}
                     {...register('color', { required: 'Color is required' })}
                     error={!!errors.color}
-                    label="Select color"
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                    displayEmpty
                   >
-                    {availableColors.map(color => (
-                      <MenuItem key={color} value={color}>
-                        {color}
-                      </MenuItem>
+                    <MenuItem value="" disabled>Select color</MenuItem>
+                    {AVAILABLE_COLORS.map((color) => (
+                      <MenuItem key={color} value={color}>{color}</MenuItem>
                     ))}
                   </Select>
                   {errors.color && (
@@ -154,9 +137,11 @@ const PlaceOrder = () => {
                 <TextField
                   fullWidth
                   type="number"
-                  variant="outlined"
-                  placeholder="Enter hole distance"
-                  {...register('holeDistance', { required: 'Hole distance is required' })}
+                  placeholder="0"                     // ← placeholder 0
+                  {...register('holeDistance', {
+                    required: 'Hole distance is required',
+                    min: { value: 1, message: 'Must be at least 1' },
+                  })}
                   error={!!errors.holeDistance}
                   helperText={errors.holeDistance?.message}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
@@ -169,21 +154,17 @@ const PlaceOrder = () => {
                   Channel Length *
                 </Typography>
                 <FormControl component="fieldset">
-                  <RadioGroup
-                    row
-                    {...register('channelLength', { required: 'Channel length is required' })}
-                  >
-                    <FormControlLabel 
-                      value="6 Hole (4 Feet)" 
-                      control={<Radio />} 
-                      label="6 Hole (4 Feet)" 
-                    />
-                    <FormControlLabel 
-                      value="10 Hole (6.67 Feet)" 
-                      control={<Radio />} 
-                      label="10 Hole (6.67 Feet)" 
-                    />
-                  </RadioGroup>
+                  <Controller
+                    name="channelLength"
+                    control={control}
+                    rules={{ required: 'Channel length is required' }}
+                    render={({ field }) => (
+                      <RadioGroup row {...field}>
+                        <FormControlLabel value="6 Hole (4 Feet)"     control={<Radio />} label="6 Hole (4 Feet)" />
+                        <FormControlLabel value="10 Hole (6.67 Feet)" control={<Radio />} label="10 Hole (6.67 Feet)" />
+                      </RadioGroup>
+                    )}
+                  />
                   {errors.channelLength && (
                     <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1 }}>
                       {errors.channelLength.message}
@@ -200,12 +181,12 @@ const PlaceOrder = () => {
                 <TextField
                   fullWidth
                   type="number"
-                  variant="outlined"
-                  placeholder="Enter total length"
-                  step="0.01"
-                  {...register('totalLength', { 
+                  placeholder="0"                     // ← placeholder 0
+                  inputProps={{ step: '0.01', min: 0 }}
+                  {...register('totalLength', {
                     required: 'Total length is required',
-                    valueAsNumber: true
+                    min: { value: 0.01, message: 'Must be greater than 0' },
+                    valueAsNumber: true,
                   })}
                   error={!!errors.totalLength}
                   helperText={errors.totalLength?.message}
@@ -213,47 +194,46 @@ const PlaceOrder = () => {
                 />
               </Grid>
 
-              {/* Total Pieces - Display Only */}
+              {/* Total Pieces — auto calculated */}
               <Grid item xs={12} md={6}>
                 <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
                   Total Pieces
                 </Typography>
                 <TextField
                   fullWidth
-                  variant="outlined"
-                  value={totalPieces}
+                  value={totalPieces}               // ← shows 0 by default
                   disabled
-                  sx={{ 
-                    '& .MuiOutlinedInput-root': { 
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
                       borderRadius: '8px',
-                      backgroundColor: '#f5f5f5'
-                    } 
+                      backgroundColor: '#f5f5f5',
+                    },
                   }}
                 />
               </Grid>
 
-              {/* Final Order Length - Display Only */}
+              {/* Final Order Length — auto calculated */}
               <Grid item xs={12} md={6}>
                 <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
                   Final Order Length (ft)
                 </Typography>
                 <TextField
                   fullWidth
-                  variant="outlined"
-                  value={finalOrderLength}
+                  value={finalLength}               // ← shows 0 by default
                   disabled
-                  sx={{ 
-                    '& .MuiOutlinedInput-root': { 
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
                       borderRadius: '8px',
-                      backgroundColor: '#f5f5f5'
-                    } 
+                      backgroundColor: '#f5f5f5',
+                    },
                   }}
                 />
               </Grid>
+
             </Grid>
           </ParentCard>
 
-          {/* Submit Order */}
+          {/* Buttons */}
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mt: 3 }}>
             <Button
               variant="outlined"
@@ -261,6 +241,7 @@ const PlaceOrder = () => {
               startIcon={<Cancel />}
               onClick={() => navigate('/order/history')}
               sx={{ borderRadius: '8px', px: 4, py: 1.5 }}
+              disabled={loading}
             >
               Cancel
             </Button>
@@ -268,10 +249,11 @@ const PlaceOrder = () => {
               type="submit"
               variant="contained"
               size="large"
-              startIcon={<Save />}
+              startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <Save />}
+              disabled={loading}
               sx={{ borderRadius: '8px', px: 4, py: 1.5 }}
             >
-              Place Order
+              {loading ? 'Placing Order...' : 'Place Order'}
             </Button>
           </Box>
         </Stack>

@@ -2,9 +2,6 @@ import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
-// Debug: Log the API URL
-console.log('API_BASE_URL:', API_BASE_URL);
-console.log('All env vars:', process.env);
 
 // Create axios instance with default config
 const apiClient = axios.create({

@@ -4,8 +4,9 @@ import { useTheme } from '@mui/material/styles';
 import {
   Typography, TableHead, Chip, Box, Table, TableBody,
   TableCell, TablePagination, TableRow, TableFooter,
-  IconButton, Paper, TableContainer, Avatar, Stack,
+  IconButton, Paper, TableContainer, Avatar, Stack, CircularProgress,
 } from '@mui/material';
+import Spinner from '../../views/spinner/Spinner';
 import FirstPageIcon from '@mui/icons-material/FirstPage';
 import KeyboardArrowLeft from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight';
@@ -88,7 +89,7 @@ const renderCell = (col, row) => {
   );
 };
 
-const DataTable = ({ rows = [], columns = [], defaultRows = 5 }) => {
+const DataTable = ({ rows = [], columns = [], defaultRows = 5, loading = false }) => {
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(defaultRows);
 
@@ -110,68 +111,74 @@ const DataTable = ({ rows = [], columns = [], defaultRows = 5 }) => {
 
   return (
     <Paper variant="outlined" sx={{ width: '100%', overflow: 'hidden', minWidth: 0 }}>
-      <TableContainer sx={{ width: "100%", overflowX: "auto" }}>
-        <Table 
-          sx={{ 
-            minWidth: totalMinWidth || 'auto',
-            tableLayout: totalMinWidth ? 'fixed' : 'auto',
-            width: '100%'
-          }} 
-          aria-label="data table"
-        >
-          <TableHead>
-            <TableRow>
-              {columns.map((col) => (
-                <TableCell key={col.field} sx={{
-                  width: col.width || col.minWidth,
-                  minWidth: col.minWidth,
-                }}>
-                  <Typography variant="h6">{col.label}</Typography>
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {visibleRows.map((row, rowIdx) => (
-              <TableRow key={row.id ?? rowIdx} hover>
+      {loading ? (
+        <Box display="flex" justifyContent="center" alignItems="center" py={8}>
+          <CircularProgress size={40} />
+        </Box>
+      ) : (
+        <TableContainer sx={{ width: "100%", overflowX: "auto" }}>
+          <Table 
+            sx={{ 
+              minWidth: totalMinWidth || 'auto',
+              tableLayout: totalMinWidth ? 'fixed' : 'auto',
+              width: '100%'
+            }} 
+            aria-label="data table"
+          >
+            <TableHead>
+              <TableRow>
                 {columns.map((col) => (
                   <TableCell key={col.field} sx={{
                     width: col.width || col.minWidth,
                     minWidth: col.minWidth,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
                   }}>
-                    {renderCell(col, row)}
+                    <Typography variant="h6">{col.label}</Typography>
                   </TableCell>
                 ))}
               </TableRow>
-            ))}
-            {emptyRows > 0 && (
-              <TableRow style={{ height: 53 * emptyRows }}>
-                <TableCell colSpan={columns.length} />
+            </TableHead>
+            <TableBody>
+              {visibleRows.map((row, rowIdx) => (
+                <TableRow key={row.id ?? rowIdx} hover>
+                  {columns.map((col) => (
+                    <TableCell key={col.field} sx={{
+                      width: col.width || col.minWidth,
+                      minWidth: col.minWidth,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}>
+                      {renderCell(col, row)}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+              {emptyRows > 0 && (
+                <TableRow style={{ height: 53 * emptyRows }}>
+                  <TableCell colSpan={columns.length} />
+                </TableRow>
+              )}
+            </TableBody>
+            <TableFooter>
+              <TableRow>
+                <TablePagination
+                  rowsPerPageOptions={[5, 10, 25, { label: 'All', value: -1 }]}
+                  colSpan={columns.length}
+                  count={rows.length}
+                  rowsPerPage={rowsPerPage}
+                  page={page}
+                  SelectProps={{ native: true }}
+                  onPageChange={(e, newPage) => setPage(newPage)}
+                  onRowsPerPageChange={(e) => {
+                    setRowsPerPage(parseInt(e.target.value, 10));
+                    setPage(0);
+                  }}
+                  ActionsComponent={TablePaginationActions}
+                />
               </TableRow>
-            )}
-          </TableBody>
-          <TableFooter>
-            <TableRow>
-              <TablePagination
-                rowsPerPageOptions={[5, 10, 25, { label: 'All', value: -1 }]}
-                colSpan={columns.length}
-                count={rows.length}
-                rowsPerPage={rowsPerPage}
-                page={page}
-                SelectProps={{ native: true }}
-                onPageChange={(e, newPage) => setPage(newPage)}
-                onRowsPerPageChange={(e) => {
-                  setRowsPerPage(parseInt(e.target.value, 10));
-                  setPage(0);
-                }}
-                ActionsComponent={TablePaginationActions}
-              />
-            </TableRow>
-          </TableFooter>
-        </Table>
-      </TableContainer>
+            </TableFooter>
+          </Table>
+        </TableContainer>
+      )}
     </Paper>
   );
 };
@@ -195,6 +202,7 @@ DataTable.propTypes = {
     })
   ).isRequired,
   defaultRows: PropTypes.number,
+  loading: PropTypes.bool,
 };
 
 export default DataTable;
