@@ -36,6 +36,41 @@ const orderService = {
       throw error.response?.data || { message: 'Network error occurred' };
     }
   },
+   getAllOrders: async () => {
+    try {
+      const response = await apiClient.get('/orders');
+      return response.data; // { data: [...], summary: {...} }
+    } catch (error) {
+      throw error.response?.data || { message: 'Network error occurred' };
+    }
+  },
+
+  updateStatus: async (id, order_status) => {
+    try {
+      const response = await apiClient.patch(`/orders/${id}/status`, { order_status });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Network error occurred' };
+    }
+  },
+
+  updateNotes: async (id, additional_notes) => {
+    try {
+      const response = await apiClient.patch(`/orders/${id}/notes`, { additional_notes });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Network error occurred' };
+    }
+  },
+
+  deleteOrder: async (id) => {
+    try {
+      const response = await apiClient.delete(`/orders/${id}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Network error occurred' };
+    }
+  },
 };
 
 export default orderService;
