@@ -38,6 +38,7 @@ const ProductionList = Loadable(lazy(() => import('../views/admin/production/Pro
 const ProductionNew  = Loadable(lazy(() => import('../views/admin/production/ProductionNew')));
 const CustomerList  = Loadable(lazy(() => import('../views/admin/customers/CustomerList')));
 const CustomerNew   = Loadable(lazy(() => import('../views/admin/customers/CustomerNew')));
+const CustomerEdit  = Loadable(lazy(() => import('../views/admin/customers/CustomerEdit')));
 const Invoices      = Loadable(lazy(() => import('../views/admin/invoices/Invoices')));
 const Reports       = Loadable(lazy(() => import('../views/admin/reports/Reports')));
 
@@ -75,6 +76,7 @@ const Router = [
       { path: '/admin/production/new', element: <ProtectedRoute allowedUserType="admin"><ProductionNew /></ProtectedRoute> },
       { path: '/admin/customers',      element: <ProtectedRoute allowedUserType="admin"><CustomerList /></ProtectedRoute> },
       { path: '/admin/customers/new',  element: <ProtectedRoute allowedUserType="admin"><CustomerNew /></ProtectedRoute> },
+      { path: '/admin/customers/edit/:id', element: <ProtectedRoute allowedUserType="admin"><CustomerEdit /></ProtectedRoute> },
       { path: '/admin/invoices',       element: <ProtectedRoute allowedUserType="admin"><Invoices /></ProtectedRoute> },
       { path: '/admin/reports',        element: <ProtectedRoute allowedUserType="admin"><Reports /></ProtectedRoute> },
 
