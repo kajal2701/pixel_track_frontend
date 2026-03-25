@@ -17,9 +17,12 @@ export const Profile = () => {
   const userRole = userType === 'admin' ? 'Administrator' : 'Customer';
 
   const handleLogout = () => {
-    // Clear user data from localStorage
+    // Clear all user data from localStorage
     localStorage.removeItem('userType');
     localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('adminData');
+    localStorage.removeItem('customerData');
+    localStorage.removeItem('userRole');
     
     // Redirect to login page
     navigate('/login');

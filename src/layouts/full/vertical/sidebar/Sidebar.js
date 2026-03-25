@@ -110,13 +110,18 @@ const Sidebar = () => {
       {/* ------------------------------------------- */}
       {/* Logo */}
       {/* ------------------------------------------- */}
-      <Box px={2}>
+      <Box px={2} py={1}>
         <Logo />
       </Box>
       {/* ------------------------------------------- */}
       {/* Sidebar For Mobile */}
       {/* ------------------------------------------- */}
-      <SidebarItems />
+      <Box sx={{ height: 'calc(100% - 120px)', display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ flexGrow: 1 }}>
+          <SidebarItems />
+        </Box>
+        <Profile />
+      </Box>
     </Drawer>
   );
 };
