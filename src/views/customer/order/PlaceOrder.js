@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { Box, Typography, Button, TextField, Paper, Grid, FormControl, InputLabel, Select, MenuItem, InputAdornment, Stack, Card, CardContent, IconButton } from '@mui/material';
-import { Save, Cancel, ShoppingCart, Add, Remove } from '@mui/icons-material';
+import { Box, Typography, Button, TextField, Grid, FormControl, RadioGroup, FormControlLabel, Radio, Select, MenuItem, InputLabel, Stack } from '@mui/material';
+import { Save, Cancel } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import PageContainer from '../../../components/container/PageContainer';
 import ParentCard from '../../../components/shared/ParentCard';
-import ChildCard from '../../../components/shared/ChildCard';
 
 const PlaceOrder = () => {
   const theme = useTheme();
@@ -17,18 +16,50 @@ const PlaceOrder = () => {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm();
+    watch,
+    setValue,
+  } = useForm({
+    defaultValues: {
+      channelType: 'Residential',
+      color: 'IRON ORE (TKGM670)',
+      holeDistance: 8,
+      channelLength: '6 Hole (4 Feet)',
+      totalLength: 10.36
+    }
+  });
 
-  const [orderItems, setOrderItems] = useState([]);
-
-  // Sample inventory data
+  // Available colors
   const availableColors = [
-    { name: 'White', code: '#FFFFFF', pricePerFoot: 2.50 },
-    { name: 'Black', code: '#000000', pricePerFoot: 2.50 },
-    { name: 'Red', code: '#FF0000', pricePerFoot: 3.00 },
-    { name: 'Blue', code: '#0000FF', pricePerFoot: 2.40 },
-    { name: 'Gray', code: '#808080', pricePerFoot: 2.25 }
+    'IRON ORE (TKGM670)',
+    'WHITE',
+    'BLACK',
+    'RED',
+    'BLUE',
+    'GRAY'
   ];
+
+  // Watch form values for calculations
+  const channelType = watch('channelType');
+  const selectedColor = watch('color');
+  const holeDistance = watch('holeDistance');
+  const channelLength = watch('channelLength');
+  const totalLength = watch('totalLength');
+
+  // Calculate total pieces and final order length
+  const calculateTotalPieces = () => {
+    const length = parseFloat(totalLength) || 10.36;
+    const pieceLength = channelLength === '6 Hole (4 Feet)' ? 4 : 6.67;
+    return Math.ceil(length / pieceLength);
+  };
+
+  const calculateFinalOrderLength = () => {
+    const pieces = calculateTotalPieces();
+    const pieceLength = channelLength === '6 Hole (4 Feet)' ? 4 : 6.67;
+    return pieces * pieceLength;
+  };
+
+  const totalPieces = calculateTotalPieces();
+  const finalOrderLength = calculateFinalOrderLength();
 
   const onSubmit = (data) => {
     // Generate order number
@@ -36,15 +67,15 @@ const PlaceOrder = () => {
     
     const order = {
       orderNumber: orderNumber,
-      date: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
-      customerName: data.customerName,
-      companyName: data.companyName,
+      date: new Date().toISOString().split('T')[0],
+      channelType: data.channelType,
       color: data.color,
-      finalOrder: data.finalOrder,
-      status: 'Pending',
-      notes: data.notes,
-      email: data.email,
-      phone: data.phone
+      holeDistance: data.holeDistance,
+      channelLength: data.channelLength,
+      totalLength: data.totalLength,
+      totalPieces: totalPieces,
+      finalOrderLength: finalOrderLength,
+      status: 'Pending'
     };
     
     console.log('New order:', order);
@@ -56,181 +87,193 @@ const PlaceOrder = () => {
     <PageContainer title="Place Order" description="Create a new pixel track order">
       <form onSubmit={handleSubmit(onSubmit)}>
         <Stack spacing={3}>
-        {/* Customer Information */}
-        <ParentCard title="Customer Information">
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
-                Customer Name
-              </Typography>
-              <TextField
-                fullWidth
-                type="text"
-                variant="outlined"
-                placeholder="Enter customer name"
-                {...register('customerName', { required: 'Customer name is required' })}
-                error={!!errors.customerName}
-                helperText={errors.customerName?.message}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
-                Company Name
-              </Typography>
-              <TextField
-                fullWidth
-                type="text"
-                variant="outlined"
-                placeholder="Enter company name"
-                {...register('companyName', { required: 'Company name is required' })}
-                error={!!errors.companyName}
-                helperText={errors.companyName?.message}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
-                Email
-              </Typography>
-              <TextField
-                fullWidth
-                type="email"
-                variant="outlined"
-                placeholder="Enter email address"
-                {...register('email', { 
-                  required: 'Email is required',
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: 'Must be a valid email format'
-                  }
-                })}
-                error={!!errors.email}
-                helperText={errors.email?.message}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
-                Phone Number
-              </Typography>
-              <TextField
-                fullWidth
-                type="text"
-                variant="outlined"
-                placeholder="Enter phone number"
-                {...register('phone', { 
-                  required: 'Phone number is required',
-                  pattern: {
-                    value: /^\d{3}-\d{3}-\d{4}$/,
-                    message: 'Pattern: 000-000-0000 (e.g., 123-456-7890)'
-                  }
-                })}
-                error={!!errors.phone}
-                helperText={errors.phone?.message || 'Pattern: 000-000-0000 (e.g., 123-456-7890)'}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-              />
-            </Grid>
-          </Grid>
-        </ParentCard>
+          {/* Order Configuration */}
+          <ParentCard title="Order Configuration">
+            <Grid container spacing={3}>
+              {/* Channel Type */}
+              <Grid item xs={12}>
+                <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                  Channel Type *
+                </Typography>
+                <FormControl component="fieldset">
+                  <RadioGroup
+                    row
+                    {...register('channelType', { required: 'Channel type is required' })}
+                  >
+                    <FormControlLabel 
+                      value="Residential" 
+                      control={<Radio />} 
+                      label="Residential" 
+                    />
+                    <FormControlLabel 
+                      value="Commercial" 
+                      control={<Radio />} 
+                      label="Commercial" 
+                    />
+                  </RadioGroup>
+                  {errors.channelType && (
+                    <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1 }}>
+                      {errors.channelType.message}
+                    </Typography>
+                  )}
+                </FormControl>
+              </Grid>
 
-        {/* Order Configuration */}
-        <ParentCard title="Order Configuration">
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
-                Color
-              </Typography>
-              <FormControl fullWidth>
-                <InputLabel>Select color</InputLabel>
-                <Select
-                  {...register('color', { required: 'Color is required' })}
-                  error={!!errors.color}
-                  label="Select color"
+              {/* Select Color */}
+              <Grid item xs={12} md={6}>
+                <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                  Select Color *
+                </Typography>
+                <FormControl fullWidth>
+                  <InputLabel>Select color</InputLabel>
+                  <Select
+                    {...register('color', { required: 'Color is required' })}
+                    error={!!errors.color}
+                    label="Select color"
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                  >
+                    {availableColors.map(color => (
+                      <MenuItem key={color} value={color}>
+                        {color}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {errors.color && (
+                    <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1 }}>
+                      {errors.color.message}
+                    </Typography>
+                  )}
+                </FormControl>
+              </Grid>
+
+              {/* Hole Distance */}
+              <Grid item xs={12} md={6}>
+                <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                  Hole Distance (center to center)
+                </Typography>
+                <TextField
+                  fullWidth
+                  type="number"
+                  variant="outlined"
+                  placeholder="Enter hole distance"
+                  {...register('holeDistance', { required: 'Hole distance is required' })}
+                  error={!!errors.holeDistance}
+                  helperText={errors.holeDistance?.message}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                >
-                  <MenuItem value="">
-                    <em>Select color</em>
-                  </MenuItem>
-                  {availableColors.map(color => (
-                    <MenuItem key={color.name} value={color.name}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box
-                          sx={{
-                            width: 20,
-                            height: 20,
-                            backgroundColor: color.code,
-                            border: '1px solid #ccc',
-                            borderRadius: '4px'
-                          }}
-                        />
-                        {color.name}
-                      </Box>
-                    </MenuItem>
-                  ))}
-                </Select>
-                {errors.color && (
-                  <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1 }}>
-                    {errors.color.message}
-                  </Typography>
-                )}
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
-                Final Order
-              </Typography>
-              <TextField
-                fullWidth
-                type="text"
-                variant="outlined"
-                placeholder="e.g., 216 ft"
-                {...register('finalOrder', { required: 'Final order is required' })}
-                error={!!errors.finalOrder}
-                helperText={errors.finalOrder?.message}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
-                Notes
-              </Typography>
-              <TextField
-                fullWidth
-                multiline
-                rows={3}
-                variant="outlined"
-                placeholder="Add any special instructions or notes..."
-                {...register('notes', { required: 'Notes are required' })}
-                error={!!errors.notes}
-                helperText={errors.notes?.message}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-              />
-            </Grid>
-          </Grid>
-        </ParentCard>
+                />
+              </Grid>
 
-        {/* Submit Order */}
-        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mt: 3 }}>
-          <Button
-            variant="outlined"
-            size="large"
-            startIcon={<Cancel />}
-            onClick={() => navigate('/order/history')}
-            sx={{ borderRadius: '8px', px: 4, py: 1.5 }}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            size="large"
-            startIcon={<Save />}
-            sx={{ borderRadius: '8px', px: 4, py: 1.5 }}
-          >
-            Place Order
-          </Button>
-        </Box>
+              {/* Channel Length */}
+              <Grid item xs={12}>
+                <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                  Channel Length *
+                </Typography>
+                <FormControl component="fieldset">
+                  <RadioGroup
+                    row
+                    {...register('channelLength', { required: 'Channel length is required' })}
+                  >
+                    <FormControlLabel 
+                      value="6 Hole (4 Feet)" 
+                      control={<Radio />} 
+                      label="6 Hole (4 Feet)" 
+                    />
+                    <FormControlLabel 
+                      value="10 Hole (6.67 Feet)" 
+                      control={<Radio />} 
+                      label="10 Hole (6.67 Feet)" 
+                    />
+                  </RadioGroup>
+                  {errors.channelLength && (
+                    <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1 }}>
+                      {errors.channelLength.message}
+                    </Typography>
+                  )}
+                </FormControl>
+              </Grid>
+
+              {/* Total Length */}
+              <Grid item xs={12} md={6}>
+                <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                  Total Length (ft) *
+                </Typography>
+                <TextField
+                  fullWidth
+                  type="number"
+                  variant="outlined"
+                  placeholder="Enter total length"
+                  step="0.01"
+                  {...register('totalLength', { 
+                    required: 'Total length is required',
+                    valueAsNumber: true
+                  })}
+                  error={!!errors.totalLength}
+                  helperText={errors.totalLength?.message}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                />
+              </Grid>
+
+              {/* Total Pieces - Display Only */}
+              <Grid item xs={12} md={6}>
+                <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                  Total Pieces
+                </Typography>
+                <TextField
+                  fullWidth
+                  variant="outlined"
+                  value={totalPieces}
+                  disabled
+                  sx={{ 
+                    '& .MuiOutlinedInput-root': { 
+                      borderRadius: '8px',
+                      backgroundColor: '#f5f5f5'
+                    } 
+                  }}
+                />
+              </Grid>
+
+              {/* Final Order Length - Display Only */}
+              <Grid item xs={12} md={6}>
+                <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                  Final Order Length (ft)
+                </Typography>
+                <TextField
+                  fullWidth
+                  variant="outlined"
+                  value={finalOrderLength}
+                  disabled
+                  sx={{ 
+                    '& .MuiOutlinedInput-root': { 
+                      borderRadius: '8px',
+                      backgroundColor: '#f5f5f5'
+                    } 
+                  }}
+                />
+              </Grid>
+            </Grid>
+          </ParentCard>
+
+          {/* Submit Order */}
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mt: 3 }}>
+            <Button
+              variant="outlined"
+              size="large"
+              startIcon={<Cancel />}
+              onClick={() => navigate('/order/history')}
+              sx={{ borderRadius: '8px', px: 4, py: 1.5 }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              size="large"
+              startIcon={<Save />}
+              sx={{ borderRadius: '8px', px: 4, py: 1.5 }}
+            >
+              Place Order
+            </Button>
+          </Box>
         </Stack>
       </form>
     </PageContainer>

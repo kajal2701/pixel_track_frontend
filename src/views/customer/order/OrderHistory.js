@@ -78,139 +78,36 @@ const OrderHistory = () => {
     }
   ];
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Confirmed': return 'success';
-      case 'Pending': return 'warning';
-      case 'Ready': return 'info';
-      case 'Cancelled': return 'error';
-      default: return 'default';
-    }
-  };
-
-  const getPaymentStatusColor = (status) => {
-    switch (status) {
-      case 'paid': return 'success';
-      case 'pending': return 'warning';
-      case 'failed': return 'error';
-      default: return 'default';
-    }
-  };
-
   const filteredOrders = orders.filter(order => {
     const matchesSearch = 
       order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.color.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.date.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.status.toLowerCase().includes(searchTerm.toLowerCase());
     
     return matchesSearch;
   });
 
-  // DataTable column definitions matching admin table
+  // DataTable column definitions - 3 columns with percentage-based widths
   const columns = [
-    { 
-      field: 'orderNumber', 
-      label: 'Order #', 
-      bold: true, 
-      width: '150px', 
-      minWidth: '150px' 
-    },
-    { 
-      field: 'date', 
-      label: 'Date', 
-      width: '120px', 
-      minWidth: '120px' 
-    },
-    { 
-      field: 'customerName', 
-      label: 'Customer', 
-      bold: true, 
-      width: '150px', 
-      minWidth: '150px' 
-    },
-    { 
-      field: 'companyName', 
-      label: 'Company', 
-      muted: true, 
-      width: '170px', 
-      minWidth: '170px' 
-    },
-    { 
-      field: 'color', 
-      label: 'Color', 
-      type: 'chip', 
-      chipColor: () => 'primary', 
-      width: '120px', 
-      minWidth: '120px' 
-    },
-    { 
-      field: 'finalOrder', 
-      label: 'Final Order', 
-      bold: true, 
-      width: '130px', 
-      minWidth: '130px' 
-    },
-    {
-      field: 'status',
-      label: 'Status',
-      type: 'chip',
-      chipColor: (v) => ({ Confirmed: 'success', Pending: 'warning', Ready: 'info', Cancelled: 'error' }[v] || 'default'),
-      width: '120px', minWidth: '120px',
-    },
-    { 
-      field: 'notes', 
-      label: 'Notes', 
-      width: '220px', 
-      minWidth: '220px' 
-    },
-    { 
-      field: 'actions', 
-      label: 'Actions', 
-      width: '160px', 
-      minWidth: '160px' 
-    }
-  ];
+  { 
+    field: 'date', 
+    label: 'Date'
+  },
+  { 
+    field: 'orderNumber', 
+    label: 'Order ID', 
+    bold: true
+  },
+  {
+    field: 'status',
+    label: 'Status',
+    type: 'chip',
+    chipColor: (v) => ({ Confirmed: 'success', Pending: 'warning', Ready: 'info', Cancelled: 'error' }[v] || 'default')
+  }
+];
 
-  // Format rows for DataTable with action buttons
-  const rows = filteredOrders.map(order => ({
-    ...order,
-    actions: (
-      <Stack direction="row" gap={0.5} flexWrap="wrap">
-        <IconButton 
-          size="small" 
-          sx={{ color: palette.info.main }}
-          onClick={() => handleViewOrder(order)}
-          title="View Order Details"
-        >
-          <Visibility fontSize="small" />
-        </IconButton>
-        <IconButton 
-          size="small" 
-          sx={{ color: palette.primary.main }}
-          onClick={() => handleDownloadInvoice(order)}
-          title="Download Invoice"
-        >
-          <Receipt fontSize="small" />
-        </IconButton>
-      </Stack>
-    )
-  }));
-
-  const handleViewOrder = (order) => {
-    alert(`Order Details:\n\nOrder #: ${order.orderNumber}\nDate: ${order.date}\nCustomer: ${order.customerName}\nCompany: ${order.companyName}\nColor: ${order.color}\nFinal Order: ${order.finalOrder}\nStatus: ${order.status}\nNotes: ${order.notes}\nEmail: ${order.email}`);
-  };
-
-  const handleDownloadInvoice = (order) => {
-    alert(`Downloading invoice for order ${order.orderNumber}`);
-  };
-
-  // Calculate summary statistics
-  const totalOrders = filteredOrders.length;
-  const confirmedOrders = filteredOrders.filter(order => order.status === 'Confirmed').length;
-  const pendingOrders = filteredOrders.filter(order => order.status === 'Pending').length;
-  const readyOrders = filteredOrders.filter(order => order.status === 'Ready').length;
+  // Format rows for DataTable - simplified for 3 columns
+  const rows = filteredOrders;
 
   return (
     <PageContainer title="Order History" description="View and track your orders">
@@ -241,7 +138,7 @@ const OrderHistory = () => {
       <Box mb={3}>
         <TextField
           fullWidth
-          placeholder="Search by order number, customer, company, color or status..."
+          placeholder="Search by order ID, date or status..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           InputProps={{
@@ -257,7 +154,17 @@ const OrderHistory = () => {
 
       {/* Orders Table */}
       <ParentCard title="Order History">
-        <DataTable rows={rows} columns={columns} defaultRows={10} />
+        <Box sx={{ 
+          '& .MuiTableContainer-root': { 
+            overflowX: 'hidden !important' 
+          },
+          '& table': {
+            tableLayout: 'fixed',
+            width: '100%'
+          }
+        }}>
+          <DataTable rows={rows} columns={columns} defaultRows={10} />
+        </Box>
       </ParentCard>
     </PageContainer>
   );

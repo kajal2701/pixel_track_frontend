@@ -97,16 +97,33 @@ const DataTable = ({ rows = [], columns = [], defaultRows = 5 }) => {
     ? rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
     : rows;
 
-  return (
+  // Calculate total minWidth from columns
+  const totalMinWidth = columns.reduce((sum, col) => {
+    if (col.minWidth) {
+      const width = typeof col.minWidth === 'string' 
+        ? parseInt(col.minWidth) 
+        : col.minWidth;
+      return sum + width;
+    }
+    return sum;
+  }, 0);
 
-    <Paper variant="outlined"  sx={{ width: '100%', overflow: 'hidden', minWidth: 0 }} >
-      <TableContainer sx={{ width: "100%", overflowX: "auto" }} >
-        <Table sx={{ minWidth: 1340, tableLayout: 'fixed' }} aria-label="data table">
+  return (
+    <Paper variant="outlined" sx={{ width: '100%', overflow: 'hidden', minWidth: 0 }}>
+      <TableContainer sx={{ width: "100%", overflowX: "auto" }}>
+        <Table 
+          sx={{ 
+            minWidth: totalMinWidth || 'auto',
+            tableLayout: totalMinWidth ? 'fixed' : 'auto',
+            width: '100%'
+          }} 
+          aria-label="data table"
+        >
           <TableHead>
             <TableRow>
               {columns.map((col) => (
                 <TableCell key={col.field} sx={{
-                  width: col.minWidth,
+                  width: col.width || col.minWidth,
                   minWidth: col.minWidth,
                 }}>
                   <Typography variant="h6">{col.label}</Typography>
@@ -119,11 +136,11 @@ const DataTable = ({ rows = [], columns = [], defaultRows = 5 }) => {
               <TableRow key={row.id ?? rowIdx} hover>
                 {columns.map((col) => (
                   <TableCell key={col.field} sx={{
-    width: col.minWidth,
-    minWidth: col.minWidth,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-  }}>
+                    width: col.width || col.minWidth,
+                    minWidth: col.minWidth,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}>
                     {renderCell(col, row)}
                   </TableCell>
                 ))}
@@ -173,6 +190,7 @@ DataTable.propTypes = {
       bold: PropTypes.bool,
       muted: PropTypes.bool,
       width: PropTypes.string,
+      minWidth: PropTypes.string,
       align: PropTypes.string,
     })
   ).isRequired,

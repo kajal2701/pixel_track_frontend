@@ -5,12 +5,19 @@ const Logout = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
+    // Get user type before clearing data
+    const userType = localStorage.getItem('userType');
+    
     // Clear user data from localStorage
     localStorage.removeItem('userType');
     localStorage.removeItem('isAuthenticated');
     
-    // Redirect to login page
-    navigate('/login');
+    // Redirect based on user type
+    if (userType === 'admin') {
+      navigate('/admin-login');
+    } else {
+      navigate('/login');
+    }
   };
 
   return handleLogout;
