@@ -67,15 +67,15 @@ const LoginAdminOnly = () => {
       localStorage.setItem('adminData', JSON.stringify(adminData));
       localStorage.setItem('userRole', adminData.role);
 
-      // Show success toast
-      toast.success('Login successful! Redirecting...', {
-        id: loadingToast,
-      });
-
-      // Navigate to admin dashboard after a short delay
+      // Navigate to admin dashboard immediately
+      navigate('/admin/orders');
+      
+      // Show success toast after navigation
       setTimeout(() => {
-        navigate('/admin/orders');
-      }, 1000);
+        toast.success('Login successful!', {
+          id: loadingToast,
+        });
+      }, 100);
     } catch (err) {
       // Handle different error responses
       const errorMessage = err.message || 'Login failed. Please try again.';
@@ -310,9 +310,12 @@ const LoginAdminOnly = () => {
                   }}
                 >
                   {loading ? (
-                    <CircularProgress size={24} color="inherit" />
+                    <>
+                      <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
+                      Logging in...
+                    </>
                   ) : (
-                    loading ? 'Logging in...' : 'Login'
+                    'Login'
                   )}
                 </Button>
               </form>

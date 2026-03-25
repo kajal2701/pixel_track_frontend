@@ -11,10 +11,19 @@ export const Profile = () => {
   const hideMenu = lgUp ? customizer.isCollapse && !customizer.isSidebarHover : '';
   const navigate = useNavigate();
   
-  // Get user type for display
+  // Get user type and data for display
   const userType = localStorage.getItem('userType');
-  const userName = userType === 'admin' ? 'Admin User' : 'Customer User';
-  const userRole = userType === 'admin' ? 'Administrator' : 'Customer';
+  
+  let userName = 'User';
+  let userRole = userType === 'admin' ? 'Administrator' : 'Customer';
+  
+  if (userType === 'admin') {
+    const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+    userName = adminData.username || 'Admin User';
+  } else if (userType === 'customer') {
+    const customerData = JSON.parse(localStorage.getItem('customerData') || '{}');
+    userName = customerData.contact_name || customerData.company_name || 'Customer User';
+  }
 
   const handleLogout = () => {
     // Clear all user data from localStorage

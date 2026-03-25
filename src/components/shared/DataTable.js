@@ -11,6 +11,9 @@ import FirstPageIcon from '@mui/icons-material/FirstPage';
 import KeyboardArrowLeft from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight';
 import LastPageIcon from '@mui/icons-material/LastPage';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import SortIcon from '@mui/icons-material/Sort';
 
 function TablePaginationActions({ count, page, rowsPerPage, onPageChange }) {
   const theme = useTheme();
@@ -92,11 +95,52 @@ const renderCell = (col, row) => {
 const DataTable = ({ rows = [], columns = [], defaultRows = 5, loading = false }) => {
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(defaultRows);
+  const [sortConfig, setSortConfig] = React.useState({ key: null, direction: 'asc' });
 
-  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
+  // Handle sorting
+  const handleSort = (field) => {
+    // Don't sort actions column
+    if (field === 'actions') return;
+    
+    let direction = 'asc';
+    if (sortConfig.key === field && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key: field, direction });
+  };
+
+  // Sort rows based on sortConfig
+  const sortedRows = React.useMemo(() => {
+    let sortableRows = [...rows];
+    if (sortConfig.key) {
+      sortableRows.sort((a, b) => {
+        const aValue = a[sortConfig.key];
+        const bValue = b[sortConfig.key];
+        
+        // Handle null/undefined values
+        if (aValue == null) return 1;
+        if (bValue == null) return -1;
+        
+        // Convert to string for comparison
+        const aStr = String(aValue).toLowerCase();
+        const bStr = String(bValue).toLowerCase();
+        
+        if (aStr < bStr) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (aStr > bStr) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableRows;
+  }, [rows, sortConfig]);
+
+  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - sortedRows.length) : 0;
   const visibleRows = rowsPerPage > 0
-    ? rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-    : rows;
+    ? sortedRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+    : sortedRows;
 
   // Calculate total minWidth from columns
   const totalMinWidth = columns.reduce((sum, col) => {
@@ -128,11 +172,34 @@ const DataTable = ({ rows = [], columns = [], defaultRows = 5, loading = false }
             <TableHead>
               <TableRow>
                 {columns.map((col) => (
-                  <TableCell key={col.field} sx={{
-                    width: col.width || col.minWidth,
-                    minWidth: col.minWidth,
-                  }}>
-                    <Typography variant="h6">{col.label}</Typography>
+                  <TableCell 
+                    key={col.field} 
+                    sx={{
+                      width: col.width || col.minWidth,
+                      minWidth: col.minWidth,
+                      cursor: col.field !== 'actions' ? 'pointer' : 'default',
+                      '&:hover': col.field !== 'actions' ? {
+                        backgroundColor: 'action.hover',
+                      } : {},
+                    }}
+                    onClick={() => handleSort(col.field)}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="h6">{col.label}</Typography>
+                      {col.field !== 'actions' && (
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          {sortConfig.key === col.field ? (
+                            sortConfig.direction === 'asc' ? (
+                              <ArrowUpwardIcon sx={{ fontSize: 16, color: 'primary.main' }} />
+                            ) : (
+                              <ArrowDownwardIcon sx={{ fontSize: 16, color: 'primary.main' }} />
+                            )
+                          ) : (
+                            <SortIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                          )}
+                        </Box>
+                      )}
+                    </Box>
                   </TableCell>
                 ))}
               </TableRow>

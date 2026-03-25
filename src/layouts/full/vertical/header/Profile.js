@@ -15,6 +15,23 @@ const Profile = () => {
   const [anchorEl2, setAnchorEl2] = useState(null);
   const handleLogout = Logout();
   
+  // Get user data for display
+  const userType = localStorage.getItem('userType');
+  const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+  const customerData = JSON.parse(localStorage.getItem('customerData') || '{}');
+  
+  let userName = 'User';
+  let userEmail = 'user@example.com';
+  let userRole = userType === 'admin' ? 'Administrator' : 'Customer';
+  
+  if (userType === 'admin') {
+    userName = adminData.username || 'Admin User';
+    userEmail = adminData.email || 'admin@example.com';
+  } else if (userType === 'customer') {
+    userName = customerData.contact_name || customerData.company_name || 'Customer User';
+    userEmail = customerData.email || 'customer@example.com';
+  }
+  
   const handleClick2 = (event) => {
     setAnchorEl2(event.currentTarget);
   };
@@ -70,10 +87,10 @@ const Profile = () => {
               <Avatar src={ProfileImg} alt={ProfileImg} sx={{ width: 95, height: 95 }} />
               <Box>
                 <Typography variant="subtitle2" color="textPrimary" fontWeight={600}>
-                  Mathew Anderson
+                  {userName}
                 </Typography>
                 <Typography variant="subtitle2" color="textSecondary">
-                  Designer
+                  {userRole}
                 </Typography>
                 <Typography
                   variant="subtitle2"
@@ -83,7 +100,7 @@ const Profile = () => {
                   gap={1}
                 >
                   <IconMail width={15} height={15} />
-                  info@modernize.com
+                  {userEmail}
                 </Typography>
               </Box>
             </Stack>

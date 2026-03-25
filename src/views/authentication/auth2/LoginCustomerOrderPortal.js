@@ -68,15 +68,15 @@ const LoginCustomerOrderPortal = () => {
       localStorage.setItem('customerData', JSON.stringify(customerData));
       localStorage.setItem('userRole', 'customer'); // Set default role for customers
 
-      // Show success toast
-      toast.success('Login successful! Redirecting...', {
-        id: loadingToast,
-      });
-
-      // Navigate to customer order history after a short delay
+      // Navigate to customer order history immediately
+      navigate('/order/history');
+      
+      // Show success toast after navigation
       setTimeout(() => {
-        navigate('/order/history');
-      }, 1000);
+        toast.success('Login successful!', {
+          id: loadingToast,
+        });
+      }, 100);
     } catch (err) {
       // Handle different error responses
       const errorMessage = err.message || 'Login failed. Please try again.';
@@ -327,9 +327,12 @@ const LoginCustomerOrderPortal = () => {
                   }}
                 >
                   {loading ? (
-                    <CircularProgress size={24} color="inherit" />
+                    <>
+                      <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
+                      Logging in...
+                    </>
                   ) : (
-                    loading ? 'Logging in...' : 'Login'
+                    'Login'
                   )}
                 </Button>
               </form>

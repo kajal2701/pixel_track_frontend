@@ -1,0 +1,7 @@
+/* Global Styles */
+
+@media (min-width: 1200px) {
+  .css-e08yli-MuiContainer-root {
+    max-width: max-content !important;
+  }
+}
