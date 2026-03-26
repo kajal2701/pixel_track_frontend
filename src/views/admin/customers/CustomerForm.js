@@ -53,7 +53,12 @@ const CustomerForm = ({
   }, [customer, isEdit, reset]);
 
   const onFormSubmit = (data) => {
-    onSubmit(data);
+    // Add access_code (last 4 digits of phone number) to payload
+    const payload = {
+      ...data,
+      access_code: data.phone ? data.phone.slice(-4) : ''
+    };
+    onSubmit(payload);
   };
 
   return (
