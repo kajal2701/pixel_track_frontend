@@ -304,8 +304,10 @@ const LoginAdminOnly = () => {
                       transform: 'translateY(-1px)',
                     },
                     '&:active': { transform: 'translateY(0px)' },
-                    '&:disabled': {
-                      opacity: 0.6,
+                    '&.Mui-disabled': {
+                      backgroundColor: palette.primary.main,
+                      color: '#ffffff',
+                      opacity: 0.7,
                     },
                   }}
                 >

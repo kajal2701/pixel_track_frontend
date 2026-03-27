@@ -70,7 +70,7 @@ const LoginCustomerOrderPortal = () => {
 
       // Navigate to customer order history immediately
       navigate('/order/history');
-      
+
       // Show success toast after navigation
       setTimeout(() => {
         toast.success('Login successful!', {
@@ -321,8 +321,10 @@ const LoginCustomerOrderPortal = () => {
                       transform: 'translateY(-1px)',
                     },
                     '&:active': { transform: 'translateY(0px)' },
-                    '&:disabled': {
-                      opacity: 0.6,
+                    '&.Mui-disabled': {
+                      backgroundColor: palette.primary.main,
+                      color: '#ffffff',
+                      opacity: 0.7,
                     },
                   }}
                 >
@@ -336,7 +338,7 @@ const LoginCustomerOrderPortal = () => {
                   )}
                 </Button>
               </form>
-            </Box>  
+            </Box>
           </Card>
         </Box>
       </Box>

@@ -7,12 +7,12 @@ import { Save, Cancel } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { useForm } from 'react-hook-form';
 
-const CustomerForm = ({ 
-  customer, 
-  onSubmit, 
-  loading, 
-  isEdit = false, 
-  onCancel 
+const CustomerForm = ({
+  customer,
+  onSubmit,
+  loading,
+  isEdit = false,
+  onCancel
 }) => {
   const { palette } = useTheme();
 
@@ -22,6 +22,7 @@ const CustomerForm = ({
     formState: { errors },
     reset,
   } = useForm({
+    mode: 'onChange',
     defaultValues: {
       company_name: '',
       customer_number: '',
@@ -63,7 +64,7 @@ const CustomerForm = ({
 
   return (
     <Paper sx={{ p: 3, borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-      <form onSubmit={handleSubmit(onFormSubmit)}>
+      <form onSubmit={handleSubmit(onFormSubmit)} noValidate>
         <Grid container spacing={3}>
           <Grid item xs={12}>
             <Typography variant="h6" sx={{ mb: 2, color: palette.primary.main, fontWeight: 600 }}>
@@ -152,6 +153,10 @@ const CustomerForm = ({
               type="text"
               variant="outlined"
               placeholder="000-000-0000"
+              onInput={(e) => {
+                const x = e.target.value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,3})(\d{0,4})/);
+                e.target.value = !x[2] ? x[1] : `${x[1]}-${x[2]}${x[3] ? `-${x[3]}` : ''}`;
+              }}
               {...register('phone', {
                 required: 'Phone number is required',
                 pattern: {
@@ -160,7 +165,7 @@ const CustomerForm = ({
                 },
                 validate: {
                   format: (value) => {
-                    // Remove all hyphens and check if only numbers remain
+
                     const numbersOnly = value.replace(/-/g, '');
                     if (!/^\d+$/.test(numbersOnly)) {
                       return 'Phone number must contain only numbers';
