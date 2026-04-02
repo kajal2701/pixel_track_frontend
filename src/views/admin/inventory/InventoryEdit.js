@@ -2,17 +2,21 @@ import React from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import PageContainer from '../../../components/container/PageContainer';
 import InventoryForm from './InventoryForm';
 
-const InventoryNew = () => {
+const InventoryEdit = () => {
   const theme = useTheme();
   const { palette } = theme;
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleCreate = (data) => {
-    console.log('New inventory item:', data);
+  // Grab the data passed from the navigation state
+  const editData = location.state?.editData || null;
+
+  const handleUpdate = (data) => {
+    console.log('Updated inventory item:', data);
     navigate('/admin/inventory');
   };
 
@@ -21,7 +25,7 @@ const InventoryNew = () => {
   };
 
   return (
-    <PageContainer title="Add New Inventory" description="Create a new inventory item">
+    <PageContainer title="Edit Inventory" description="Edit an existing inventory item">
       <Box>
         {/* Header */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
@@ -34,19 +38,26 @@ const InventoryNew = () => {
             Back to Inventory
           </Button>
           <Typography variant="h4" sx={{ fontWeight: 700, color: palette.text.primary }}>
-            Add New Inventory
+            Edit Inventory
           </Typography>
         </Box>
 
-        {/* Reusable Form */}
-        <InventoryForm 
-          onSubmit={handleCreate} 
-          onCancel={handleCancel} 
-          isEditing={false} 
-        />
+        {/* Reusable Form conditionally rendering if we have edit data */}
+        {editData ? (
+          <InventoryForm 
+            initialValues={editData}
+            onSubmit={handleUpdate} 
+            onCancel={handleCancel} 
+            isEditing={true} 
+          />
+        ) : (
+          <Typography variant="body1" color="error">
+            No inventory data found to edit. Please return to the inventory list.
+          </Typography>
+        )}
       </Box>
     </PageContainer>
   );
 };
 
-export default InventoryNew;
+export default InventoryEdit;

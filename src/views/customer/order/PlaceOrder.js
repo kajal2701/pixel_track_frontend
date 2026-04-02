@@ -27,16 +27,16 @@ const PlaceOrder = () => {
     control,
   } = useForm({
     defaultValues: {
-      channelType:   'Residential',
-      color:         'IRON ORE (TKGM670)',
-      holeDistance:  1,       // ← default 1
+      channelType: 'Residential',
+      color: 'IRON ORE (TKGM670)',
+      holeDistance: 1,       // ← default 1
       channelLength: '6 Hole (4 Feet)',
-      totalLength:   0,       // ← default 0
+      totalLength: 0,       // ← default 0
     },
   });
 
   const channelLength = watch('channelLength');
-  const totalLength   = watch('totalLength');
+  const totalLength = watch('totalLength');
 
   // ── Calculations ──
   const totalPieces = calculateTotalPieces(totalLength, channelLength);
@@ -53,14 +53,14 @@ const PlaceOrder = () => {
     setLoading(true);
     try {
       const payload = {
-        customer_id:    customer.id,
-        channel_type:   data.channelType,
-        color:          data.color,
-        hole_distance:  Number(data.holeDistance),
+        customer_id: customer.id,
+        channel_type: data.channelType,
+        color: data.color,
+        hole_distance: Number(data.holeDistance),
         channel_length: data.channelLength,
-        total_length:   Number(data.totalLength),
-        total_pieces:   totalPieces,
-        final_length:   finalLength,
+        total_length: Number(data.totalLength),
+        total_pieces: totalPieces,
+        final_length: finalLength,
       };
       await orderService.createOrder(payload);
       toast.success('Order placed successfully!');
@@ -92,7 +92,7 @@ const PlaceOrder = () => {
                     render={({ field }) => (
                       <RadioGroup row {...field}>
                         <FormControlLabel value="Residential" control={<Radio />} label="Residential" />
-                        <FormControlLabel value="Commercial"  control={<Radio />} label="Commercial" />
+                        <FormControlLabel value="Commercial" control={<Radio />} label="Commercial" />
                       </RadioGroup>
                     )}
                   />
@@ -160,7 +160,7 @@ const PlaceOrder = () => {
                     rules={{ required: 'Channel length is required' }}
                     render={({ field }) => (
                       <RadioGroup row {...field}>
-                        <FormControlLabel value="6 Hole (4 Feet)"     control={<Radio />} label="6 Hole (4 Feet)" />
+                        <FormControlLabel value="6 Hole (4 Feet)" control={<Radio />} label="6 Hole (4 Feet)" />
                         <FormControlLabel value="10 Hole (6.67 Feet)" control={<Radio />} label="10 Hole (6.67 Feet)" />
                       </RadioGroup>
                     )}

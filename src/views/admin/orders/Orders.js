@@ -6,6 +6,7 @@ import {
 } from '@mui/material';
 import { Search, Add, Check, Close, Delete, Refresh, CheckCircle } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 import PageContainer from 'src/components/container/PageContainer';
@@ -53,6 +54,7 @@ const SUMMARY_CARDS = (counts) => [
 
 const Orders = () => {
   const { palette } = useTheme();
+  const navigate = useNavigate();
 
   // ── State ────────────────────────────────────────────────
   const [allOrders, setAllOrders]         = useState([]);
@@ -246,7 +248,7 @@ const filteredOrders = allOrders.filter((order) => {
               <MenuItem value="Cancelled">Cancelled</MenuItem>
             </Select>
           </FormControl>
-          <Button variant="contained" startIcon={<Add />} href="/admin/customers" sx={{ borderRadius: '8px' }}>
+          <Button variant="contained" startIcon={<Add />} onClick={() => navigate('/admin/customers')} sx={{ borderRadius: '8px' }}>
             Manage Customers
           </Button>
         </Stack>

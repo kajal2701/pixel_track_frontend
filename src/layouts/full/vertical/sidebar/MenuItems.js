@@ -8,7 +8,6 @@ import {
   IconUserCircle,
   IconBox,
   IconAperture,
-
 } from '@tabler/icons';
 
 import { uniqueId } from 'lodash';
@@ -30,46 +29,8 @@ const adminMenuItems = [
     icon: IconBorderAll,
     href: '/admin/orders',
   },
-  // {
-  //   id: uniqueId(),
-  //   title: 'Inventory',
-  //   icon: IconBox,
-  //   href: '/admin/inventory',
-  //   children: [
-  //     {
-  //       id: uniqueId(),
-  //       title: 'Inventory List',
-  //       icon: IconPoint,
-  //       href: '/admin/inventory',
-  //     },
-  //     {
-  //       id: uniqueId(),
-  //       title: 'Add New',
-  //       icon: IconPoint,
-  //       href: '/admin/inventory/new',
-  //     },
-  //   ],
-  // },
-  // {
-  //   id: uniqueId(),
-  //   title: 'Production',
-  //   icon: IconFiles,
-  //   href: '/admin/production',
-  //   children: [
-  //     {
-  //       id: uniqueId(),
-  //       title: 'Production List',
-  //       icon: IconPoint,
-  //       href: '/admin/production',
-  //     },
-  //     {
-  //       id: uniqueId(),
-  //       title: 'New Production',
-  //       icon: IconPoint,
-  //       href: '/admin/production/new',
-  //     },
-  //   ],
-  // },
+
+
   {
     id: uniqueId(),
     title: 'Customers',
@@ -87,6 +48,46 @@ const adminMenuItems = [
         title: 'Add Customer',
         icon: IconPoint,
         href: '/admin/customers/new',
+      },
+    ],
+  },
+  {
+    id: uniqueId(),
+    title: 'Inventory',
+    icon: IconBox,
+    href: '/admin/inventory',
+    children: [
+      {
+        id: uniqueId(),
+        title: 'Inventory List',
+        icon: IconPoint,
+        href: '/admin/inventory',
+      },
+      {
+        id: uniqueId(),
+        title: 'Add Inventory',
+        icon: IconPoint,
+        href: '/admin/inventory/new',
+      },
+    ],
+  },
+  {
+    id: uniqueId(),
+    title: 'Production',
+    icon: IconFiles,
+    href: '/admin/production',
+    children: [
+      {
+        id: uniqueId(),
+        title: 'Production List',
+        icon: IconPoint,
+        href: '/admin/production',
+      },
+      {
+        id: uniqueId(),
+        title: 'Add Production',
+        icon: IconPoint,
+        href: '/admin/production/new',
       },
     ],
   },
@@ -123,7 +124,7 @@ const customerMenuItems = [
 // Function to get menu items based on user type
 const getMenuItemsFunction = () => {
   const userType = getUserType();
-  
+
   switch (userType) {
     case 'admin':
       return adminMenuItems;

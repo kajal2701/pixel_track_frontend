@@ -1,15 +1,40 @@
 import React, { useState } from 'react';
-import { Box, Typography, Button, TextField, InputAdornment, Chip, IconButton } from '@mui/material';
+import { Box, Typography, Button, TextField, InputAdornment, Chip, IconButton, MenuItem, FormControl, InputLabel, Select, Stack, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
 import { Search, Add, Edit, Delete, Visibility, FilterList } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
+import { useNavigate } from 'react-router-dom';
 import PageContainer from '../../../components/container/PageContainer';
 import ParentCard from '../../../components/shared/ParentCard';
 import DataTable from '../../../components/shared/DataTable';
+import DeleteInventoryDialog from './DeleteInventoryDialog';
 
 const InventoryList = () => {
   const theme = useTheme();
   const { palette } = theme;
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterState, setFilterState] = useState('All');
+
+  // Dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+
+  const handleEdit = (item) => {
+    // Pass the item state to the edit page
+    navigate('/admin/inventory/edit', { state: { editData: item } });
+  };
+
+  const openDeleteDialog = (item) => {
+    setItemToDelete(item);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDelete = () => {
+    // Implement actual deletion logic here
+    console.log("Deleting item: ", itemToDelete);
+    setDeleteDialogOpen(false);
+    setItemToDelete(null);
+  };
 
   // Sample inventory data matching specifications
   const inventory = [
@@ -19,17 +44,10 @@ const InventoryList = () => {
       supplier: 'Supplier A',
       colorCode: 'WH001',
       price: 2.50,
-      state: 'Available',
       type: 'Full Roll',
       size: '100ft',
       quantity: 15,
       possibleFeet: 1500,
-      slittedQuantity: 0,
-      slittedSize: '',
-      slittedPossibleFeet: 0,
-      readyChannelHoleDistance: '8 inches',
-      readyChannelPieces: 0,
-      readyChannelLength: 0
     },
     {
       id: 'INV-002',
@@ -37,17 +55,10 @@ const InventoryList = () => {
       supplier: 'Supplier B',
       colorCode: 'BK002',
       price: 3.25,
-      state: 'Low Stock',
-      type: 'Full Roll',
-      size: '100ft',
-      quantity: 3,
-      possibleFeet: 300,
-      slittedQuantity: 2,
+      type: 'Slitted',
       slittedSize: '50ft',
-      slittedPossibleFeet: 100,
-      readyChannelHoleDistance: '9 inches',
-      readyChannelPieces: 5,
-      readyChannelLength: 20
+      slittedQuantity: 20,
+      slittedPossibleFeet: 1000,
     },
     {
       id: 'INV-003',
@@ -55,97 +66,93 @@ const InventoryList = () => {
       supplier: 'Supplier A',
       colorCode: 'RD003',
       price: 2.75,
-      state: 'Out of Stock',
-      type: 'Full Roll',
-      size: '100ft',
-      quantity: 0,
-      possibleFeet: 0,
-      slittedQuantity: 1,
-      slittedSize: '25ft',
-      slittedPossibleFeet: 25,
+      type: 'Ready Channel',
       readyChannelHoleDistance: '8 inches',
-      readyChannelPieces: 0,
-      readyChannelLength: 0
+      readyChannelPieces: 50,
+      readyChannelLength: 20
+    },
+    {
+      id: 'INV-004',
+      color: 'Blue',
+      supplier: 'Supplier C',
+      colorCode: 'BL004',
+      price: 2.10,
+      type: 'Ready Channel',
+      readyChannelHoleDistance: '9 inches',
+      readyChannelPieces: 100,
+      readyChannelLength: 10
     }
   ];
 
-  const getStateColor = (state) => {
-    switch (state) {
-      case 'Available': return 'success';
-      case 'Low Stock': return 'warning';
-      case 'Out of Stock': return 'error';
-      default: return 'default';
-    }
-  };
+  // Format data for display
+  const formattedInventory = inventory.map(item => {
+    let displaySize = '';
+    let displayQuantity = 0;
+    let displayLength = 0;
 
-  const filteredInventory = inventory.filter(item =>
-    item.color.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.supplier.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.colorCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.type.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    if (item.type === 'Full Roll') {
+      displaySize = item.size || '';
+      displayQuantity = item.quantity || 0;
+      displayLength = item.possibleFeet || 0;
+    } else if (item.type === 'Slitted') {
+      displaySize = item.slittedSize || '';
+      displayQuantity = item.slittedQuantity || 0;
+      displayLength = item.slittedPossibleFeet || 0;
+    } else if (item.type === 'Ready Channel') {
+      displaySize = item.readyChannelHoleDistance || '';
+      displayQuantity = item.readyChannelPieces || 0;
+      displayLength = item.readyChannelLength || 0;
+    }
+
+    return {
+      ...item,
+      displaySize,
+      displayQuantity,
+      displayLength,
+      actions: (
+        <Stack direction="row" gap={0.5}>
+          <IconButton
+            size="small"
+            sx={{ color: palette.info.main }}
+            onClick={() => handleEdit(item)}
+            title="Edit"
+          >
+            <Edit fontSize="small" />
+          </IconButton>
+          <IconButton
+            size="small"
+            sx={{ color: palette.error.main }}
+            onClick={() => openDeleteDialog(item)}
+            title="Delete"
+          >
+            <Delete fontSize="small" />
+          </IconButton>
+        </Stack>
+      )
+    };
+  });
+
+  const filteredInventory = formattedInventory.filter(item => {
+    const matchesSearch = item.color.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.supplier.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.colorCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.type.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesFilter = filterState === 'All' || item.type === filterState;
+    return matchesSearch && matchesFilter;
+  });
 
   // DataTable column definitions
   const columns = [
-    {
-      field: 'color',
-      label: 'Color',
-      type: 'text',
-      bold: true,
-      width: '100px'
-    },
-    {
-      field: 'supplier',
-      label: 'Supplier',
-      type: 'text',
-      width: '110px'
-    },
-    {
-      field: 'colorCode',
-      label: 'Color Code',
-      type: 'text',
-      muted: true,
-      width: '90px'
-    },
-    {
-      field: 'price',
-      label: 'Price/ft',
-      type: 'text',
-      prefix: '$',
-      width: '70px'
-    },
-    {
-      field: 'state',
-      label: 'State',
-      type: 'chip',
-      chipColor: getStateColor,
-      width: '100px'
-    },
-    {
-      field: 'type',
-      label: 'Type',
-      type: 'text',
-      width: '80px'
-    },
-    {
-      field: 'size',
-      label: 'Size',
-      type: 'text',
-      width: '70px'
-    },
-    {
-      field: 'quantity',
-      label: 'Quantity',
-      type: 'text',
-      bold: true,
-      width: '70px'
-    },
-    {
-      field: 'possibleFeet',
-      label: 'Possible Feet',
-      type: 'text',
-      width: '90px'
-    }
+    { field: 'color', label: 'Color', type: 'text', bold: true, width: '100px' },
+    { field: 'supplier', label: 'Supplier', type: 'text', width: '110px' },
+    { field: 'colorCode', label: 'Color Code', type: 'text', muted: true, width: '90px' },
+    { field: 'price', label: 'Price/ft', type: 'text', prefix: '$', width: '70px' },
+    { field: 'type', label: 'Inventory State', type: 'text', width: '120px' },
+    { field: 'displaySize', label: 'Size/Hole Dist', type: 'text', width: '110px' },
+    { field: 'displayQuantity', label: 'Qty/Pieces', type: 'text', bold: true, width: '80px' },
+    { field: 'displayLength', label: 'Feet/Length', type: 'text', width: '100px' },
+    { field: 'actions', label: 'Actions', type: 'text', width: '110px' }
   ];
 
   return (
@@ -157,17 +164,26 @@ const InventoryList = () => {
             Inventory
           </Typography>
           <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button
-              variant="outlined"
-              startIcon={<FilterList />}
-              sx={{ borderRadius: '8px' }}
-            >
-              Filter
-            </Button>
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel id="inventory-state-label">State</InputLabel>
+              <Select
+                labelId="inventory-state-label"
+                id="inventory-state-select"
+                value={filterState}
+                label="State"
+                onChange={(e) => setFilterState(e.target.value)}
+                sx={{ borderRadius: '8px' }}
+              >
+                <MenuItem value="All">All</MenuItem>
+                <MenuItem value="Full Roll">Full Roll</MenuItem>
+                <MenuItem value="Slitted">Slitted</MenuItem>
+                <MenuItem value="Ready Channel">Ready Channel</MenuItem>
+              </Select>
+            </FormControl>
             <Button
               variant="contained"
               startIcon={<Add />}
-              href="/admin/inventory/new"
+              onClick={() => navigate('/admin/inventory/new')}
               sx={{ borderRadius: '8px' }}
             >
               Add Item
@@ -228,12 +244,20 @@ const InventoryList = () => {
 
         {/* DataTable */}
         <ParentCard title="Inventory Management">
-          <DataTable 
-            rows={filteredInventory} 
-            columns={columns} 
+          <DataTable
+            rows={filteredInventory}
+            columns={columns}
             defaultRows={10}
           />
         </ParentCard>
+
+        {/* Delete Confirmation Dialog */}
+        <DeleteInventoryDialog
+          open={deleteDialogOpen}
+          onClose={() => setDeleteDialogOpen(false)}
+          onConfirm={handleDelete}
+          item={itemToDelete}
+        />
       </Box>
     </PageContainer>
   );

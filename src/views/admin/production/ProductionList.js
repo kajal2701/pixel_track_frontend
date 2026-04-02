@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Box, Typography, Button, TextField, InputAdornment, Chip, IconButton, FormControl, InputLabel, Select, MenuItem, Stack, Grid } from '@mui/material';
 import { Search, Add, Edit, Delete, Visibility, FilterList, PlayArrow, Pause } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
+import { useNavigate } from 'react-router-dom';
 import PageContainer from '../../../components/container/PageContainer';
 import ParentCard from '../../../components/shared/ParentCard';
 import ChildCard from '../../../components/shared/ChildCard';
@@ -10,6 +11,7 @@ import DataTable from '../../../components/shared/DataTable';
 const ProductionList = () => {
   const theme = useTheme();
   const { palette } = theme;
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
@@ -270,7 +272,7 @@ const ProductionList = () => {
           <Button variant="outlined" startIcon={<FilterList />} sx={{ borderRadius: '8px' }}>
             Filter
           </Button>
-          <Button variant="contained" startIcon={<Add />} href="/admin/production/new" sx={{ borderRadius: '8px' }}>
+          <Button variant="contained" startIcon={<Add />} onClick={() => navigate('/admin/production/new')} sx={{ borderRadius: '8px' }}>
             New Production
           </Button>
         </Stack>

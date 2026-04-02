@@ -34,6 +34,7 @@ const Dashboard     = Loadable(lazy(() => import('../views/admin/dashboard/Dashb
 const Orders        = Loadable(lazy(() => import('../views/admin/orders/Orders')));
 const InventoryList = Loadable(lazy(() => import('../views/admin/inventory/InventoryList')));
 const InventoryNew  = Loadable(lazy(() => import('../views/admin/inventory/InventoryNew')));
+const InventoryEdit  = Loadable(lazy(() => import('../views/admin/inventory/InventoryEdit')));
 const ProductionList = Loadable(lazy(() => import('../views/admin/production/ProductionList')));
 const ProductionNew  = Loadable(lazy(() => import('../views/admin/production/ProductionNew')));
 const CustomerList  = Loadable(lazy(() => import('../views/admin/customers/CustomerList')));
@@ -72,6 +73,7 @@ const Router = [
       { path: '/admin/orders',         element: <ProtectedRoute allowedUserType="admin"><Orders /></ProtectedRoute> },
       { path: '/admin/inventory',      element: <ProtectedRoute allowedUserType="admin"><InventoryList /></ProtectedRoute> },
       { path: '/admin/inventory/new',  element: <ProtectedRoute allowedUserType="admin"><InventoryNew /></ProtectedRoute> },
+      { path: '/admin/inventory/edit', element: <ProtectedRoute allowedUserType="admin"><InventoryEdit /></ProtectedRoute> },
       { path: '/admin/production',     element: <ProtectedRoute allowedUserType="admin"><ProductionList /></ProtectedRoute> },
       { path: '/admin/production/new', element: <ProtectedRoute allowedUserType="admin"><ProductionNew /></ProtectedRoute> },
       { path: '/admin/customers',      element: <ProtectedRoute allowedUserType="admin"><CustomerList /></ProtectedRoute> },
