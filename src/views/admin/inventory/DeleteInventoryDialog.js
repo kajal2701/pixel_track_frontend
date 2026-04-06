@@ -31,7 +31,7 @@ const DeleteInventoryDialog = ({ open, item, onClose, onConfirm, loading }) => {
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 1, gap: 1.5 }}>
           <Delete sx={{ color: 'error.main', fontSize: 40 }} />
           <Typography variant="body1" textAlign="center" fontWeight={500}>
-            Are you sure you want to delete {item?.color}?
+            Are you sure you want to delete this inventory item?
           </Typography>
           <Typography variant="caption" color="text.secondary" textAlign="center">
             This action cannot be undone.
@@ -39,13 +39,19 @@ const DeleteInventoryDialog = ({ open, item, onClose, onConfirm, loading }) => {
           {item && (
             <Box sx={{ mt: 1, p: 1.5, bgcolor: 'grey.100', borderRadius: '8px', width: '100%' }}>
               <Typography variant="caption" color="text.secondary" display="block">
-                Color Code: <strong>{item.colorCode}</strong>
+                Color Name: <strong>{item.color_name}</strong>
+              </Typography>
+              <Typography variant="caption" color="text.secondary" display="block">
+                Color Code: <strong>{item.color_code}</strong>
               </Typography>
               <Typography variant="caption" color="text.secondary" display="block">
                 Supplier: <strong>{item.supplier}</strong>
               </Typography>
               <Typography variant="caption" color="text.secondary" display="block">
-                Price: <strong>${item.price?.toFixed(2)}</strong>
+                Type: <strong>{item.inventory_type}</strong>
+              </Typography>
+              <Typography variant="caption" color="text.secondary" display="block">
+                Price: <strong>${item.price != null ? Number(item.price).toFixed(2) : '—'}</strong>
               </Typography>
             </Box>
           )}
