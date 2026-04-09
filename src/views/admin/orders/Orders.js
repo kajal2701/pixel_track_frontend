@@ -5,7 +5,7 @@ import {
   Select, MenuItem, Card, CircularProgress,
 } from '@mui/material';
 import { Search, Add, Check, Close, Delete, Refresh, CheckCircle } from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, alpha } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
@@ -23,20 +23,13 @@ import { formatDate } from 'src/utils/helpers';
 
 
 const columns = [
-  { field: 'order_id',     label: 'Order #',     bold: true,  width: '150px', minWidth: '150px' },
-  { field: 'created_at',   label: 'Date',                      width: '130px', minWidth: '130px' },
-  { field: 'contact_name', label: 'Customer',    bold: true,  width: '150px', minWidth: '150px' },
-  { field: 'company_name', label: 'Company',     muted: true, width: '170px', minWidth: '170px' },
-  { field: 'color',        label: 'Color',       type: 'chip', chipColor: () => 'primary', width: '120px', minWidth: '120px' },
-  { field: 'final_length', label: 'Final Order', bold: true,  width: '130px', minWidth: '130px' },
-  {
-    field: 'order_status',
-    label: 'Status',
-    type: 'chip',
-    chipColor: (v) => ({ Confirmed: 'success', Pending: 'warning', Cancelled: 'error', Ready: 'info' }[v] || 'default'),
-    width: '120px', minWidth: '120px',
-  },
-  { field: 'notes',   label: 'Notes',   width: '180px', minWidth: '180px' },
+  { field: 'order_id', label: 'Order #', bold: true, width: '150px', minWidth: '150px' },
+  { field: 'created_at', label: 'Date', width: '130px', minWidth: '130px' },
+  { field: 'contact_name', label: 'Customer', bold: true, width: '150px', minWidth: '150px' },
+  { field: 'company_name', label: 'Company', muted: true, width: '170px', minWidth: '170px' },
+  { field: 'color', label: 'Color', type: 'chip', chipColor: () => 'primary', width: '120px', minWidth: '120px' },
+  { field: 'final_length', label: 'Final Order', bold: true, width: '130px', minWidth: '130px' },
+  { field: 'notes', label: 'Notes', width: '180px', minWidth: '180px' },
   { field: 'actions', label: 'Actions', width: '160px', minWidth: '160px' },
 ];
 
@@ -45,23 +38,20 @@ const BCrumb = [
   { title: 'Orders' },
 ];
 
-const SUMMARY_CARDS = (counts) => [
-  { title: 'Total Orders',     count: counts.total,     sub: 'All orders',           accent: 'primary.main', dot: 'primary.main' },
-  { title: 'Pending Orders',   count: counts.pending,   sub: 'Awaiting confirmation', accent: 'warning.main', dot: 'warning.main' },
-  { title: 'Confirmed Orders', count: counts.confirmed, sub: 'Ready for production',  accent: 'success.main', dot: 'success.main' },
-  { title: 'Cancelled Orders', count: counts.cancelled, sub: 'Orders cancelled',      accent: 'error.main',   dot: 'error.main'   },
-];
-
 const Orders = () => {
   const { palette } = useTheme();
   const navigate = useNavigate();
 
   // ── State ────────────────────────────────────────────────
-  const [allOrders, setAllOrders]         = useState([]);
-  const [loading, setLoading]             = useState(true);
+  const [allOrders, setAllOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const [searchTerm, setSearchTerm]       = useState('');
-  const [statusFilter, setStatusFilter]   = useState('all');
+  const [searchTerms, setSearchTerms] = useState({
+    Pending: '',
+    Confirmed: '',
+    Ready: '',
+    Cancelled: ''
+  });
 
   // Status dialog
   const [statusDialog, setStatusDialog] = useState({ open: false, type: null, order: null });
@@ -78,7 +68,7 @@ const Orders = () => {
       const res = await orderService.getAllOrders();
       const formatted = res.data.map((o) => ({
         ...o,
-        created_at:   formatDate(o.created_at),
+        created_at: formatDate(o.created_at),
         final_length: `${o.final_length} ft`,
       }));
       setAllOrders(formatted);
@@ -89,30 +79,44 @@ const Orders = () => {
     }
   };
 
-  // ── Local filter — no API call ───────────────────────────
-const filteredOrders = allOrders.filter((order) => {
-  const q = searchTerm.toLowerCase();
-  const matchesSearch = [
-    order.order_id,
-    order.contact_name,
-    order.company_name,
-    order.color,
-    order.order_status,
-    order.created_at,           // ← date
-    order.final_length,         // ← final length
-    order.additional_notes,     // ← notes description
-  ].some((f) => f?.toLowerCase().includes(q));
+  const handleSearchChange = (status, value) => {
+    setSearchTerms((prev) => ({ ...prev, [status]: value }));
+  };
 
-  const matchesStatus = statusFilter === 'all' || order.order_status === statusFilter;
-  return matchesSearch && matchesStatus;
-});
+  const getFilteredOrders = (status) => {
+    const term = searchTerms[status].toLowerCase();
+    return allOrders.filter((order) => {
+      if (order.order_status !== status) return false;
+      if (!term) return true;
+
+      return [
+        order.order_id,
+        order.contact_name,
+        order.company_name,
+        order.color,
+        order.order_status,
+        order.created_at,
+        order.final_length,
+        order.additional_notes,
+      ].some((f) => f?.toString().toLowerCase().includes(term));
+    });
+  };
 
   const counts = {
-    total:     filteredOrders.length,
-    pending:   filteredOrders.filter((o) => o.order_status === 'Pending').length,
-    confirmed: filteredOrders.filter((o) => o.order_status === 'Confirmed').length,
-    cancelled: filteredOrders.filter((o) => o.order_status === 'Cancelled').length,
+    total: allOrders.length,
+    pending: allOrders.filter((o) => o.order_status === 'Pending').length,
+    confirmed: allOrders.filter((o) => o.order_status === 'Confirmed').length,
+    ready: allOrders.filter((o) => o.order_status === 'Ready').length,
+    cancelled: allOrders.filter((o) => o.order_status === 'Cancelled').length,
   };
+
+  const summaryCardsData = [
+    { title: 'Total Orders', count: counts.total, sub: 'All orders', accent: 'primary.main', dot: 'primary.main', target: 'tables-container' },
+    { title: 'Pending', count: counts.pending, sub: 'Awaiting confirmation', accent: 'warning.main', dot: 'warning.main', target: 'table-Pending' },
+    { title: 'Confirmed', count: counts.confirmed, sub: 'Ready for production', accent: 'success.main', dot: 'success.main', target: 'table-Confirmed' },
+    { title: 'Ready', count: counts.ready, sub: 'Ready for dispatch', accent: 'info.main', dot: 'info.main', target: 'table-Ready' },
+    { title: 'Cancelled', count: counts.cancelled, sub: 'Orders cancelled', accent: 'error.main', dot: 'error.main', target: 'table-Cancelled' },
+  ];
 
   // ── Status dialog handlers ───────────────────────────────
   const openStatusDialog = (type, order) => setStatusDialog({ open: true, type, order });
@@ -121,9 +125,9 @@ const filteredOrders = allOrders.filter((order) => {
   const handleStatusConfirm = async (type, order) => {
     const statusMap = {
       CONFIRM: 'Confirmed',
-      CANCEL:  'Cancelled',
-      REOPEN:  'Pending',
-      READY:   'Ready',
+      CANCEL: 'Cancelled',
+      REOPEN: 'Pending',
+      READY: 'Ready',
     };
 
     if (type === 'DELETE') {
@@ -161,7 +165,7 @@ const filteredOrders = allOrders.filter((order) => {
   };
 
   // ── Notes dialog handlers ────────────────────────────────
-  const openNotesDialog  = (order) => setNotesDialog({ open: true, order });
+  const openNotesDialog = (order) => setNotesDialog({ open: true, order });
   const closeNotesDialog = () => setNotesDialog({ open: false, order: null });
 
   const handleSaveNotes = async (order, notes) => {
@@ -182,7 +186,7 @@ const filteredOrders = allOrders.filter((order) => {
   };
 
   // ── Build rows with action buttons + notes cell ──────────
-  const rows = filteredOrders.map((order) => ({
+  const buildRows = (filteredOrders) => filteredOrders.map((order) => ({
     ...order,
     notes: (
       <NotesCell order={order} onOpenNotes={openNotesDialog} />
@@ -194,7 +198,7 @@ const filteredOrders = allOrders.filter((order) => {
             <IconButton size="small" sx={{ color: palette.success.main }} onClick={() => openStatusDialog('CONFIRM', order)} title="Confirm">
               <Check fontSize="small" />
             </IconButton>
-            <IconButton size="small" sx={{ color: palette.warning.main }} onClick={() => openStatusDialog('READY', order)} title="Mark Ready">
+            <IconButton size="small" sx={{ color: palette.info.main }} onClick={() => openStatusDialog('READY', order)} title="Mark Ready">
               <CheckCircle fontSize="small" />
             </IconButton>
             <IconButton size="small" sx={{ color: palette.error.main }} onClick={() => openStatusDialog('CANCEL', order)} title="Cancel">
@@ -203,9 +207,24 @@ const filteredOrders = allOrders.filter((order) => {
           </>
         )}
         {order.order_status === 'Confirmed' && (
-          <IconButton size="small" sx={{ color: palette.info.main }} onClick={() => openStatusDialog('READY', order)} title="Mark Ready">
-            <CheckCircle fontSize="small" />
-          </IconButton>
+          <>
+            <IconButton size="small" sx={{ color: palette.info.main }} onClick={() => openStatusDialog('READY', order)} title="Mark Ready">
+              <CheckCircle fontSize="small" />
+            </IconButton>
+            <IconButton size="small" sx={{ color: palette.error.main }} onClick={() => openStatusDialog('CANCEL', order)} title="Cancel">
+              <Close fontSize="small" />
+            </IconButton>
+          </>
+        )}
+        {order.order_status === 'Ready' && (
+          <>
+            <IconButton size="small" sx={{ color: palette.warning.main }} onClick={() => openStatusDialog('REOPEN', order)} title="Move to Pending">
+              <Refresh fontSize="small" />
+            </IconButton>
+            <IconButton size="small" sx={{ color: palette.error.main }} onClick={() => openStatusDialog('CANCEL', order)} title="Cancel">
+              <Close fontSize="small" />
+            </IconButton>
+          </>
         )}
         {order.order_status === 'Cancelled' && (
           <IconButton size="small" sx={{ color: palette.info.main }} onClick={() => openStatusDialog('REOPEN', order)} title="Reopen">
@@ -218,6 +237,33 @@ const filteredOrders = allOrders.filter((order) => {
       </Stack>
     ),
   }));
+
+  const tableData = [
+    {
+      status: 'Pending',
+      title: 'Pending Orders',
+      subtitle: 'New orders that are awaiting review and confirmation.',
+      color: 'warning'
+    },
+    {
+      status: 'Confirmed',
+      title: 'Confirmed Orders',
+      subtitle: 'Orders that have been approved and are in production.',
+      color: 'success'
+    },
+    {
+      status: 'Ready',
+      title: 'Ready Orders',
+      subtitle: 'Completed orders that are ready for dispatch or pickup.',
+      color: 'info'
+    },
+    {
+      status: 'Cancelled',
+      title: 'Cancelled Orders',
+      subtitle: 'Orders that have been cancelled or rejected.',
+      color: 'error'
+    }
+  ];
 
   return (
     <PageContainer description="Confirm and manage customer orders">
@@ -232,75 +278,120 @@ const filteredOrders = allOrders.filter((order) => {
         gap={2}
         mb={3}
       >
-        <Stack direction="row" gap={1} flexWrap="wrap">
-          <FormControl sx={{ minWidth: 120 }}>
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={statusFilter}
-              label="Status"
-              onChange={(e) => setStatusFilter(e.target.value)}
-              size="small"
-            >
-              <MenuItem value="all">All</MenuItem>
-              <MenuItem value="Pending">Pending</MenuItem>
-              <MenuItem value="Confirmed">Confirmed</MenuItem>
-              <MenuItem value="Ready">Ready</MenuItem>
-              <MenuItem value="Cancelled">Cancelled</MenuItem>
-            </Select>
-          </FormControl>
-          <Button variant="contained" startIcon={<Add />} onClick={() => navigate('/admin/customers')} sx={{ borderRadius: '8px' }}>
-            Manage Customers
-          </Button>
-        </Stack>
+        <Button variant="contained" startIcon={<Add />} onClick={() => navigate('/admin/customers')} sx={{ borderRadius: '8px' }}>
+          Manage Customers
+        </Button>
       </Stack>
 
-      {/* ── Search ── */}
-      <Box mb={3}>
-        <TextField
-          fullWidth
-          placeholder="Search by order number, customer, company, color or status..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search sx={{ color: palette.text.secondary }} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
-        />
+      {/* ── Summary Cards ── */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(5, 1fr)' }, gap: 3, mb: 4 }}>
+        {summaryCardsData.map((s) => (
+          <Card
+            key={s.title}
+            elevation={0}
+            sx={{
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              height: '100%',
+              cursor: 'pointer',
+              transition: 'all 0.3s',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.1)',
+                borderColor: s.accent
+              }
+            }}
+            onClick={() => {
+              const el = document.getElementById(s.target);
+              if (el) {
+                // Determine vertical offset for fixed header
+                const yOffset = -100;
+                const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                window.scrollTo({ top: y, behavior: 'smooth' });
+              }
+            }}
+          >
+            <Box sx={{ height: '4px', backgroundColor: s.accent }} />
+            <Box sx={{ p: '18px 20px 16px', display: 'flex', flexDirection: 'column', height: 'calc(100% - 4px)' }}>
+              <Typography variant="h3" fontWeight={700} sx={{ lineHeight: 1, mb: '8px' }}>{s.count}</Typography>
+              <Typography variant="body1" fontWeight={500} sx={{ mb: '4px' }}>{s.title}</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px', mt: 'auto' }}>
+                <Box sx={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: s.dot, flexShrink: 0 }} />
+                <Typography variant="caption" color="text.secondary">{s.sub}</Typography>
+              </Box>
+            </Box>
+          </Card>
+        ))}
       </Box>
 
-      {/* ── Summary Cards ── */}
-      <Grid container spacing={3} mb={3}>
-        {SUMMARY_CARDS(counts).map((s) => (
-          <Grid item xs={12} sm={6} md={3} key={s.title}>
-            <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '12px', overflow: 'hidden' }}>
-              <Box sx={{ height: '4px', backgroundColor: s.accent }} />
-              <Box sx={{ p: '18px 20px 16px' }}>
-                <Typography variant="h3" fontWeight={700} sx={{ lineHeight: 1, mb: '4px' }}>{s.count}</Typography>
-                <Typography variant="body1" fontWeight={500} sx={{ mb: '4px' }}>{s.title}</Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Box sx={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: s.dot, flexShrink: 0 }} />
-                  <Typography variant="caption" color="text.secondary">{s.sub}</Typography>
+      {/* ── Tables ── */}
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <Stack spacing={4} id="tables-container">
+          {tableData.map(({ status, title, subtitle, color }) => {
+            const currentRows = buildRows(getFilteredOrders(status));
+            const themeColor = palette[color].main;
+            return (
+              <Card
+                id={`table-${status}`}
+                key={status}
+                variant="outlined"
+                sx={{
+                  borderRadius: '12px',
+                  borderColor: themeColor,
+                  borderWidth: 1,
+                  boxShadow: `0 4px 20px ${alpha(themeColor, 0.1)}`,
+                  overflow: 'hidden'
+                }}
+              >
+                <Box sx={{
+                  bgcolor: alpha(themeColor, 0.05),
+                  p: 2.5,
+                  borderBottom: `2px solid ${themeColor}`
+                }}>
+                  <Typography variant="h5" fontWeight={600} color={themeColor}>
+                    {title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" mt={0.5}>
+                    {subtitle}
+                  </Typography>
                 </Box>
-              </Box>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
 
-      {/* ── Table ── */}
-      <ParentCard title="All Orders">
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <DataTable rows={rows} columns={columns} defaultRows={10} />
-        )}
-      </ParentCard>
+                <Box p={3}>
+                  <Box mb={3}>
+                    <TextField
+                      fullWidth
+                      placeholder={`Search within ${title.toLowerCase()} (e.g. order #, customer, etc.)...`}
+                      value={searchTerms[status]}
+                      onChange={(e) => handleSearchChange(status, e.target.value)}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Search sx={{ color: palette.text.secondary }} />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
+                      size="small"
+                    />
+                  </Box>
+                  <DataTable
+                    rows={currentRows}
+                    columns={columns}
+                    defaultRows={5}
+                    emptyMessage={`No ${title.toLowerCase()} found.`}
+                  />
+                </Box>
+              </Card>
+            );
+          })}
+        </Stack>
+      )}
 
       {/* ── Dialogs ── */}
       <StatusDialog

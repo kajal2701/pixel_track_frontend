@@ -92,7 +92,7 @@ const renderCell = (col, row) => {
   );
 };
 
-const DataTable = ({ rows = [], columns = [], defaultRows = 5, loading = false }) => {
+const DataTable = ({ rows = [], columns = [], defaultRows = 5, loading = false, emptyMessage = "No records found" }) => {
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(defaultRows);
   const [sortConfig, setSortConfig] = React.useState({ key: null, direction: 'asc' });
@@ -101,7 +101,7 @@ const DataTable = ({ rows = [], columns = [], defaultRows = 5, loading = false }
   const handleSort = (field) => {
     // Don't sort actions column
     if (field === 'actions') return;
-    
+
     let direction = 'asc';
     if (sortConfig.key === field && sortConfig.direction === 'asc') {
       direction = 'desc';
@@ -116,15 +116,15 @@ const DataTable = ({ rows = [], columns = [], defaultRows = 5, loading = false }
       sortableRows.sort((a, b) => {
         const aValue = a[sortConfig.key];
         const bValue = b[sortConfig.key];
-        
+
         // Handle null/undefined values
         if (aValue == null) return 1;
         if (bValue == null) return -1;
-        
+
         // Convert to string for comparison
         const aStr = String(aValue).toLowerCase();
         const bStr = String(bValue).toLowerCase();
-        
+
         if (aStr < bStr) {
           return sortConfig.direction === 'asc' ? -1 : 1;
         }
@@ -145,8 +145,8 @@ const DataTable = ({ rows = [], columns = [], defaultRows = 5, loading = false }
   // Calculate total minWidth from columns
   const totalMinWidth = columns.reduce((sum, col) => {
     if (col.minWidth) {
-      const width = typeof col.minWidth === 'string' 
-        ? parseInt(col.minWidth) 
+      const width = typeof col.minWidth === 'string'
+        ? parseInt(col.minWidth)
         : col.minWidth;
       return sum + width;
     }
@@ -161,19 +161,19 @@ const DataTable = ({ rows = [], columns = [], defaultRows = 5, loading = false }
         </Box>
       ) : (
         <TableContainer sx={{ width: "100%", overflowX: "auto" }}>
-          <Table 
-            sx={{ 
+          <Table
+            sx={{
               minWidth: totalMinWidth || 'auto',
               tableLayout: totalMinWidth ? 'fixed' : 'auto',
               width: '100%'
-            }} 
+            }}
             aria-label="data table"
           >
             <TableHead>
               <TableRow>
                 {columns.map((col) => (
-                  <TableCell 
-                    key={col.field} 
+                  <TableCell
+                    key={col.field}
                     sx={{
                       width: col.width || col.minWidth,
                       minWidth: col.minWidth,
@@ -205,44 +205,58 @@ const DataTable = ({ rows = [], columns = [], defaultRows = 5, loading = false }
               </TableRow>
             </TableHead>
             <TableBody>
-              {visibleRows.map((row, rowIdx) => (
-                <TableRow key={row.id ?? rowIdx} hover>
-                  {columns.map((col) => (
-                    <TableCell key={col.field} sx={{
-                      width: col.width || col.minWidth,
-                      minWidth: col.minWidth,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}>
-                      {renderCell(col, row)}
-                    </TableCell>
+              {rows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} align="center" sx={{ py: 6 }}>
+                    <Typography variant="h6" color="text.secondary" fontWeight="normal">
+                      {emptyMessage}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                <>
+                  {visibleRows.map((row, rowIdx) => (
+                    <TableRow key={row.id ?? rowIdx} hover>
+                      {columns.map((col) => (
+                        <TableCell key={col.field} sx={{
+                          width: col.width || col.minWidth,
+                          minWidth: col.minWidth,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}>
+                          {renderCell(col, row)}
+                        </TableCell>
+                      ))}
+                    </TableRow>
                   ))}
-                </TableRow>
-              ))}
-              {emptyRows > 0 && (
-                <TableRow style={{ height: 53 * emptyRows }}>
-                  <TableCell colSpan={columns.length} />
-                </TableRow>
+                  {emptyRows > 0 && (
+                    <TableRow style={{ height: 53 * emptyRows }}>
+                      <TableCell colSpan={columns.length} />
+                    </TableRow>
+                  )}
+                </>
               )}
             </TableBody>
-            <TableFooter>
-              <TableRow>
-                <TablePagination
-                  rowsPerPageOptions={[5, 10, 25, { label: 'All', value: -1 }]}
-                  colSpan={columns.length}
-                  count={rows.length}
-                  rowsPerPage={rowsPerPage}
-                  page={page}
-                  SelectProps={{ native: true }}
-                  onPageChange={(e, newPage) => setPage(newPage)}
-                  onRowsPerPageChange={(e) => {
-                    setRowsPerPage(parseInt(e.target.value, 10));
-                    setPage(0);
-                  }}
-                  ActionsComponent={TablePaginationActions}
-                />
-              </TableRow>
-            </TableFooter>
+            {rows.length > 0 && (
+              <TableFooter>
+                <TableRow>
+                  <TablePagination
+                    rowsPerPageOptions={[5, 10, 25, { label: 'All', value: -1 }]}
+                    colSpan={columns.length}
+                    count={rows.length}
+                    rowsPerPage={rowsPerPage}
+                    page={page}
+                    SelectProps={{ native: true }}
+                    onPageChange={(e, newPage) => setPage(newPage)}
+                    onRowsPerPageChange={(e) => {
+                      setRowsPerPage(parseInt(e.target.value, 10));
+                      setPage(0);
+                    }}
+                    ActionsComponent={TablePaginationActions}
+                  />
+                </TableRow>
+              </TableFooter>
+            )}
           </Table>
         </TableContainer>
       )}
@@ -270,6 +284,7 @@ DataTable.propTypes = {
   ).isRequired,
   defaultRows: PropTypes.number,
   loading: PropTypes.bool,
+  emptyMessage: PropTypes.node,
 };
 
 export default DataTable;
