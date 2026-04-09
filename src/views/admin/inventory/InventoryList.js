@@ -1,91 +1,39 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box, Typography, Button, TextField, InputAdornment,
-  IconButton, MenuItem, FormControl, InputLabel, Select,
-  Stack, CircularProgress, Chip,
+  Stack, CircularProgress, Chip, Grid, Card,
+  Table, TableHead, TableBody, TableRow, TableCell,
+  TableContainer, TablePagination, TableFooter,
+  Paper, IconButton, Collapse,
 } from '@mui/material';
-import { Search, Add, Edit, Delete } from '@mui/icons-material';
+import { Search, Add } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 import PageContainer from '../../../components/container/PageContainer';
 import ParentCard from '../../../components/shared/ParentCard';
-import DataTable from '../../../components/shared/DataTable';
 import inventoryService from 'src/services/inventoryService';
 import DeleteInventoryDialog from './DeleteInventoryDialog';
+import { getStatusInfo, SUMMARY_CARDS, groupBySupplierColor } from './helperFunction';
+import PaginationActions from './PaginationActions';
+import CollapsibleRow from './CollapsibleRow';
 
-// ── Common columns (shared across all types) ──
-const commonStart = [
-  { field: 'supplier', label: 'Supplier', type: 'text', bold: true, width: '130px' },
-  { field: 'color_name', label: 'Color Name', type: 'text', width: '110px' },
-  { field: 'color_code', label: 'Color Code', type: 'text', width: '110px' },
-  { field: 'price', label: 'Price', type: 'text', width: '80px' },
-];
-
-const actionsCol = { field: 'actions', label: 'Actions', type: 'text', width: '100px' };
-
-// ── Type-specific columns ──
-const fullRollColumns = [
-  ...commonStart,
-  { field: 'channel_length', label: 'Channel Length', type: 'text', width: '120px' },
-  { field: 'size', label: 'Size (feet)', type: 'text', width: '100px' },
-  { field: 'quantity', label: 'Quantity', type: 'text', bold: true, width: '90px' },
-  { field: 'possible_feet', label: 'Possible Feet', type: 'text', width: '110px' },
-  actionsCol,
-];
-
-const slittedColumns = [
-  ...commonStart,
-  { field: 'channel_length', label: 'Channel Length', type: 'text', width: '120px' },
-  { field: 'size', label: 'Size (feet)', type: 'text', width: '100px' },
-  { field: 'quantity', label: 'Quantity', type: 'text', bold: true, width: '90px' },
-  { field: 'possible_feet', label: 'Possible Feet', type: 'text', width: '110px' },
-  actionsCol,
-];
-
-const readyChannelColumns = [
-  ...commonStart,
-  { field: 'hole_distance', label: 'Hole Distance', type: 'text', width: '120px' },
-  { field: 'pieces', label: 'Pieces', type: 'text', bold: true, width: '90px' },
-  { field: 'length', label: 'Length/Piece', type: 'text', width: '110px' },
-  actionsCol,
-];
-
-// ── "All" view — show type badge + merged display columns ──
-const allColumns = [
-  ...commonStart,
-  {
-    field: 'inventory_type',
-    label: 'Type',
-    type: 'chip',
-    chipColor: (val) => {
-      if (val === 'Full Roll') return 'primary';
-      if (val === 'Slitted') return 'warning';
-      if (val === 'Ready Channel') return 'success';
-      return 'default';
-    },
-    width: '130px',
-  },
-  { field: 'channel_length', label: 'Ch. Length', type: 'text', width: '110px' },
-  { field: 'displaySize', label: 'Size / Hole Dist', type: 'text', width: '120px' },
-  { field: 'displayQuantity', label: 'Qty / Pieces', type: 'text', bold: true, width: '100px' },
-  { field: 'displayLength', label: 'Feet / Length', type: 'text', width: '110px' },
-  actionsCol,
-];
-
+// ═══════════════════════════════════════════════════════════════════
+// InventoryList — Accordion table grouped by Supplier + Color
+// ═══════════════════════════════════════════════════════════════════
 const InventoryList = () => {
   const { palette } = useTheme();
   const navigate = useNavigate();
 
-  // ── State ──
   const [allInventory, setAllInventory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState('All');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  // Delete dialog state
+  // Delete dialog
   const [deleteDialog, setDeleteDialog] = useState({ open: false, item: null });
 
   // ── Fetch inventory on mount ──
@@ -103,71 +51,63 @@ const InventoryList = () => {
     }
   };
 
-  // ── Format display fields for "All" view ──
-  const formatRow = (item) => {
-    let displaySize = '';
-    let displayQuantity = '';
-    let displayLength = '';
+  // ── Group data ──
+  const grouped = useMemo(() => groupBySupplierColor(allInventory), [allInventory]);
 
-    if (item.inventory_type === 'Full Roll' || item.inventory_type === 'Slitted') {
-      displaySize = item.size ? `${item.size} ft` : '—';
-      displayQuantity = item.quantity ?? '—';
-      displayLength = item.possible_feet ?? '—';
-    } else if (item.inventory_type === 'Ready Channel') {
-      displaySize = item.hole_distance || '—';
-      displayQuantity = item.pieces ?? '—';
-      displayLength = item.length ?? '—';
-      return { ...item, displaySize, displayQuantity, displayLength, channel_length: '—' };
-    }
+  // ── Local search filter ──
+  const filtered = useMemo(() => {
+    const q = searchTerm.toLowerCase();
+    if (!q) return grouped;
+    return grouped.filter((row) =>
+      [
+        row.supplier,
+        row.color_name,
+        row.color_code,
+        row.channel_length,
+        row.hole_distance,
+        String(row.fullRoll_qty),
+        String(row.slitted_qty),
+        String(row.ready_pieces),
+        String(row.possible_feet),
+      ].some((f) => f?.toLowerCase().includes(q)),
+    );
+  }, [grouped, searchTerm]);
 
-    return { ...item, displaySize, displayQuantity, displayLength };
+  // ── Summary counts ──
+  const counts = useMemo(() => ({
+    total: filtered.length,
+    fullRolls: filtered.reduce((s, r) => s + (r.fullRoll_qty || 0), 0),
+    slitted: filtered.reduce((s, r) => s + (r.slitted_qty || 0), 0),
+    readyPieces: filtered.reduce((s, r) => s + (r.ready_pieces || 0), 0),
+  }), [filtered]);
+
+  // ── Paginated rows ──
+  const visibleRows = rowsPerPage > 0
+    ? filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+    : filtered;
+
+  // ── Edit handler — navigate to edit page ──
+  const handleEdit = (itemId) => {
+    navigate(`/admin/inventory/edit/${itemId}`);
   };
 
-  // ── Pick columns based on filter ──
-  const columns = useMemo(() => {
-    switch (filterType) {
-      case 'Full Roll': return fullRollColumns;
-      case 'Slitted': return slittedColumns;
-      case 'Ready Channel': return readyChannelColumns;
-      default: return allColumns;
+  // ── Delete handlers ──
+  const handleDeleteClick = (itemId, stageLabel) => {
+    // Find the raw item from allInventory to pass to the dialog
+    const item = allInventory.find((i) => i.id === itemId);
+    if (item) {
+      setDeleteDialog({ open: true, item: { ...item, _stageLabel: stageLabel } });
     }
-  }, [filterType]);
-
-  // ── Local filter ──
-  const filteredInventory = allInventory
-    .map(formatRow)
-    .filter((item) => {
-      const q = searchTerm.toLowerCase();
-      const matchesSearch = [
-        item.supplier,
-        item.color_name,
-        item.color_code,
-        item.inventory_type,
-        String(item.price ?? ''),
-        String(item.size ?? ''),
-        item.hole_distance,
-        String(item.quantity ?? ''),
-        String(item.pieces ?? ''),
-        String(item.possible_feet ?? ''),
-        String(item.length ?? ''),
-        String(item.channel_length ?? ''),
-      ].some((field) => field?.toLowerCase().includes(q));
-
-      const matchesType = filterType === 'All' || item.inventory_type === filterType;
-      return matchesSearch && matchesType;
-    });
-
-  // ── Delete dialog handlers ──
-  const openDeleteDialog = (item) => setDeleteDialog({ open: true, item });
-  const closeDeleteDialog = () => setDeleteDialog({ open: false, item: null });
+  };
 
   const handleDeleteConfirm = async (item) => {
     setActionLoading(true);
     try {
       await inventoryService.deleteInventory(item.id);
-      toast.success(`Inventory item ${item.color_code} deleted successfully.`);
-      fetchInventory();
-      closeDeleteDialog();
+      toast.success(`${item._stageLabel || 'Item'} (${item.color_code}) deleted successfully.`);
+      // Remove from local state
+      setAllInventory((prev) => prev.filter((i) => i.id !== item.id));
+      setDeleteDialog({ open: false, item: null });
     } catch (err) {
       toast.error(err.message || 'Failed to delete inventory item.');
     } finally {
@@ -175,92 +115,33 @@ const InventoryList = () => {
     }
   };
 
-  // ── Edit handler ──
-  const handleEdit = (item) => {
-    navigate(`/admin/inventory/edit/${item.id}`);
-  };
-
-  // ── Build rows with action buttons ──
-  const rows = filteredInventory.map((item) => ({
-    ...item,
-    actions: (
-      <Stack direction="row" gap={0.5}>
-        <IconButton
-          size="small"
-          sx={{ color: palette.info.main }}
-          onClick={() => handleEdit(item)}
-          title="Edit"
-        >
-          <Edit fontSize="small" />
-        </IconButton>
-        <IconButton
-          size="small"
-          sx={{ color: palette.error.main }}
-          onClick={() => openDeleteDialog(item)}
-          title="Delete"
-        >
-          <Delete fontSize="small" />
-        </IconButton>
-      </Stack>
-    ),
-  }));
-
-  // ── Summary stats ──
-  const fullRollCount = allInventory
-    .filter((item) => item.inventory_type === 'Full Roll' && item.quantity > 0)
-    .reduce((sum, item) => sum + (item.quantity || 0), 0);
-
-  const slittedCount = allInventory
-    .filter((item) => item.inventory_type === 'Slitted' && item.quantity > 0)
-    .reduce((sum, item) => sum + (item.quantity || 0), 0);
-
-  const readyChannelCount = allInventory
-    .filter((item) => item.inventory_type === 'Ready Channel' && item.pieces > 0)
-    .reduce((sum, item) => sum + (item.pieces || 0), 0);
+  const closeDeleteDialog = () => setDeleteDialog({ open: false, item: null });
 
   return (
     <PageContainer title="Inventory Management" description="Manage product inventory">
       <Box>
-        {/* Header */}
+        {/* ── Header ── */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', my: 3 }}>
           <Typography variant="h4" sx={{ fontWeight: 700, color: palette.text.primary }}>
             Inventory
           </Typography>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel id="inventory-type-label">Type</InputLabel>
-              <Select
-                labelId="inventory-type-label"
-                id="inventory-type-select"
-                value={filterType}
-                label="Type"
-                onChange={(e) => setFilterType(e.target.value)}
-                sx={{ borderRadius: '8px' }}
-              >
-                <MenuItem value="All">All</MenuItem>
-                <MenuItem value="Full Roll">Full Roll</MenuItem>
-                <MenuItem value="Slitted">Slitted</MenuItem>
-                <MenuItem value="Ready Channel">Ready Channel</MenuItem>
-              </Select>
-            </FormControl>
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={() => navigate('/admin/inventory/new')}
-              sx={{ borderRadius: '8px' }}
-            >
-              Add Item
-            </Button>
-          </Box>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => navigate('/admin/inventory/new')}
+            sx={{ borderRadius: '8px' }}
+          >
+            Add Item
+          </Button>
         </Box>
 
-        {/* Search Bar */}
+        {/* ── Search Bar ── */}
         <Box sx={{ mb: 3 }}>
           <TextField
             fullWidth
-            placeholder="Search inventory by supplier, color name, color code, or type..."
+            placeholder="Search by supplier, color name, color code..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => { setSearchTerm(e.target.value); setPage(0); }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -272,50 +153,100 @@ const InventoryList = () => {
               '& .MuiOutlinedInput-root': {
                 borderRadius: '12px',
                 backgroundColor: palette.background.paper,
-              }
+              },
             }}
           />
         </Box>
 
-        {/* Inventory Types Summary */}
-        <Box sx={{ display: 'flex', gap: 3, mb: 3 }}>
-          <ParentCard title="Full Rolls" sx={{ flex: 1 }}>
-            <Typography variant="h4" fontWeight="600" color="primary.main">
-              {loading ? <CircularProgress size={20} /> : fullRollCount}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              Total rolls available
-            </Typography>
-          </ParentCard>
-          <ParentCard title="Slitted Rolls" sx={{ flex: 1 }}>
-            <Typography variant="h4" fontWeight="600" color="warning.main">
-              {loading ? <CircularProgress size={20} /> : slittedCount}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              Total slitted pieces
-            </Typography>
-          </ParentCard>
-          <ParentCard title="Ready Channels" sx={{ flex: 1 }}>
-            <Typography variant="h4" fontWeight="600" color="success.main">
-              {loading ? <CircularProgress size={20} /> : readyChannelCount}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              Total ready pieces
-            </Typography>
-          </ParentCard>
-        </Box>
+        {/* ── Summary Cards ── */}
+        <Grid container spacing={3} mb={3}>
+          {SUMMARY_CARDS(counts).map((s) => (
+            <Grid item xs={12} sm={6} md={3} key={s.title}>
+              <Card
+                elevation={0}
+                sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '12px', overflow: 'hidden' }}
+              >
+                <Box sx={{ height: '4px', backgroundColor: s.accent }} />
+                <Box sx={{ p: '18px 20px 16px' }}>
+                  <Typography variant="h3" fontWeight={700} sx={{ lineHeight: 1, mb: '4px' }}>
+                    {loading ? <CircularProgress size={20} /> : s.count}
+                  </Typography>
+                  <Typography variant="body1" fontWeight={500} sx={{ mb: '4px' }}>
+                    {s.title}
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Box sx={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: s.dot, flexShrink: 0 }} />
+                    <Typography variant="caption" color="text.secondary">{s.sub}</Typography>
+                  </Box>
+                </Box>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
 
-        {/* DataTable */}
-        <ParentCard title={filterType === 'All' ? 'All Inventory' : `${filterType} Inventory`}>
-          <DataTable
-            rows={rows}
-            columns={columns}
-            defaultRows={10}
-            loading={loading}
-          />
+        {/* ── Accordion Table ── */}
+        <ParentCard title="All Inventory — Grouped by Supplier + Color">
+          {loading ? (
+            <Box display="flex" justifyContent="center" alignItems="center" py={8}>
+              <CircularProgress size={40} />
+            </Box>
+          ) : (
+            <Box sx={{ mx: -3, mb: -3 }}>
+              <TableContainer>
+                <Table sx={{ width: '100%', tableLayout: 'fixed' }}>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell sx={{ width: 48, px: 1 }} />
+                      <TableCell sx={{ width: '15%' }}><Typography variant="h6">Supplier</Typography></TableCell>
+                      <TableCell sx={{ width: '15%' }}><Typography variant="h6">Color Name</Typography></TableCell>
+                      <TableCell sx={{ width: '12%' }}><Typography variant="h6">Color Code</Typography></TableCell>
+                      <TableCell><Typography variant="h6">Stock Summary</Typography></TableCell>
+                      <TableCell sx={{ width: '12%' }}><Typography variant="h6">Possible Feet</Typography></TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {visibleRows.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                          <Typography color="text.secondary">No inventory items found.</Typography>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      visibleRows.map((row, idx) => (
+                        <CollapsibleRow
+                          key={row.ids?.[0] ?? idx}
+                          row={row}
+                          onEdit={handleEdit}
+                          onDelete={handleDeleteClick}
+                        />
+                      ))
+                    )}
+                  </TableBody>
+                  <TableFooter>
+                    <TableRow>
+                      <TablePagination
+                        rowsPerPageOptions={[5, 10, 25, { label: 'All', value: -1 }]}
+                        colSpan={6}
+                        count={filtered.length}
+                        rowsPerPage={rowsPerPage}
+                        page={page}
+                        SelectProps={{ native: true }}
+                        onPageChange={(e, newPage) => setPage(newPage)}
+                        onRowsPerPageChange={(e) => {
+                          setRowsPerPage(parseInt(e.target.value, 10));
+                          setPage(0);
+                        }}
+                        ActionsComponent={PaginationActions}
+                      />
+                    </TableRow>
+                  </TableFooter>
+                </Table>
+              </TableContainer>
+            </Box>
+          )}
         </ParentCard>
 
-        {/* Delete Confirmation Dialog */}
+        {/* ── Delete Dialog ── */}
         <DeleteInventoryDialog
           open={deleteDialog.open}
           onClose={closeDeleteDialog}

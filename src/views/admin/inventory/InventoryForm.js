@@ -158,7 +158,7 @@ const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }
 
   // ── Submit with nulled irrelevant fields ──
   const handleFormSubmit = (data) => {
-    const payload = { ...data, state: null };
+    const payload = { ...data, state: data.state || 'available' };
     if (data.inventory_type === 'Full Roll' || data.inventory_type === 'Slitted') {
       payload.hole_distance = null;
       payload.pieces = null;
