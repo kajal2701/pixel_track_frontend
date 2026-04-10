@@ -5,12 +5,16 @@ import ScrollToTop from './components/shared/ScrollToTop';
 import Router from './routes/Router.js';
 import { Toaster } from 'react-hot-toast';
 
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+
 function App() {
   const routing = useRoutes(Router);
   const theme = ThemeSettings();
 
   return (
     <ThemeProvider theme={theme}>
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
         <CssBaseline />
         <ScrollToTop>{routing}</ScrollToTop>
         <Toaster 
@@ -37,6 +41,7 @@ function App() {
             },
           }}
         />
+      </LocalizationProvider>
     </ThemeProvider>
   );
 }

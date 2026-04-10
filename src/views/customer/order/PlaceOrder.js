@@ -2,16 +2,18 @@ import React from 'react';
 import {
   Box, Typography, Button, TextField, Grid, FormControl,
   RadioGroup, FormControlLabel, Radio, Select, MenuItem,
-  InputLabel, Stack, CircularProgress,
+  InputLabel, Stack, CircularProgress, Alert,
 } from '@mui/material';
-import { Save, Cancel } from '@mui/icons-material';
+import { Save, Cancel, LocalShipping, Store } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
+import { DatePicker } from '@mui/x-date-pickers';
 import toast from 'react-hot-toast';
 import PageContainer from '../../../components/container/PageContainer';
 import ParentCard from '../../../components/shared/ParentCard';
 import orderService from 'src/services/orderService';
 import { AVAILABLE_COLORS, calculateTotalPieces, calculateFinalLength } from 'src/utils/helpers';
+import { addDays } from 'date-fns';
 
 const PlaceOrder = () => {
   const navigate = useNavigate();
@@ -25,18 +27,25 @@ const PlaceOrder = () => {
     formState: { errors },
     watch,
     control,
+    setValue,
   } = useForm({
     defaultValues: {
-      channelType: 'Residential',
-      color: 'IRON ORE (TKGM670)',
-      holeDistance: 1,       // ← default 1
-      channelLength: '6 Hole (4 Feet)',
-      totalLength: 0,       // ← default 0
+      channelType: '',
+      color: '',
+      holeDistance: '',
+      channelLength: '',
+      totalLength: '',
+      deliveryMethod: '',
+      pickupLocation: '',
+      pickupDate: addDays(new Date(), 1),
+      deliveryAddress: '',
+      notes: '',
     },
   });
 
   const channelLength = watch('channelLength');
   const totalLength = watch('totalLength');
+  const deliveryMethod = watch('deliveryMethod');
 
   // ── Calculations ──
   const totalPieces = calculateTotalPieces(totalLength, channelLength);
@@ -61,6 +70,11 @@ const PlaceOrder = () => {
         total_length: Number(data.totalLength),
         total_pieces: totalPieces,
         final_length: finalLength,
+        delivery_method: data.deliveryMethod,
+        pickup_location: data.deliveryMethod === 'pickup' ? data.pickupLocation : null,
+        pickup_date: data.deliveryMethod === 'pickup' ? data.pickupDate : null,
+        delivery_address: data.deliveryMethod === 'delivery' ? data.deliveryAddress : null,
+        notes: data.notes,
       };
       await orderService.createOrder(payload);
       toast.success('Order placed successfully!');
@@ -109,18 +123,23 @@ const PlaceOrder = () => {
                 <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
                   Select Color *
                 </Typography>
-                <FormControl fullWidth variant="outlined">
-                  <Select
-                    value={watch('color')}
-                    {...register('color', { required: 'Color is required' })}
-                    error={!!errors.color}
-                    displayEmpty
-                  >
-                    <MenuItem value="" disabled>Select color</MenuItem>
-                    {AVAILABLE_COLORS.map((color) => (
-                      <MenuItem key={color} value={color}>{color}</MenuItem>
-                    ))}
-                  </Select>
+                <FormControl fullWidth variant="outlined" error={!!errors.color}>
+                  <Controller
+                    name="color"
+                    control={control}
+                    rules={{ required: 'Color is required' }}
+                    render={({ field }) => (
+                      <Select
+                        {...field}
+                        displayEmpty
+                      >
+                        <MenuItem value="" disabled>Select color</MenuItem>
+                        {AVAILABLE_COLORS.map((color) => (
+                          <MenuItem key={color} value={color}>{color}</MenuItem>
+                        ))}
+                      </Select>
+                    )}
+                  />
                   {errors.color && (
                     <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1 }}>
                       {errors.color.message}
@@ -132,20 +151,25 @@ const PlaceOrder = () => {
               {/* Hole Distance */}
               <Grid item xs={12} md={6}>
                 <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
-                  Hole Distance (center to center)
+                  Hole Distance *
                 </Typography>
-                <TextField
-                  fullWidth
-                  type="number"
-                  placeholder="0"                     // ← placeholder 0
-                  {...register('holeDistance', {
-                    required: 'Hole distance is required',
-                    min: { value: 1, message: 'Must be at least 1' },
-                  })}
-                  error={!!errors.holeDistance}
-                  helperText={errors.holeDistance?.message}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                />
+                <FormControl component="fieldset" error={!!errors.holeDistance}>
+                  <Controller
+                    name="holeDistance"
+                    control={control}
+                    rules={{ required: 'Hole distance is required' }}
+                    render={({ field }) => (
+                      <RadioGroup row {...field}>
+                        <FormControlLabel value="8" control={<Radio />} label="8” center-to-center" />
+                      </RadioGroup>
+                    )}
+                  />
+                  {errors.holeDistance && (
+                    <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1 }}>
+                      {errors.holeDistance.message}
+                    </Typography>
+                  )}
+                </FormControl>
               </Grid>
 
               {/* Channel Length */}
@@ -230,6 +254,120 @@ const PlaceOrder = () => {
                 />
               </Grid>
 
+            </Grid>
+          </ParentCard>
+
+          <ParentCard title="Delivery Options">
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                  Delivery Method *
+                </Typography>
+                <FormControl component="fieldset" error={!!errors.deliveryMethod}>
+                  <Controller
+                    name="deliveryMethod"
+                    control={control}
+                    rules={{ required: 'Please select a delivery method' }}
+                    render={({ field }) => (
+                      <RadioGroup row {...field}>
+                        <FormControlLabel value="pickup" control={<Radio />} label={<Box sx={{ display: 'flex', alignItems: 'center' }}><Store sx={{ mr: 1 }} /> Pickup</Box>} />
+                        <FormControlLabel value="delivery" control={<Radio />} label={<Box sx={{ display: 'flex', alignItems: 'center' }}><LocalShipping sx={{ mr: 1 }} /> Delivery</Box>} />
+                      </RadioGroup>
+                    )}
+                  />
+                  {errors.deliveryMethod && (
+                    <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1 }}>
+                      {errors.deliveryMethod.message}
+                    </Typography>
+                  )}
+                </FormControl>
+              </Grid>
+
+              {deliveryMethod === 'pickup' && (
+                <>
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                      Pickup Location *
+                    </Typography>
+                    <FormControl fullWidth error={!!errors.pickupLocation}>
+                      <Controller
+                        name="pickupLocation"
+                        control={control}
+                        rules={{ required: deliveryMethod === 'pickup' ? 'Pickup location is required' : false }}
+                        render={({ field }) => (
+                          <Select
+                            {...field}
+                            displayEmpty
+                          >
+                            <MenuItem value="" disabled>Select Location</MenuItem>
+                            <MenuItem value="Main Warehouse - 1234 Industrial Ave, Edmonton, AB">
+                              Main Warehouse - 1234 Industrial Ave, Edmonton, AB
+                            </MenuItem>
+                            <MenuItem value="South Side Depot - 5678 Calgary Trail, Edmonton, AB">
+                              South Side Depot - 5678 Calgary Trail, Edmonton, AB
+                            </MenuItem>
+                          </Select>
+                        )}
+                      />
+                      {errors.pickupLocation && (
+                        <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1 }}>
+                          {errors.pickupLocation.message}
+                        </Typography>
+                      )}
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                      Pickup Date *
+                    </Typography>
+                    <Controller
+                      name="pickupDate"
+                      control={control}
+                      rules={{ required: deliveryMethod === 'pickup' ? 'Pickup date is required' : false }}
+                      render={({ field }) => (
+                        <DatePicker
+                          {...field}
+                          minDate={addDays(new Date(), 1)}
+                          renderInput={(params) => <TextField {...params} fullWidth error={!!errors.pickupDate} helperText={errors.pickupDate?.message} />}
+                        />
+                      )}
+                    />
+                  </Grid>
+                </>
+              )}
+
+              {deliveryMethod === 'delivery' && (
+                <>
+                  <Grid item xs={12}>
+
+                    <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                      Delivery Address *
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      multiline
+                      rows={3}
+                      placeholder="Enter full delivery address"
+                      {...register('deliveryAddress', { required: deliveryMethod === 'delivery' ? 'Delivery address is required' : false })}
+                      error={!!errors.deliveryAddress}
+                      helperText={errors.deliveryAddress?.message}
+                    />
+                  </Grid>
+                </>
+              )}
+
+              <Grid item xs={12}>
+                <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                  Notes (Optional)
+                </Typography>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={2}
+                  placeholder="Additional notes for your order"
+                  {...register('notes')}
+                />
+              </Grid>
             </Grid>
           </ParentCard>
 
