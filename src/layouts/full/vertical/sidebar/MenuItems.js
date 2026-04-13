@@ -8,6 +8,7 @@ import {
   IconUserCircle,
   IconBox,
   IconAperture,
+  IconShoppingCart,
 } from '@tabler/icons';
 
 import { uniqueId } from 'lodash';
@@ -68,6 +69,26 @@ const adminMenuItems = [
         title: 'Add Inventory',
         icon: IconPoint,
         href: '/admin/inventory/new',
+      },
+    ],
+  },
+  {
+    id: uniqueId(),
+    title: 'Products',
+    icon: IconShoppingCart,
+    href: '/admin/products',
+    children: [
+      {
+        id: uniqueId(),
+        title: 'Product List',
+        icon: IconPoint,
+        href: '/admin/products',
+      },
+      {
+        id: uniqueId(),
+        title: 'Add Product',
+        icon: IconPoint,
+        href: '/admin/products/new',
       },
     ],
   },

@@ -1,8 +1,20 @@
 import React from 'react';
 import {
-  Box, Typography, Button, TextField, Grid, FormControl,
-  RadioGroup, FormControlLabel, Radio, Select, MenuItem,
-  InputLabel, Stack, CircularProgress, Alert,
+  Box,
+  Typography,
+  Button,
+  TextField,
+  Grid,
+  FormControl,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  Select,
+  MenuItem,
+  InputLabel,
+  Stack,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import { Save, Cancel, LocalShipping, Store } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -13,7 +25,7 @@ import PageContainer from '../../../components/container/PageContainer';
 import ParentCard from '../../../components/shared/ParentCard';
 import orderService from 'src/services/orderService';
 import { AVAILABLE_COLORS, calculateTotalPieces, calculateFinalLength } from 'src/utils/helpers';
-import { addDays } from 'date-fns';
+import { addDays, format } from 'date-fns';
 
 const PlaceOrder = () => {
   const navigate = useNavigate();
@@ -61,6 +73,12 @@ const PlaceOrder = () => {
 
     setLoading(true);
     try {
+      const deliveryMethodValue = data.deliveryMethod;
+      const pickupDateValue =
+        deliveryMethodValue === 'pickup' && data.pickupDate
+          ? format(new Date(data.pickupDate), 'yyyy-MM-dd')
+          : null;
+
       const payload = {
         customer_id: customer.id,
         channel_type: data.channelType,
@@ -70,11 +88,13 @@ const PlaceOrder = () => {
         total_length: Number(data.totalLength),
         total_pieces: totalPieces,
         final_length: finalLength,
-        delivery_method: data.deliveryMethod,
-        pickup_location: data.deliveryMethod === 'pickup' ? data.pickupLocation : null,
-        pickup_date: data.deliveryMethod === 'pickup' ? data.pickupDate : null,
-        delivery_address: data.deliveryMethod === 'delivery' ? data.deliveryAddress : null,
-        notes: data.notes,
+        delivery_method: deliveryMethodValue,
+        pickup_location:
+          deliveryMethodValue === 'pickup' ? data.pickupLocation?.trim() || null : null,
+        pickup_date: pickupDateValue,
+        delivery_address:
+          deliveryMethodValue === 'delivery' ? data.deliveryAddress?.trim() || null : null,
+        notes: data.notes?.trim() || null,
       };
       await orderService.createOrder(payload);
       toast.success('Order placed successfully!');
@@ -92,7 +112,6 @@ const PlaceOrder = () => {
         <Stack spacing={3}>
           <ParentCard title="Order Configuration">
             <Grid container spacing={3}>
-
               {/* Channel Type */}
               <Grid item xs={12}>
                 <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
@@ -105,8 +124,16 @@ const PlaceOrder = () => {
                     rules={{ required: 'Channel type is required' }}
                     render={({ field }) => (
                       <RadioGroup row {...field}>
-                        <FormControlLabel value="Residential" control={<Radio />} label="Residential" />
-                        <FormControlLabel value="Commercial" control={<Radio />} label="Commercial" />
+                        <FormControlLabel
+                          value="Residential"
+                          control={<Radio />}
+                          label="Residential"
+                        />
+                        <FormControlLabel
+                          value="Commercial"
+                          control={<Radio />}
+                          label="Commercial"
+                        />
                       </RadioGroup>
                     )}
                   />
@@ -129,13 +156,14 @@ const PlaceOrder = () => {
                     control={control}
                     rules={{ required: 'Color is required' }}
                     render={({ field }) => (
-                      <Select
-                        {...field}
-                        displayEmpty
-                      >
-                        <MenuItem value="" disabled>Select color</MenuItem>
+                      <Select {...field} displayEmpty>
+                        <MenuItem value="" disabled>
+                          Select color
+                        </MenuItem>
                         {AVAILABLE_COLORS.map((color) => (
-                          <MenuItem key={color} value={color}>{color}</MenuItem>
+                          <MenuItem key={color} value={color}>
+                            {color}
+                          </MenuItem>
                         ))}
                       </Select>
                     )}
@@ -160,7 +188,11 @@ const PlaceOrder = () => {
                     rules={{ required: 'Hole distance is required' }}
                     render={({ field }) => (
                       <RadioGroup row {...field}>
-                        <FormControlLabel value="8" control={<Radio />} label="8” center-to-center" />
+                        <FormControlLabel
+                          value="8"
+                          control={<Radio />}
+                          label="8” center-to-center"
+                        />
                       </RadioGroup>
                     )}
                   />
@@ -184,8 +216,16 @@ const PlaceOrder = () => {
                     rules={{ required: 'Channel length is required' }}
                     render={({ field }) => (
                       <RadioGroup row {...field}>
-                        <FormControlLabel value="6 Hole (4 Feet)" control={<Radio />} label="6 Hole (4 Feet)" />
-                        <FormControlLabel value="10 Hole (6.67 Feet)" control={<Radio />} label="10 Hole (6.67 Feet)" />
+                        <FormControlLabel
+                          value="6 Hole (4 Feet)"
+                          control={<Radio />}
+                          label="6 Hole (4 Feet)"
+                        />
+                        <FormControlLabel
+                          value="10 Hole (6.67 Feet)"
+                          control={<Radio />}
+                          label="10 Hole (6.67 Feet)"
+                        />
                       </RadioGroup>
                     )}
                   />
@@ -205,7 +245,7 @@ const PlaceOrder = () => {
                 <TextField
                   fullWidth
                   type="number"
-                  placeholder="0"                     // ← placeholder 0
+                  placeholder="0" // ← placeholder 0
                   inputProps={{ step: '0.01', min: 0 }}
                   {...register('totalLength', {
                     required: 'Total length is required',
@@ -225,7 +265,7 @@ const PlaceOrder = () => {
                 </Typography>
                 <TextField
                   fullWidth
-                  value={totalPieces}               // ← shows 0 by default
+                  value={totalPieces} // ← shows 0 by default
                   disabled
                   sx={{
                     '& .MuiOutlinedInput-root': {
@@ -243,7 +283,7 @@ const PlaceOrder = () => {
                 </Typography>
                 <TextField
                   fullWidth
-                  value={finalLength}               // ← shows 0 by default
+                  value={finalLength} // ← shows 0 by default
                   disabled
                   sx={{
                     '& .MuiOutlinedInput-root': {
@@ -253,7 +293,6 @@ const PlaceOrder = () => {
                   }}
                 />
               </Grid>
-
             </Grid>
           </ParentCard>
 
@@ -270,8 +309,24 @@ const PlaceOrder = () => {
                     rules={{ required: 'Please select a delivery method' }}
                     render={({ field }) => (
                       <RadioGroup row {...field}>
-                        <FormControlLabel value="pickup" control={<Radio />} label={<Box sx={{ display: 'flex', alignItems: 'center' }}><Store sx={{ mr: 1 }} /> Pickup</Box>} />
-                        <FormControlLabel value="delivery" control={<Radio />} label={<Box sx={{ display: 'flex', alignItems: 'center' }}><LocalShipping sx={{ mr: 1 }} /> Delivery</Box>} />
+                        <FormControlLabel
+                          value="pickup"
+                          control={<Radio />}
+                          label={
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Store sx={{ mr: 1 }} /> Pickup
+                            </Box>
+                          }
+                        />
+                        <FormControlLabel
+                          value="delivery"
+                          control={<Radio />}
+                          label={
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <LocalShipping sx={{ mr: 1 }} /> Delivery
+                            </Box>
+                          }
+                        />
                       </RadioGroup>
                     )}
                   />
@@ -293,18 +348,20 @@ const PlaceOrder = () => {
                       <Controller
                         name="pickupLocation"
                         control={control}
-                        rules={{ required: deliveryMethod === 'pickup' ? 'Pickup location is required' : false }}
+                        rules={{
+                          required:
+                            deliveryMethod === 'pickup' ? 'Pickup location is required' : false,
+                        }}
                         render={({ field }) => (
-                          <Select
-                            {...field}
-                            displayEmpty
-                          >
-                            <MenuItem value="" disabled>Select Location</MenuItem>
-                            <MenuItem value="Main Warehouse - 1234 Industrial Ave, Edmonton, AB">
-                              Main Warehouse - 1234 Industrial Ave, Edmonton, AB
+                          <Select {...field} displayEmpty>
+                            <MenuItem value="" disabled>
+                              Select Location
                             </MenuItem>
-                            <MenuItem value="South Side Depot - 5678 Calgary Trail, Edmonton, AB">
-                              South Side Depot - 5678 Calgary Trail, Edmonton, AB
+                            <MenuItem value="4783 CAWSEY Terrace SW, Edmonton AB T6W 5M7">
+                              4783 CAWSEY Terrace SW, Edmonton AB T6W 5M7
+                            </MenuItem>
+                            <MenuItem value="2322 chokecherry close sw Edmonton, AB T6X2M7">
+                              2322 chokecherry close sw Edmonton, AB T6X2M7
                             </MenuItem>
                           </Select>
                         )}
@@ -323,12 +380,21 @@ const PlaceOrder = () => {
                     <Controller
                       name="pickupDate"
                       control={control}
-                      rules={{ required: deliveryMethod === 'pickup' ? 'Pickup date is required' : false }}
+                      rules={{
+                        required: deliveryMethod === 'pickup' ? 'Pickup date is required' : false,
+                      }}
                       render={({ field }) => (
                         <DatePicker
                           {...field}
                           minDate={addDays(new Date(), 1)}
-                          renderInput={(params) => <TextField {...params} fullWidth error={!!errors.pickupDate} helperText={errors.pickupDate?.message} />}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              fullWidth
+                              error={!!errors.pickupDate}
+                              helperText={errors.pickupDate?.message}
+                            />
+                          )}
                         />
                       )}
                     />
@@ -339,7 +405,6 @@ const PlaceOrder = () => {
               {deliveryMethod === 'delivery' && (
                 <>
                   <Grid item xs={12}>
-
                     <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
                       Delivery Address *
                     </Typography>
@@ -348,7 +413,10 @@ const PlaceOrder = () => {
                       multiline
                       rows={3}
                       placeholder="Enter full delivery address"
-                      {...register('deliveryAddress', { required: deliveryMethod === 'delivery' ? 'Delivery address is required' : false })}
+                      {...register('deliveryAddress', {
+                        required:
+                          deliveryMethod === 'delivery' ? 'Delivery address is required' : false,
+                      })}
                       error={!!errors.deliveryAddress}
                       helperText={errors.deliveryAddress?.message}
                     />
