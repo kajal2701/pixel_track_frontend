@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, Typography, CircularProgress, Box, IconButton,
+  Stack, Divider, Alert,
 } from '@mui/material';
 import {
-  Check, Refresh, Delete, CheckCircle,
+  Check, Refresh, Delete, CheckCircle, Close, Inventory2,
 } from '@mui/icons-material';
-import { Close } from '@mui/icons-material';
+import orderService from 'src/services/orderService';
+import OrderDetailsCard from './OrderDetailsCard';
+import InventoryBreakdown from './InventoryBreakdown';
 
 // Config per dialog type
 const DIALOG_CONFIG = {
@@ -52,22 +55,51 @@ const DIALOG_CONFIG = {
   },
 };
 
+// ═══════════════════════════════════════════════════════════════════
+// StatusDialog
+// ═══════════════════════════════════════════════════════════════════
 const StatusDialog = ({ open, type, order, onClose, onConfirm, loading }) => {
   const config = DIALOG_CONFIG[type];
+
+  const [inventoryResult, setInventoryResult] = useState(null);
+  const [inventoryLoading, setInventoryLoading] = useState(false);
+
+  // Fetch inventory and run check when CONFIRM dialog opens
+  useEffect(() => {
+    if (open && type === 'CONFIRM' && order) {
+      const fetchAndCheck = async () => {
+        setInventoryLoading(true);
+        try {
+          const res = await orderService.checkInventory(order.id);
+          setInventoryResult(res.data || {});
+        } catch (err) {
+          setInventoryResult({ error: err.message || 'Failed to check inventory availability.' });
+        } finally {
+          setInventoryLoading(false);
+        }
+      };
+      fetchAndCheck();
+    } else {
+      setInventoryResult(null);
+    }
+  }, [open, type, order]);
+
   if (!config) return null;
 
+  const isConfirm = type === 'CONFIRM';
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
-      <DialogTitle sx={{ 
-        fontWeight: 700, 
-        display: 'flex', 
-        alignItems: 'center', 
+    <Dialog open={open} onClose={onClose} maxWidth={isConfirm ? 'sm' : 'xs'} fullWidth>
+      <DialogTitle sx={{
+        fontWeight: 700,
+        display: 'flex',
+        alignItems: 'center',
         justifyContent: 'space-between'
       }}>
         {config.title}
-        <IconButton 
-          onClick={onClose} 
-          size="small" 
+        <IconButton
+          onClick={onClose}
+          size="small"
           sx={{ color: 'text.secondary' }}
         >
           <Close fontSize="small" />
@@ -83,17 +115,39 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, loading }) => {
           <Typography variant="caption" color="text.secondary" textAlign="center">
             {config.sub}
           </Typography>
-          {order && (
-            <Box sx={{ mt: 1, p: 1.5, bgcolor: 'grey.100', borderRadius: '8px', width: '100%' }}>
-              <Typography variant="caption" color="text.secondary" display="block">
-                Customer: <strong>{order.contact_name}</strong>
-              </Typography>
-              <Typography variant="caption" color="text.secondary" display="block">
-                Company: <strong>{order.company_name}</strong>
-              </Typography>
-            </Box>
-          )}
+          <OrderDetailsCard order={order} />
         </Box>
+
+        {/* ── Inventory Check Panel (CONFIRM only) ── */}
+        {isConfirm && (
+          <Box sx={{ mt: 2 }}>
+            <Divider sx={{ mb: 2 }} />
+
+            <Stack direction="row" spacing={1} alignItems="center" mb={2}>
+              <Inventory2 sx={{ color: 'primary.main', fontSize: 20 }} />
+              <Typography variant="subtitle2" fontWeight={700}>
+                Inventory Availability Check
+              </Typography>
+            </Stack>
+
+            {inventoryLoading ? (
+              <Box display="flex" flexDirection="column" alignItems="center" py={3} gap={1}>
+                <CircularProgress size={28} />
+                <Typography variant="caption" color="text.secondary">
+                  Checking inventory...
+                </Typography>
+              </Box>
+            ) : inventoryResult ? (
+              inventoryResult.error && !inventoryResult.orderQty ? (
+                <Alert severity="warning" sx={{ borderRadius: '8px' }}>
+                  {inventoryResult.error}
+                </Alert>
+              ) : (
+                <InventoryBreakdown result={inventoryResult} />
+              )
+            ) : null}
+          </Box>
+        )}
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>

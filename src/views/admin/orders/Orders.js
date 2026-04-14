@@ -1,26 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Button, TextField, InputAdornment,
-  IconButton, Grid, Stack, FormControl, InputLabel,
-  Select, MenuItem, Card, CircularProgress,
+  IconButton, Stack, Card, CircularProgress,
 } from '@mui/material';
 import { Search, Add, Check, Close, Delete, Refresh, CheckCircle } from '@mui/icons-material';
 import { useTheme, alpha } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-
 import PageContainer from 'src/components/container/PageContainer';
 import Breadcrumb from 'src/layouts/full/shared/breadcrumb/Breadcrumb';
-import ParentCard from 'src/components/shared/ParentCard';
 import DataTable from 'src/components/shared/DataTable';
 import orderService from 'src/services/orderService';
 import StatusDialog from './StatusDialog';
 import NotesDialog from './NotesDialog';
 import NotesCell from './NotesCell';
-import { formatDate } from 'src/utils/helpers';
-
-
-
+import { formatDate, ORDER_TABLE_DATA, getSummaryCardsData } from 'src/utils/helpers';
 
 const columns = [
   { field: 'order_id', label: 'Order #', bold: true, width: '150px', minWidth: '150px' },
@@ -110,13 +104,7 @@ const Orders = () => {
     cancelled: allOrders.filter((o) => o.order_status === 'Cancelled').length,
   };
 
-  const summaryCardsData = [
-    { title: 'Total Orders', count: counts.total, sub: 'All orders', accent: 'primary.main', dot: 'primary.main', target: 'tables-container' },
-    { title: 'Pending', count: counts.pending, sub: 'Awaiting confirmation', accent: 'warning.main', dot: 'warning.main', target: 'table-Pending' },
-    { title: 'Confirmed', count: counts.confirmed, sub: 'Ready for production', accent: 'success.main', dot: 'success.main', target: 'table-Confirmed' },
-    { title: 'Ready', count: counts.ready, sub: 'Ready for dispatch', accent: 'info.main', dot: 'info.main', target: 'table-Ready' },
-    { title: 'Cancelled', count: counts.cancelled, sub: 'Orders cancelled', accent: 'error.main', dot: 'error.main', target: 'table-Cancelled' },
-  ];
+  const summaryCardsData = getSummaryCardsData(counts);
 
   // ── Status dialog handlers ───────────────────────────────
   const openStatusDialog = (type, order) => setStatusDialog({ open: true, type, order });
@@ -238,33 +226,6 @@ const Orders = () => {
     ),
   }));
 
-  const tableData = [
-    {
-      status: 'Pending',
-      title: 'Pending Orders',
-      subtitle: 'New orders that are awaiting review and confirmation.',
-      color: 'warning'
-    },
-    {
-      status: 'Confirmed',
-      title: 'Confirmed Orders',
-      subtitle: 'Orders that have been approved and are in production.',
-      color: 'success'
-    },
-    {
-      status: 'Ready',
-      title: 'Ready Orders',
-      subtitle: 'Completed orders that are ready for dispatch or pickup.',
-      color: 'info'
-    },
-    {
-      status: 'Cancelled',
-      title: 'Cancelled Orders',
-      subtitle: 'Orders that have been cancelled or rejected.',
-      color: 'error'
-    }
-  ];
-
   return (
     <PageContainer description="Confirm and manage customer orders">
       <Breadcrumb title="Orders" items={BCrumb} />
@@ -333,7 +294,7 @@ const Orders = () => {
         </Box>
       ) : (
         <Stack spacing={4} id="tables-container">
-          {tableData.map(({ status, title, subtitle, color }) => {
+          {ORDER_TABLE_DATA.map(({ status, title, subtitle, color }) => {
             const currentRows = buildRows(getFilteredOrders(status));
             const themeColor = palette[color].main;
             return (

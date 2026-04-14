@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, IconButton, Typography, Tooltip } from '@mui/material';
-import { NoteAdd, StickyNote2 } from '@mui/icons-material';
+import { NoteAdd } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 
 const NotesCell = ({ order, onOpenNotes }) => {

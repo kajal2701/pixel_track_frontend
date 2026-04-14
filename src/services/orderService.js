@@ -63,6 +63,15 @@ const orderService = {
     }
   },
 
+  checkInventory: async (id) => {
+    try {
+      const response = await apiClient.get(`/orders/${id}/check-inventory`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Network error occurred' };
+    }
+  },
+
   deleteOrder: async (id) => {
     try {
       const response = await apiClient.delete(`/orders/${id}`);

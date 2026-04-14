@@ -1,23 +1,16 @@
-// ── Inventory Dropdown Options ──────────────────────────────────
+import {
+  CHANNEL_LENGTH_OPTIONS as channelLengthOptions,
+  HOLE_DISTANCE_OPTIONS as holeDistanceOptions,
+  READY_CHANNEL_LENGTH_OPTIONS as readyChannelLengthOptions,
+  INVENTORY_TYPE_OPTIONS as inventoryTypeOptions,
+} from 'src/utils/helpers';
 
-export const channelLengthOptions = [
-  { value: '', label: 'Select Channel Length', disabled: true },
-  { value: "4 Feet/48''", label: "4 Feet/48''" },
-  { value: "6 Feet/72''", label: "6 Feet/72''" },
-  { value: '8 Feet/80"', label: '8 Feet/80"' },
-];
-
-export const holeDistanceOptions = [
-  { value: '', label: 'Select Hole Distance', disabled: true },
-  { value: '8 inches', label: '8 inches' },
-  { value: '9 inches', label: '9 inches' },
-];
-
-export const inventoryTypeOptions = [
-  { value: 'Full Roll', label: 'Full Roll' },
-  { value: 'Slitted', label: 'Slitted' },
-  { value: 'Ready Channel', label: 'Ready Channel' },
-];
+export {
+  channelLengthOptions,
+  holeDistanceOptions,
+  readyChannelLengthOptions,
+  inventoryTypeOptions,
+};
 
 // ── Status config ──────────────────────────────────────────────
 export const statusConfig = {
@@ -34,10 +27,34 @@ export const getStatusInfo = (state, qty) => {
 
 // ── Summary card config ──────────────────────────────────────────
 export const SUMMARY_CARDS = (counts) => [
-  { title: 'Total Colors', count: counts.total, sub: 'Unique supplier + color', accent: 'primary.main', dot: 'primary.main' },
-  { title: 'Full Rolls', count: counts.fullRolls, sub: 'Total rolls in stock', accent: 'info.main', dot: 'info.main' },
-  { title: 'Slitted Rolls', count: counts.slitted, sub: 'Total slitted pieces', accent: 'warning.main', dot: 'warning.main' },
-  { title: 'Ready Channels', count: counts.readyPieces, sub: 'Total ready pieces', accent: 'success.main', dot: 'success.main' },
+  {
+    title: 'Total Colors',
+    count: counts.total,
+    sub: 'Unique supplier + color',
+    accent: 'primary.main',
+    dot: 'primary.main',
+  },
+  {
+    title: 'Full Rolls',
+    count: counts.fullRolls,
+    sub: 'Total rolls in stock',
+    accent: 'info.main',
+    dot: 'info.main',
+  },
+  {
+    title: 'Slitted Rolls',
+    count: counts.slitted,
+    sub: 'Total slitted pieces',
+    accent: 'warning.main',
+    dot: 'warning.main',
+  },
+  {
+    title: 'Ready Channels',
+    count: counts.readyPieces,
+    sub: 'Total ready pieces',
+    accent: 'success.main',
+    dot: 'success.main',
+  },
 ];
 
 // ═══════════════════════════════════════════════════════════════════
@@ -47,7 +64,9 @@ export const groupBySupplierColor = (items) => {
   const map = {};
 
   items.forEach((item) => {
-    const key = `${(item.supplier || '').trim().toLowerCase()}__${(item.color_name || '').trim().toLowerCase()}`;
+    const key = `${(item.supplier || '').trim().toLowerCase()}__${(item.color_name || '')
+      .trim()
+      .toLowerCase()}`;
 
     if (!map[key]) {
       map[key] = {
@@ -55,9 +74,22 @@ export const groupBySupplierColor = (items) => {
         color_name: item.color_name,
         color_code: item.color_code,
         hole_distance: '',
-        fullRoll_qty: 0, fullRoll_size: '', fullRoll_state: null, fullRoll_feet: 0, fullRoll_id: null, fullRoll_channel_length: '',
-        slitted_qty: 0, slitted_size: '', slitted_state: null, slitted_feet: 0, slitted_id: null, slitted_channel_length: '',
-        ready_pieces: 0, ready_length: '', ready_state: null, ready_id: null,
+        fullRoll_qty: 0,
+        fullRoll_size: '',
+        fullRoll_state: null,
+        fullRoll_feet: 0,
+        fullRoll_id: null,
+        fullRoll_channel_length: '',
+        slitted_qty: 0,
+        slitted_size: '',
+        slitted_state: null,
+        slitted_feet: 0,
+        slitted_id: null,
+        slitted_channel_length: '',
+        ready_pieces: 0,
+        ready_length: '',
+        ready_state: null,
+        ready_id: null,
         ids: [],
       };
     }

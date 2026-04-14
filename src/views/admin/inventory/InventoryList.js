@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box, Typography, Button, TextField, InputAdornment,
-  Stack, CircularProgress, Chip, Grid, Card,
+  CircularProgress, Grid, Card,
   Table, TableHead, TableBody, TableRow, TableCell,
   TableContainer, TablePagination, TableFooter,
-  Paper, IconButton, Collapse,
+
 } from '@mui/material';
 import { Search, Add } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
@@ -15,7 +15,7 @@ import PageContainer from '../../../components/container/PageContainer';
 import ParentCard from '../../../components/shared/ParentCard';
 import inventoryService from 'src/services/inventoryService';
 import DeleteInventoryDialog from './DeleteInventoryDialog';
-import { getStatusInfo, SUMMARY_CARDS, groupBySupplierColor } from './helperFunction';
+import { SUMMARY_CARDS, groupBySupplierColor } from './helperFunction';
 import PaginationActions from './PaginationActions';
 import CollapsibleRow from './CollapsibleRow';
 
@@ -105,8 +105,7 @@ const InventoryList = () => {
     try {
       await inventoryService.deleteInventory(item.id);
       toast.success(`${item._stageLabel || 'Item'} (${item.color_code}) deleted successfully.`);
-      // Remove from local state
-      setAllInventory((prev) => prev.filter((i) => i.id !== item.id));
+      await fetchInventory();
       setDeleteDialog({ open: false, item: null });
     } catch (err) {
       toast.error(err.message || 'Failed to delete inventory item.');
