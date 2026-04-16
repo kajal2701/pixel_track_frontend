@@ -17,6 +17,7 @@ import {
   calculateTotalPieces,
   calculateFinalLength,
   generateColorOptions,
+  getMinPickupDate,
 } from 'src/utils/helpers';
 import OrderConfiguration from './OrderConfiguration';
 import DeliveryOptions from './DeliveryOptions';
@@ -46,7 +47,7 @@ const PlaceOrder = () => {
       totalLength: '',
       deliveryMethod: '',
       pickupLocation: '',
-      pickupDate: addDays(new Date(), 1),
+      pickupDate: new Date(),
       deliveryAddress: '',
       notes: '',
     },
@@ -141,6 +142,8 @@ const PlaceOrder = () => {
             errors={errors}
             register={register}
             deliveryMethod={deliveryMethod}
+            totalPieces={totalPieces}
+            setValue={setValue}
           />
 
           {/* Buttons */}

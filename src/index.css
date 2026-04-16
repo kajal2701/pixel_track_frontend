@@ -1,7 +1,12 @@
 /* Global Styles */
 
+/* Override MUI Container max-width to prevent content overflow */
+.css-e08yli-MuiContainer-root {
+  max-width: 100% !important;
+}
+
 @media (min-width: 1200px) {
   .css-e08yli-MuiContainer-root {
-    max-width: max-content !important;
+    max-width: 100% !important;
   }
 }

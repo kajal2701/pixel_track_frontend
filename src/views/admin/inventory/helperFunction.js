@@ -30,7 +30,7 @@ export const SUMMARY_CARDS = (counts) => [
   {
     title: 'Total Colors',
     count: counts.total,
-    sub: 'Unique supplier + color',
+    sub: 'Unique supplier + color code',
     accent: 'primary.main',
     dot: 'primary.main',
   },
@@ -58,13 +58,13 @@ export const SUMMARY_CARDS = (counts) => [
 ];
 
 // ═══════════════════════════════════════════════════════════════════
-// Grouping: merge all inventory records by supplier + color_name
+// Grouping: merge all inventory records by supplier + color_code
 // ═══════════════════════════════════════════════════════════════════
 export const groupBySupplierColor = (items) => {
   const map = {};
 
   items.forEach((item) => {
-    const key = `${(item.supplier || '').trim().toLowerCase()}__${(item.color_name || '')
+    const key = `${(item.supplier || '').trim().toLowerCase()}__${(item.color_code || '')
       .trim()
       .toLowerCase()}`;
 
@@ -127,4 +127,46 @@ export const groupBySupplierColor = (items) => {
       possible_feet: totalFeet ? parseFloat(totalFeet.toFixed(2)) : 0,
     };
   });
+};
+
+export const getSuppliersOptions = (allProducts) => {
+  const s = allProducts.map((p) => p.manufacturer).filter(Boolean);
+  const unique = Array.from(new Set(s)).sort();
+  const options = unique.map((name) => ({ value: name, label: name }));
+  return [{ value: '', label: 'Select Supplier', disabled: true }, ...options];
+};
+
+export const getFilteredColorsOptions = (allProducts, selectedSupplier) => {
+  if (!selectedSupplier) return [{ value: '', label: 'Select Supplier first', disabled: true }];
+  const colors = allProducts
+    .filter((p) => p.manufacturer === selectedSupplier)
+    .map((p) => ({
+      value: p.color || p.product_name,
+      label: p.color || p.product_name,
+      color_code: p.color_code,
+    }));
+  // Unique color names
+  const map = new Map();
+  colors.forEach((c) => {
+    if (!map.has(c.value)) map.set(c.value, c);
+  });
+  const options = Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
+  return [{ value: '', label: 'Select Color', disabled: true }, ...options];
+};
+
+export const getFilteredColorCodesOptions = (allProducts, selectedSupplier) => {
+  if (!selectedSupplier) return [{ value: '', label: 'Select Supplier first', disabled: true }];
+  const codes = allProducts
+    .filter((p) => p.manufacturer === selectedSupplier && p.color_code)
+    .map((p) => ({
+      value: p.color_code,
+      label: p.color_code,
+    }));
+  // Unique color codes
+  const map = new Map();
+  codes.forEach((c) => {
+    if (!map.has(c.value)) map.set(c.value, c);
+  });
+  const options = Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
+  return [{ value: '', label: 'Select Color Code', disabled: true }, ...options];
 };

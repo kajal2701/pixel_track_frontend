@@ -8,6 +8,7 @@ import {
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { getStatusInfo } from './helperFunction';
+import { calculateProductionDetails } from 'src/utils/helpers';
 
 const CollapsibleRow = ({ row, onEdit, onDelete }) => {
   const [open, setOpen] = useState(false);
@@ -24,8 +25,7 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
       details: [
         { label: 'Quantity', value: row.fullRoll_qty },
         { label: 'Size', value: row.fullRoll_size || '—' },
-        { label: 'Channel Length', value: row.fullRoll_channel_length || '—' },
-        { label: 'Possible Feet', value: row.fullRoll_feet || '—' },
+        { label: 'Possible Production', value: calculateProductionDetails(row.fullRoll_size, row.fullRoll_qty) },
       ],
     },
     {
@@ -37,8 +37,7 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
       details: [
         { label: 'Quantity', value: row.slitted_qty },
         { label: 'Size', value: row.slitted_size || '—' },
-        { label: 'Channel Length', value: row.slitted_channel_length || '—' },
-        { label: 'Possible Feet', value: row.slitted_feet || '—' },
+        { label: 'Possible Production', value: calculateProductionDetails(row.slitted_size, row.slitted_qty) },
       ],
     },
     {
@@ -93,10 +92,21 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
             {stages.map((s) => {
               const status = getStatusInfo(s.state, s.qty);
+              let displayValue = s.qty;
+              
+              // Show total feet for Full Roll and Slitted
+              if (s.label === 'Full Roll' && row.fullRoll_size && row.fullRoll_qty) {
+                const totalFeet = (parseFloat(row.fullRoll_size) * parseFloat(row.fullRoll_qty)).toFixed(1);
+                displayValue = `${totalFeet} ft`;
+              } else if (s.label === 'Slitted' && row.slitted_size && row.slitted_qty) {
+                const totalFeet = (parseFloat(row.slitted_size) * parseFloat(row.slitted_qty)).toFixed(1);
+                displayValue = `${totalFeet} ft`;
+              }
+              
               return (
                 <Chip
                   key={s.label}
-                  label={`${s.label}: ${s.qty}`}
+                  label={`${s.label}: ${displayValue}`}
                   color={status.color}
                   variant={s.qty > 0 ? 'filled' : 'outlined'}
                   size="small"
@@ -107,17 +117,11 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
           </Stack>
         </TableCell>
 
-        {/* Possible Feet */}
-        <TableCell>
-          <Typography variant="h6" fontWeight={600}>
-            {row.possible_feet || '—'}
-          </Typography>
-        </TableCell>
       </TableRow>
 
       {/* ── Expanded Detail Row ── */}
       <TableRow>
-        <TableCell colSpan={6} sx={{ py: 0, px: 0, borderBottom: open ? undefined : 'none' }}>
+        <TableCell colSpan={5} sx={{ py: 0, px: 0, borderBottom: open ? undefined : 'none' }}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box sx={{ p: 2.5, backgroundColor: palette.action.hover, borderRadius: 0 }}>
               <Grid container spacing={2}>

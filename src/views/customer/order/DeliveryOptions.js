@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Grid,
   Typography,
@@ -12,17 +12,65 @@ import {
   Box,
 } from '@mui/material';
 import { Store, LocalShipping } from '@mui/icons-material';
-import { Controller } from 'react-hook-form';
+import { Controller, useWatch } from 'react-hook-form';
 import { DatePicker } from '@mui/x-date-pickers';
 import ParentCard from '../../../components/shared/ParentCard';
-import { addDays } from 'date-fns';
+import { getEstimatedDeliveryDate, getMinPickupDate, getPieceLength } from 'src/utils/helpers';
+import orderService from 'src/services/orderService';
 
 const DeliveryOptions = ({
   control,
   errors,
   register,
   deliveryMethod,
+  totalPieces, // Take it directly from parent props
+  setValue,
 }) => {
+  const color = useWatch({ control, name: 'color' });
+  const channel_length = useWatch({ control, name: 'channelLength' });
+  // totalPieces comes from props now
+
+  const [minPickupDate, setMinPickupDate] = useState(null);
+
+  useEffect(() => {
+    if (deliveryMethod !== 'pickup') return;
+
+    if (!color || !channel_length || !totalPieces) {
+      setMinPickupDate(getMinPickupDate(false)); // Default safely if incomplete data
+      return;
+    }
+
+    let isSubscribed = true;
+
+    const checkStock = async () => {
+      try {
+        const response = await orderService.checkInventoryPreview({
+          color,
+          channel_length: getPieceLength(channel_length), // Convert to numeric length for backend
+          total_pieces: Number(totalPieces), // mapping to snake_case for backend
+        });
+
+        const isReadySatisfied = response.data?.isReadySatisfied || false;
+        if (isSubscribed) {
+          setMinPickupDate(getMinPickupDate(isReadySatisfied));
+        }
+      } catch (err) {
+        console.error('Failed to check inventory for pickup date:', err);
+        if (isSubscribed) setMinPickupDate(getMinPickupDate(false));
+      }
+    };
+
+    checkStock();
+    return () => { isSubscribed = false; };
+  }, [color, channel_length, totalPieces, deliveryMethod]);
+
+  // Ensure pickupDate value is never earlier than calculated minPickupDate
+  useEffect(() => {
+    if (deliveryMethod === 'pickup' && minPickupDate) {
+      setValue('pickupDate', minPickupDate);
+    }
+  }, [minPickupDate, deliveryMethod, setValue]);
+
   return (
     <ParentCard title="Delivery Options">
       <Grid container spacing={3}>
@@ -65,6 +113,41 @@ const DeliveryOptions = ({
             )}
           </FormControl>
         </Grid>
+
+        {deliveryMethod === 'delivery' && (
+          <Grid item xs={12}>
+            <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+              Estimated Delivery Date
+            </Typography>
+            <Controller
+              name="estimatedDeliveryDate"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  {...field}
+                  value={new Date(getEstimatedDeliveryDate())}
+                  readOnly
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      fullWidth
+                      helperText="Delivery within 5 business days"
+                      inputProps={{
+                        ...params.inputProps,
+                        readOnly: true,
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          backgroundColor: '#f5f5f5',
+                        },
+                      }}
+                    />
+                  )}
+                />
+              )}
+            />
+          </Grid>
+        )}
 
         {deliveryMethod === 'pickup' && (
           <>
@@ -113,13 +196,23 @@ const DeliveryOptions = ({
                 render={({ field }) => (
                   <DatePicker
                     {...field}
-                    minDate={addDays(new Date(), 1)}
+                    minDate={minPickupDate}
+                    disabled
                     renderInput={(params) => (
                       <TextField
                         {...params}
                         fullWidth
                         error={!!errors.pickupDate}
                         helperText={errors.pickupDate?.message}
+                        inputProps={{
+                          ...params.inputProps,
+                          readOnly: true,
+                        }}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            backgroundColor: '#f5f5f5',
+                          },
+                        }}
                       />
                     )}
                   />

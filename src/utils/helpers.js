@@ -152,6 +152,53 @@ export const ORDER_TABLE_DATA = [
   }
 ];
 
+// ── Production Calculation Helper ──────────────────────────────────
+
+export const calculateProductionDetails = (size, qty) => {
+  if (!size || !qty) return '—';
+
+  const totalFeet = parseFloat(size) * parseFloat(qty);
+  if (totalFeet <= 0) return '—';
+
+  const lengths = [
+    { label: '4ft', value: 4 },
+    { label: '6ft', value: 6 },
+    { label: '8ft', value: 8 }
+  ];
+
+  return lengths.map(length =>
+    `${length.label}: ${(totalFeet / length.value).toFixed(1)} pcs`
+  ).join(' | ');
+};
+
+// ── Business Days Calculation ──────────────────────────────────
+
+export const addBusinessDays = (date, days) => {
+  const result = new Date(date);
+  let businessDaysAdded = 0;
+
+  while (businessDaysAdded < days) {
+    result.setDate(result.getDate() + 1);
+
+    // Only count weekdays (Monday=1, Tuesday=2, Wednesday=3, Thursday=4, Friday=5)
+    // Skip weekends (Saturday = 6, Sunday = 0)
+    const dayOfWeek = result.getDay();
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+      businessDaysAdded++;
+    }
+  }
+
+  return result;
+};
+
+export const getEstimatedDeliveryDate = () => {
+  const date = addBusinessDays(new Date(), 5);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 // Generate config for summary cards based on current counts
 export const getSummaryCardsData = (counts) => [
   { title: 'Total Orders', count: counts.total, sub: 'All orders', accent: 'primary.main', dot: 'primary.main', target: 'tables-container' },
@@ -160,3 +207,11 @@ export const getSummaryCardsData = (counts) => [
   { title: 'Ready', count: counts.ready, sub: 'Ready for dispatch', accent: 'info.main', dot: 'info.main', target: 'table-Ready' },
   { title: 'Cancelled', count: counts.cancelled, sub: 'Orders cancelled', accent: 'error.main', dot: 'error.main', target: 'table-Cancelled' },
 ];
+
+// Calculate minimum pickup date based on stock and time cutoff
+export const getMinPickupDate = (isReadySatisfied) => {
+  const currentHour = new Date().getHours();
+  const daysToAdd = (currentHour < 12 && isReadySatisfied) ? 1 : 2;
+  return addBusinessDays(new Date(), daysToAdd);
+};
+

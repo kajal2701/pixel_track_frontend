@@ -184,7 +184,7 @@ const InventoryList = () => {
         </Grid>
 
         {/* ── Accordion Table ── */}
-        <ParentCard title="All Inventory — Grouped by Supplier + Color">
+        <ParentCard title="All Inventory — Grouped by Supplier + Color Code">
           {loading ? (
             <Box display="flex" justifyContent="center" alignItems="center" py={8}>
               <CircularProgress size={40} />
@@ -200,13 +200,12 @@ const InventoryList = () => {
                       <TableCell sx={{ width: '15%' }}><Typography variant="h6">Color Name</Typography></TableCell>
                       <TableCell sx={{ width: '12%' }}><Typography variant="h6">Color Code</Typography></TableCell>
                       <TableCell><Typography variant="h6">Stock Summary</Typography></TableCell>
-                      <TableCell sx={{ width: '12%' }}><Typography variant="h6">Possible Feet</Typography></TableCell>
-                    </TableRow>
+                                          </TableRow>
                   </TableHead>
                   <TableBody>
                     {visibleRows.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                        <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
                           <Typography color="text.secondary">No inventory items found.</Typography>
                         </TableCell>
                       </TableRow>
@@ -225,7 +224,7 @@ const InventoryList = () => {
                     <TableRow>
                       <TablePagination
                         rowsPerPageOptions={[5, 10, 25, { label: 'All', value: -1 }]}
-                        colSpan={6}
+                        colSpan={5}
                         count={filtered.length}
                         rowsPerPage={rowsPerPage}
                         page={page}

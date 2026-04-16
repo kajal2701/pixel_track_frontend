@@ -118,13 +118,13 @@ const ProductForm = ({ product, onSubmit, loading, isEdit = false, onCancel }) =
 
           <Grid item xs={12} md={6}>
             <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
-              Color Code
+              Color Code *
             </Typography>
             <TextField
               fullWidth
               variant="outlined"
               placeholder="Enter color code"
-              {...register('color_code')}
+              {...register('color_code', { required: 'Color code is required' })}
               error={!!errors.color_code}
               helperText={errors.color_code?.message}
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
@@ -200,8 +200,8 @@ const ProductForm = ({ product, onSubmit, loading, isEdit = false, onCancel }) =
                     ? 'Updating...'
                     : 'Creating...'
                   : isEdit
-                  ? 'Update Product'
-                  : 'Create Product'}
+                    ? 'Update Product'
+                    : 'Create Product'}
               </Button>
             </Box>
           </Grid>

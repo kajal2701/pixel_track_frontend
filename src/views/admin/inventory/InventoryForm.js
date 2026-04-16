@@ -12,6 +12,8 @@ import {
   RadioGroup,
   FormControlLabel,
   FormControl,
+  Chip,
+  Stack,
 } from '@mui/material';
 import { Save, Cancel } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
@@ -31,9 +33,11 @@ import {
   integerRules,
   getPieceLength,
   mapToChannelLengthLabel,
+  calculateProductionDetails,
 } from 'src/utils/helpers';
 import productService from 'src/services/productService';
 import toast from 'react-hot-toast';
+import { getSuppliersOptions, getFilteredColorsOptions, getFilteredColorCodesOptions } from './helperFunction';
 
 // ── Reusable field wrapper ─────────────────────────────────────
 const inputSx = { '& .MuiOutlinedInput-root': { borderRadius: '8px' } };
@@ -176,31 +180,19 @@ const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }
   }, []);
 
   // Unique suppliers
-  const suppliers = useMemo(() => {
-    const s = allProducts.map((p) => p.manufacturer).filter(Boolean);
-    const unique = Array.from(new Set(s)).sort();
-    const options = unique.map((name) => ({ value: name, label: name }));
-    return [{ value: '', label: 'Select Supplier', disabled: true }, ...options];
-  }, [allProducts]);
+  const suppliers = useMemo(() => getSuppliersOptions(allProducts), [allProducts]);
 
   // Colors for selected supplier
-  const filteredColors = useMemo(() => {
-    if (!selectedSupplier) return [{ value: '', label: 'Select Supplier first', disabled: true }];
-    const colors = allProducts
-      .filter((p) => p.manufacturer === selectedSupplier)
-      .map((p) => ({
-        value: p.color || p.product_name,
-        label: p.color || p.product_name,
-        color_code: p.color_code,
-      }));
-    // Unique color names
-    const map = new Map();
-    colors.forEach((c) => {
-      if (!map.has(c.value)) map.set(c.value, c);
-    });
-    const options = Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
-    return [{ value: '', label: 'Select Color', disabled: true }, ...options];
-  }, [allProducts, selectedSupplier]);
+  const filteredColors = useMemo(
+    () => getFilteredColorsOptions(allProducts, selectedSupplier),
+    [allProducts, selectedSupplier]
+  );
+
+  // Color codes for selected supplier
+  const filteredColorCodes = useMemo(
+    () => getFilteredColorCodesOptions(allProducts, selectedSupplier),
+    [allProducts, selectedSupplier]
+  );
 
   // Auto-set color_code when color_name changes
   useEffect(() => {
@@ -219,20 +211,6 @@ const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }
     }
   }, [processedInitialValues, reset]);
 
-  // ── Auto-calculate possible_feet ──
-  useEffect(() => {
-    if (selectedType === 'Full Roll' || selectedType === 'Slitted') {
-      const s = parseFloat(watchSize) || 0;
-      const q = parseFloat(watchQuantity) || 0;
-      const cl = getPieceLength(watchChannelLength);
-
-      if (s > 0 && q > 0 && cl > 0) {
-        setValue('possible_feet', parseFloat(((s * q) / cl).toFixed(2)));
-      } else {
-        setValue('possible_feet', '');
-      }
-    }
-  }, [watchSize, watchQuantity, watchChannelLength, selectedType, setValue]);
 
   // ── Submit with nulled irrelevant fields ──
   const handleFormSubmit = (data) => {
@@ -241,6 +219,9 @@ const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }
       payload.hole_distance = null;
       payload.pieces = null;
       payload.length = null;
+      payload.channel_length = null;
+      // Don't send the formatted possible_feet to backend
+      payload.possible_feet = null;
     } else if (data.inventory_type === 'Ready Channel') {
       payload.channel_length = null;
       payload.size = null;
@@ -292,13 +273,18 @@ const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }
             displayEmpty
           />
 
-          <FormTextField
+          <FormSelectField
             control={control}
             name="color_code"
             id="color-code"
             label="Color Code *"
             rules={{ required: 'Color Code is required' }}
-            placeholder="e.g., WH-001, BK-002"
+            options={
+              productsLoading
+                ? [{ value: control._defaultValues.color_code || '', label: 'Loading color codes...', disabled: true }]
+                : filteredColorCodes
+            }
+            displayEmpty
           />
 
           <FormTextField
@@ -325,15 +311,6 @@ const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }
           {/* ── Section: Full Roll & Slitted (shared) ── */}
           {showRollSlittedFields && (
             <>
-              <FormSelectField
-                control={control}
-                name="channel_length"
-                id="channel-length"
-                label="Channel Length *"
-                rules={{ required: 'Channel Length is required' }}
-                options={channelLengthOptions}
-                displayEmpty
-              />
 
               <FormTextField
                 control={control}
@@ -361,16 +338,63 @@ const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }
                 onInputOverride={handleIntegerInput}
               />
 
-              <FormTextField
-                control={control}
-                name="possible_feet"
-                id="possible-feet"
-                label="Possible Feet in Production"
-                type="number"
-                placeholder="Possible Feet in Production"
-                readOnly
-                bgColor={palette.action.hover}
-              />
+              <Grid item xs={12} md={4}>
+                <CustomFormLabel>Possible Production</CustomFormLabel>
+                <Box sx={{ mt: 1 }}>
+                  {(() => {
+                    const s = parseFloat(watchSize) || 0;
+                    const q = parseFloat(watchQuantity) || 0;
+
+                    if (s > 0 && q > 0) {
+                      const calculation = calculateProductionDetails(s, q);
+                      const lengths = [
+                        { label: '4ft', color: 'primary' },
+                        { label: '6ft', color: 'success' },
+                        { label: '8ft', color: 'warning' }
+                      ];
+
+                      return (
+                        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+                          {lengths.map((length, index) => {
+                            const match = calculation.match(new RegExp(`${length.label}: ([\\d.]+) pcs`));
+                            const pieces = match ? match[1] : '0.0';
+                            return (
+                              <Chip
+                                key={index}
+                                label={`${length.label}: ${pieces} pcs`}
+                                color={length.color}
+                                variant="outlined"
+                                size="medium"
+                                sx={{
+                                  fontWeight: 500,
+                                  '& .MuiChip-label': {
+                                    px: 1
+                                  }
+                                }}
+                              />
+                            );
+                          })}
+                        </Stack>
+                      );
+                    } else {
+                      return (
+                        <CustomTextField
+                          value=""
+                          placeholder="Possible Production"
+                          disabled
+                          fullWidth
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: '8px',
+                              backgroundColor: palette.action.hover
+                            }
+                          }}
+                        />
+                      );
+                    }
+                  })()}
+                </Box>
+              </Grid>
             </>
           )}
 
