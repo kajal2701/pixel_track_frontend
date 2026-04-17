@@ -73,7 +73,6 @@ export const groupBySupplierColor = (items) => {
         supplier: item.supplier,
         color_name: item.color_name,
         color_code: item.color_code,
-        hole_distance: '',
         fullRoll_qty: 0,
         fullRoll_size: '',
         fullRoll_state: null,
@@ -87,9 +86,8 @@ export const groupBySupplierColor = (items) => {
         slitted_id: null,
         slitted_channel_length: '',
         ready_pieces: 0,
-        ready_length: '',
         ready_state: null,
-        ready_id: null,
+        ready_variants: [],
         ids: [],
       };
     }
@@ -112,16 +110,30 @@ export const groupBySupplierColor = (items) => {
       group.slitted_id = item.id;
       group.slitted_channel_length = item.channel_length || group.slitted_channel_length;
     } else if (item.inventory_type === 'Ready Channel') {
-      group.ready_pieces += parseFloat(item.pieces) || 0;
-      group.ready_length = item.length ? `${item.length} ft` : group.ready_length;
+      const readyPieces = parseFloat(item.pieces) || 0;
+      const itemLength = parseFloat(item.length);
+      const formattedLength = Number.isNaN(itemLength) ? null : parseFloat(itemLength.toFixed(2));
+      const holeDistance = item.hole_distance || '—';
+
+      group.ready_pieces += readyPieces;
       group.ready_state = item.state || group.ready_state;
-      group.ready_id = item.id;
-      group.hole_distance = item.hole_distance || group.hole_distance;
+      group.ready_variants.push({
+        id: item.id,
+        pieces: readyPieces,
+        length: formattedLength,
+        hole_distance: holeDistance,
+        state: item.state || null,
+      });
     }
   });
 
   return Object.values(map).map((g) => {
     const totalFeet = (g.fullRoll_feet || 0) + (g.slitted_feet || 0);
+    g.ready_variants.sort((a, b) => {
+      const aLen = a.length ?? Number.MAX_SAFE_INTEGER;
+      const bLen = b.length ?? Number.MAX_SAFE_INTEGER;
+      return aLen - bLen;
+    });
     return {
       ...g,
       possible_feet: totalFeet ? parseFloat(totalFeet.toFixed(2)) : 0,

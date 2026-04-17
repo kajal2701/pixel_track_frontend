@@ -58,19 +58,23 @@ const InventoryList = () => {
   const filtered = useMemo(() => {
     const q = searchTerm.toLowerCase();
     if (!q) return grouped;
-    return grouped.filter((row) =>
-      [
+    return grouped.filter((row) => {
+      const readySearchBlob = (row.ready_variants || [])
+        .map((v) => `${v.length ?? ''} ${v.pieces ?? ''} ${v.hole_distance ?? ''}`)
+        .join(' ');
+
+      return [
         row.supplier,
         row.color_name,
         row.color_code,
         row.channel_length,
-        row.hole_distance,
         String(row.fullRoll_qty),
         String(row.slitted_qty),
         String(row.ready_pieces),
         String(row.possible_feet),
-      ].some((f) => f?.toLowerCase().includes(q)),
-    );
+        readySearchBlob,
+      ].some((f) => String(f ?? '').toLowerCase().includes(q));
+    });
   }, [grouped, searchTerm]);
 
   // ── Summary counts ──

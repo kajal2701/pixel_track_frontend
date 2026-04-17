@@ -45,11 +45,9 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
       chipColor: 'success',
       qty: row.ready_pieces,
       state: row.ready_state,
-      itemId: row.ready_id,
+      itemId: null,
       details: [
-        { label: 'Pieces', value: row.ready_pieces },
-        { label: 'Length / Piece', value: row.ready_length || '—' },
-        { label: 'Hole Distance', value: row.hole_distance || '—' },
+        { label: 'Total Pieces', value: row.ready_pieces },
       ],
     },
   ];
@@ -201,6 +199,53 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
                             </Typography>
                           </Stack>
                         ))}
+
+                        {stage.label === 'Ready Channel' && (
+                          <Box sx={{ mt: 1.5 }}>
+                            {(row.ready_variants || []).length === 0 ? (
+                              <Typography variant="body2" color="text.secondary">
+                                No ready-channel variants found.
+                              </Typography>
+                            ) : (
+                              (row.ready_variants || []).map((variant) => (
+                                <Stack
+                                  key={variant.id}
+                                  direction="row"
+                                  alignItems="center"
+                                  justifyContent="space-between"
+                                  sx={{
+                                    py: 0.75,
+                                    borderBottom: '1px solid',
+                                    borderColor: 'divider',
+                                    '&:last-child': { borderBottom: 'none' },
+                                  }}
+                                >
+                                  <Typography variant="body2" color="text.secondary">
+                                    {`${variant.length ?? '—'} ft | ${variant.pieces} pcs | Hole ${variant.hole_distance}`}
+                                  </Typography>
+                                  <Stack direction="row" spacing={0.5}>
+                                    <IconButton
+                                      size="small"
+                                      sx={{ color: palette.info.main }}
+                                      onClick={(e) => { e.stopPropagation(); onEdit(variant.id); }}
+                                      title={`Edit Ready Channel ${variant.length ?? ''}ft`}
+                                    >
+                                      <Edit fontSize="small" />
+                                    </IconButton>
+                                    <IconButton
+                                      size="small"
+                                      sx={{ color: palette.error.main }}
+                                      onClick={(e) => { e.stopPropagation(); onDelete(variant.id, `Ready Channel ${variant.length ?? ''}ft`); }}
+                                      title={`Delete Ready Channel ${variant.length ?? ''}ft`}
+                                    >
+                                      <Delete fontSize="small" />
+                                    </IconButton>
+                                  </Stack>
+                                </Stack>
+                              ))
+                            )}
+                          </Box>
+                        )}
                       </Paper>
                     </Grid>
                   );
