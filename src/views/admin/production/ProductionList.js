@@ -7,6 +7,7 @@ import PageContainer from '../../../components/container/PageContainer';
 import ParentCard from '../../../components/shared/ParentCard';
 import ChildCard from '../../../components/shared/ChildCard';
 import DataTable from '../../../components/shared/DataTable';
+import DeleteProductionDialog from './DeleteProductionDialog';
 
 const ProductionList = () => {
   const theme = useTheme();
@@ -14,6 +15,9 @@ const ProductionList = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedProduction, setSelectedProduction] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Sample production data matching specifications
   const production = [
@@ -233,7 +237,7 @@ const ProductionList = () => {
   };
 
   const handleEditProduction = (item) => {
-    alert(`Edit production: ${item.id}`);
+    navigate(`/admin/production/edit/${item.id}`);
   };
 
   const handleStartProduction = (item) => {
@@ -251,9 +255,28 @@ const ProductionList = () => {
   };
 
   const handleDeleteProduction = (item) => {
-    if (window.confirm(`Delete production ${item.id}?`)) {
-      alert(`Production ${item.id} deleted!`);
+    setSelectedProduction(item);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async (production) => {
+    setDeleteLoading(true);
+    try {
+      // TODO: Replace with actual API call
+      console.log('Delete production:', production.id);
+      alert(`Production ${production.id} deleted!`);
+      setDeleteDialogOpen(false);
+      setSelectedProduction(null);
+    } catch (err) {
+      alert('Failed to delete production');
+    } finally {
+      setDeleteLoading(false);
     }
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setSelectedProduction(null);
   };
 
   return (
@@ -314,7 +337,7 @@ const ProductionList = () => {
       <Grid container spacing={3} mb={3}>
         <Grid item xs={12} sm={4}>
           <ChildCard title="Pending Production">
-            <Typography variant="h4" fontWeight="600" color="warning.main">
+            <Typography variant="h4" fontWeight={600} color="warning.main">
               {production.filter(item => item.status === 'pending').length}
             </Typography>
             <Typography variant="body2" color="textSecondary">
@@ -324,7 +347,7 @@ const ProductionList = () => {
         </Grid>
         <Grid item xs={12} sm={4}>
           <ChildCard title="In Production">
-            <Typography variant="h4" fontWeight="600" color="info.main">
+            <Typography variant="h4" fontWeight={600} color="info.main">
               {production.filter(item => item.status === 'in-progress').length}
             </Typography>
             <Typography variant="body2" color="textSecondary">
@@ -334,7 +357,7 @@ const ProductionList = () => {
         </Grid>
         <Grid item xs={12} sm={4}>
           <ChildCard title="Completed Today">
-            <Typography variant="h4" fontWeight="600" color="success.main">
+            <Typography variant="h4" fontWeight={600} color="success.main">
               {production.filter(item => item.status === 'completed').length}
             </Typography>
             <Typography variant="body2" color="textSecondary">
@@ -348,6 +371,15 @@ const ProductionList = () => {
       <ParentCard title="Production Management">
         <DataTable rows={rows} columns={columns} defaultRows={10} />
       </ParentCard>
+
+      {/* Delete Dialog */}
+      <DeleteProductionDialog
+        open={deleteDialogOpen}
+        production={selectedProduction}
+        onClose={handleCloseDeleteDialog}
+        onConfirm={handleConfirmDelete}
+        loading={deleteLoading}
+      />
     </PageContainer>
   );
 };

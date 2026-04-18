@@ -1,7 +1,13 @@
 // Status chip color mapping for order statuses
 export const STATUS_CHIP_COLOR = (status) =>
-({ Confirmed: 'success', Pending: 'warning', Ready: 'info', Cancelled: 'error' }[status] ||
-  'default');
+({
+  Confirmed: 'success',
+  Pending: 'warning',
+  'Awaiting production': 'primary',
+  'Awaiting material': 'secondary',
+  Ready: 'info',
+  Cancelled: 'error',
+}[status] || 'default');
 
 // Format date string to DD-MM-YYYY HH:MM format
 export const formatDate = (dateStr) => {
@@ -135,8 +141,20 @@ export const ORDER_TABLE_DATA = [
   {
     status: 'Confirmed',
     title: 'Confirmed Orders',
-    subtitle: 'Orders that have been approved and are in production.',
+    subtitle: 'Orders approved and ready for pickup or production request.',
     color: 'success'
+  },
+  {
+    status: 'Awaiting production',
+    title: 'Awaiting Production',
+    subtitle: 'Orders confirmed and waiting for production completion.',
+    color: 'primary',
+  },
+  {
+    status: 'Awaiting material',
+    title: 'Awaiting Material',
+    subtitle: 'Orders that need stock before production can start.',
+    color: 'secondary',
   },
   {
     status: 'Ready',
@@ -203,7 +221,9 @@ export const getEstimatedDeliveryDate = () => {
 export const getSummaryCardsData = (counts) => [
   { title: 'Total Orders', count: counts.total, sub: 'All orders', accent: 'primary.main', dot: 'primary.main', target: 'tables-container' },
   { title: 'Pending', count: counts.pending, sub: 'Awaiting confirmation', accent: 'warning.main', dot: 'warning.main', target: 'table-Pending' },
-  { title: 'Confirmed', count: counts.confirmed, sub: 'Ready for production', accent: 'success.main', dot: 'success.main', target: 'table-Confirmed' },
+  { title: 'Confirmed', count: counts.confirmed, sub: 'Confirmed orders', accent: 'success.main', dot: 'success.main', target: 'table-Confirmed' },
+  { title: 'Awaiting Prod.', count: counts.awaitingProduction, sub: 'Production requested', accent: 'primary.main', dot: 'primary.main', target: 'table-Awaiting-production' },
+  { title: 'Awaiting Material', count: counts.awaitingMaterial, sub: 'Need stock update', accent: 'secondary.main', dot: 'secondary.main', target: 'table-Awaiting-material' },
   { title: 'Ready', count: counts.ready, sub: 'Ready for dispatch', accent: 'info.main', dot: 'info.main', target: 'table-Ready' },
   { title: 'Cancelled', count: counts.cancelled, sub: 'Orders cancelled', accent: 'error.main', dot: 'error.main', target: 'table-Cancelled' },
 ];

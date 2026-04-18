@@ -37,6 +37,7 @@ const InventoryNew  = Loadable(lazy(() => import('../views/admin/inventory/Inven
 const InventoryEdit  = Loadable(lazy(() => import('../views/admin/inventory/InventoryEdit')));
 const ProductionList = Loadable(lazy(() => import('../views/admin/production/ProductionList')));
 const ProductionNew  = Loadable(lazy(() => import('../views/admin/production/ProductionNew')));
+const ProductionEdit = Loadable(lazy(() => import('../views/admin/production/ProductionEdit')));
 const CustomerList  = Loadable(lazy(() => import('../views/admin/customers/CustomerList')));
 const CustomerNew   = Loadable(lazy(() => import('../views/admin/customers/CustomerNew')));
 const CustomerEdit  = Loadable(lazy(() => import('../views/admin/customers/CustomerEdit')));
@@ -77,8 +78,9 @@ const Router = [
       { path: '/admin/inventory',      element: <ProtectedRoute allowedUserType="admin"><InventoryList /></ProtectedRoute> },
       { path: '/admin/inventory/new',  element: <ProtectedRoute allowedUserType="admin"><InventoryNew /></ProtectedRoute> },
       { path: '/admin/inventory/edit/:id', element: <ProtectedRoute allowedUserType="admin"><InventoryEdit /></ProtectedRoute> },
-      { path: '/admin/production',     element: <ProtectedRoute allowedUserType="admin"><ProductionList /></ProtectedRoute> },
-      { path: '/admin/production/new', element: <ProtectedRoute allowedUserType="admin"><ProductionNew /></ProtectedRoute> },
+      { path: '/admin/production',        element: <ProtectedRoute allowedUserType="admin"><ProductionList /></ProtectedRoute> },
+      { path: '/admin/production/new',    element: <ProtectedRoute allowedUserType="admin"><ProductionNew /></ProtectedRoute> },
+      { path: '/admin/production/edit/:id', element: <ProtectedRoute allowedUserType="admin"><ProductionEdit /></ProtectedRoute> },
       { path: '/admin/customers',      element: <ProtectedRoute allowedUserType="admin"><CustomerList /></ProtectedRoute> },
       { path: '/admin/customers/new',  element: <ProtectedRoute allowedUserType="admin"><CustomerNew /></ProtectedRoute> },
       { path: '/admin/customers/edit/:id', element: <ProtectedRoute allowedUserType="admin"><CustomerEdit /></ProtectedRoute> },

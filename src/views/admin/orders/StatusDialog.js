@@ -87,6 +87,9 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, loading }) => {
   if (!config) return null;
 
   const isConfirm = type === 'CONFIRM';
+  const hasShortage = isConfirm && inventoryResult && !inventoryResult.error && Number(inventoryResult.shortage || 0) > 0;
+  const needsProduction = isConfirm && inventoryResult && !inventoryResult.error && 
+    (Number(inventoryResult.slittedUsed || 0) > 0 || Number(inventoryResult.fullRollUsed || 0) > 0);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth={isConfirm ? 'sm' : 'xs'} fullWidth>
@@ -159,17 +162,45 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, loading }) => {
         >
           Cancel
         </Button>
-        <Button
-          onClick={() => onConfirm(type, order)}
-          variant="contained"
-          color={config.confirmColor}
-          disabled={loading}
-          sx={{ borderRadius: '8px', minWidth: 110 }}
-        >
-          {loading
-            ? <CircularProgress size={18} color="inherit" />
-            : config.confirmLabel}
-        </Button>
+        {!hasShortage && !needsProduction && (
+          <Button
+            onClick={() => onConfirm(type, order, { inventoryResult, action: 'confirm' })}
+            variant="contained"
+            color={config.confirmColor}
+            disabled={loading}
+            sx={{ borderRadius: '8px', minWidth: 110 }}
+          >
+            {loading
+              ? <CircularProgress size={18} color="inherit" />
+              : config.confirmLabel}
+          </Button>
+        )}
+        {needsProduction && !hasShortage && (
+          <Button
+            onClick={() => onConfirm(type, order, { inventoryResult, action: 'request-production' })}
+            variant="contained"
+            color="primary"
+            disabled={loading}
+            sx={{ borderRadius: '8px', minWidth: 200 }}
+          >
+            {loading
+              ? <CircularProgress size={18} color="inherit" />
+              : 'Confirm & Request for Production'}
+          </Button>
+        )}
+        {hasShortage && (
+          <Button
+            onClick={() => onConfirm(type, order, { inventoryResult, action: 'awaiting-material' })}
+            variant="outlined"
+            color="warning"
+            disabled={loading}
+            sx={{ borderRadius: '8px', minWidth: 150 }}
+          >
+            {loading
+              ? <CircularProgress size={18} color="inherit" />
+              : 'Awaiting Inventory'}
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );

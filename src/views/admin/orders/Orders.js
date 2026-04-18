@@ -14,6 +14,7 @@ import orderService from 'src/services/orderService';
 import StatusDialog from './StatusDialog';
 import NotesDialog from './NotesDialog';
 import NotesCell from './NotesCell';
+import ProductionRequestDialog from './ProductionRequestDialog';
 import { formatDate, ORDER_TABLE_DATA, getSummaryCardsData } from 'src/utils/helpers';
 
 const columns = [
@@ -43,6 +44,8 @@ const Orders = () => {
   const [searchTerms, setSearchTerms] = useState({
     Pending: '',
     Confirmed: '',
+    'Awaiting production': '',
+    'Awaiting material': '',
     Ready: '',
     Cancelled: ''
   });
@@ -52,6 +55,11 @@ const Orders = () => {
 
   // Notes dialog
   const [notesDialog, setNotesDialog] = useState({ open: false, order: null });
+  const [productionDialog, setProductionDialog] = useState({
+    open: false,
+    order: null,
+    inventoryResult: null,
+  });
 
   // ── Fetch once on mount ──────────────────────────────────
   useEffect(() => { fetchOrders(); }, []);
@@ -100,6 +108,8 @@ const Orders = () => {
     total: allOrders.length,
     pending: allOrders.filter((o) => o.order_status === 'Pending').length,
     confirmed: allOrders.filter((o) => o.order_status === 'Confirmed').length,
+    awaitingProduction: allOrders.filter((o) => o.order_status === 'Awaiting production').length,
+    awaitingMaterial: allOrders.filter((o) => o.order_status === 'Awaiting material').length,
     ready: allOrders.filter((o) => o.order_status === 'Ready').length,
     cancelled: allOrders.filter((o) => o.order_status === 'Cancelled').length,
   };
@@ -109,8 +119,12 @@ const Orders = () => {
   // ── Status dialog handlers ───────────────────────────────
   const openStatusDialog = (type, order) => setStatusDialog({ open: true, type, order });
   const closeStatusDialog = () => setStatusDialog({ open: false, type: null, order: null });
+  const openProductionDialog = (order, inventoryResult) =>
+    setProductionDialog({ open: true, order, inventoryResult });
+  const closeProductionDialog = () =>
+    setProductionDialog({ open: false, order: null, inventoryResult: null });
 
-  const handleStatusConfirm = async (type, order) => {
+  const handleStatusConfirm = async (type, order, options = {}) => {
     const statusMap = {
       CONFIRM: 'Confirmed',
       CANCEL: 'Cancelled',
@@ -133,6 +147,44 @@ const Orders = () => {
       return;
     }
 
+    if (type === 'CONFIRM' && options.action === 'awaiting-material') {
+      setActionLoading(true);
+      try {
+        const awaitingMaterialStatus = 'Awaiting material';
+        await orderService.updateStatus(order.id, awaitingMaterialStatus);
+        toast.success(`Order ${order.order_id} → ${awaitingMaterialStatus}`);
+        setAllOrders((prev) =>
+          prev.map((o) => o.id === order.id ? { ...o, order_status: awaitingMaterialStatus } : o)
+        );
+        closeStatusDialog();
+        navigate('/admin/inventory');
+      } catch (err) {
+        toast.error(err.message || 'Failed to move order to awaiting material.');
+      } finally {
+        setActionLoading(false);
+      }
+      return;
+    }
+
+    if (type === 'CONFIRM' && options.action === 'request-production') {
+      setActionLoading(true);
+      try {
+        // First confirm the order
+        await orderService.updateStatus(order.id, 'Confirmed');
+        toast.success(`Order ${order.order_id} → Confirmed`);
+        const updatedOrder = { ...order, order_status: 'Confirmed' };
+        setAllOrders((prev) => prev.map((o) => o.id === order.id ? updatedOrder : o));
+        closeStatusDialog();
+        // Then open production dialog
+        openProductionDialog(updatedOrder, options.inventoryResult);
+      } catch (err) {
+        toast.error(err.message || 'Failed to confirm order.');
+      } finally {
+        setActionLoading(false);
+      }
+      return;
+    }
+
     const newStatus = statusMap[type];
     if (!newStatus) return;
 
@@ -141,10 +193,18 @@ const Orders = () => {
       await orderService.updateStatus(order.id, newStatus);
       toast.success(`Order ${order.order_id} → ${newStatus}`);
       // Update locally — no re-fetch needed
-      setAllOrders((prev) =>
-        prev.map((o) => o.id === order.id ? { ...o, order_status: newStatus } : o)
-      );
+      const updatedOrder = { ...order, order_status: newStatus };
+      setAllOrders((prev) => prev.map((o) => o.id === order.id ? updatedOrder : o));
       closeStatusDialog();
+
+      const inventoryResult = options.inventoryResult || null;
+      const needsProduction = type === 'CONFIRM'
+        && inventoryResult
+        && ((inventoryResult.slittedUsed || 0) > 0 || (inventoryResult.fullRollUsed || 0) > 0);
+
+      if (needsProduction) {
+        openProductionDialog(updatedOrder, inventoryResult);
+      }
     } catch (err) {
       toast.error(err.message || 'Failed to update status.');
     } finally {
@@ -168,6 +228,30 @@ const Orders = () => {
       closeNotesDialog();
     } catch (err) {
       toast.error(err.message || 'Failed to save notes.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleProductionRequest = async (requestData) => {
+    setActionLoading(true);
+    try {
+      // Dummy flow step: hold slitted/full-roll and create production rows.
+      console.log('Production request payload:', requestData);
+      toast.success('Production request created and email sent to assigned person.');
+
+      // Order is already confirmed, just change to Awaiting production
+      const awaitingProductionStatus = 'Awaiting production';
+      await orderService.updateStatus(requestData.order.id, awaitingProductionStatus);
+      setAllOrders((prev) =>
+        prev.map((o) =>
+          o.id === requestData.order.id ? { ...o, order_status: awaitingProductionStatus } : o
+        )
+      );
+      closeProductionDialog();
+      navigate('/admin/production');
+    } catch (err) {
+      toast.error(err.message || 'Failed to request production.');
     } finally {
       setActionLoading(false);
     }
@@ -198,6 +282,29 @@ const Orders = () => {
           <>
             <IconButton size="small" sx={{ color: palette.info.main }} onClick={() => openStatusDialog('READY', order)} title="Mark Ready">
               <CheckCircle fontSize="small" />
+            </IconButton>
+            <IconButton size="small" sx={{ color: palette.error.main }} onClick={() => openStatusDialog('CANCEL', order)} title="Cancel">
+              <Close fontSize="small" />
+            </IconButton>
+          </>
+        )}
+        {order.order_status === 'Awaiting production' && (
+          <>
+            <IconButton size="small" sx={{ color: palette.info.main }} onClick={() => openStatusDialog('READY', order)} title="Mark Ready">
+              <CheckCircle fontSize="small" />
+            </IconButton>
+            <IconButton size="small" sx={{ color: palette.error.main }} onClick={() => openStatusDialog('CANCEL', order)} title="Cancel">
+              <Close fontSize="small" />
+            </IconButton>
+          </>
+        )}
+        {order.order_status === 'Awaiting material' && (
+          <>
+            <IconButton size="small" sx={{ color: palette.primary.main }} onClick={() => navigate('/admin/inventory')} title="Add Inventory">
+              <Add fontSize="small" />
+            </IconButton>
+            <IconButton size="small" sx={{ color: palette.warning.main }} onClick={() => openStatusDialog('REOPEN', order)} title="Move to Pending">
+              <Refresh fontSize="small" />
             </IconButton>
             <IconButton size="small" sx={{ color: palette.error.main }} onClick={() => openStatusDialog('CANCEL', order)} title="Cancel">
               <Close fontSize="small" />
@@ -297,9 +404,10 @@ const Orders = () => {
           {ORDER_TABLE_DATA.map(({ status, title, subtitle, color }) => {
             const currentRows = buildRows(getFilteredOrders(status));
             const themeColor = palette[color].main;
+            const tableId = `table-${status.replace(/\s+/g, '-')}`;
             return (
               <Card
-                id={`table-${status}`}
+                id={tableId}
                 key={status}
                 variant="outlined"
                 sx={{
@@ -369,6 +477,15 @@ const Orders = () => {
         order={notesDialog.order}
         onClose={closeNotesDialog}
         onSave={handleSaveNotes}
+        loading={actionLoading}
+      />
+
+      <ProductionRequestDialog
+        open={productionDialog.open}
+        order={productionDialog.order}
+        inventoryResult={productionDialog.inventoryResult}
+        onClose={closeProductionDialog}
+        onSubmit={handleProductionRequest}
         loading={actionLoading}
       />
 
