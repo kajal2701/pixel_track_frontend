@@ -88,7 +88,7 @@ const InventoryBreakdown = ({ result }) => {
                 </Typography>
               </Stack>
               <Chip
-                label={`${s.used} pcs used`}
+                label={`${s.used} pcs allocated`}
                 size="small"
                 color={s.chipColor}
                 variant={s.used > 0 ? 'filled' : 'outlined'}

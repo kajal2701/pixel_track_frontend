@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Typography, Button, TextField, InputAdornment, Chip, IconButton, FormControl, InputLabel, Select, MenuItem, Stack, Grid } from '@mui/material';
-import { Search, Add, Edit, Delete, Visibility, FilterList, PlayArrow, Pause } from '@mui/icons-material';
+import { Search, Add, Edit, Delete, Visibility, FilterList, PlayArrow, CheckCircle, Cancel as CancelIcon } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import PageContainer from '../../../components/container/PageContainer';
@@ -8,6 +8,8 @@ import ParentCard from '../../../components/shared/ParentCard';
 import ChildCard from '../../../components/shared/ChildCard';
 import DataTable from '../../../components/shared/DataTable';
 import DeleteProductionDialog from './DeleteProductionDialog';
+import StatusUpdateDialog from './StatusUpdateDialog';
+import toast from 'react-hot-toast';
 
 const ProductionList = () => {
   const theme = useTheme();
@@ -18,11 +20,14 @@ const ProductionList = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedProduction, setSelectedProduction] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [statusDialog, setStatusDialog] = useState({ open: false, production: null, newStatus: null });
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [productionData, setProductionData] = useState(null); // will be set after initial load
 
   // Sample production data matching specifications
-  const production = [
-    { 
-      id: 'PROD-001', 
+  const sampleProduction = [
+    {
+      id: 'PROD-001',
       orderNumber: 'ORD-2024-001',
       rawMaterial: 'White Full Roll (WH001)',
       state: 'In Production',
@@ -38,8 +43,8 @@ const ProductionList = () => {
       status: 'in-progress',
       priority: 'high'
     },
-    { 
-      id: 'PROD-002', 
+    {
+      id: 'PROD-002',
       orderNumber: 'ORD-2024-002',
       rawMaterial: 'Black Full Roll (BK002)',
       state: 'Completed',
@@ -55,8 +60,8 @@ const ProductionList = () => {
       status: 'completed',
       priority: 'medium'
     },
-    { 
-      id: 'PROD-003', 
+    {
+      id: 'PROD-003',
       orderNumber: 'ORD-2024-003',
       rawMaterial: 'Red Full Roll (RD003)',
       state: 'Pending',
@@ -72,8 +77,8 @@ const ProductionList = () => {
       status: 'pending',
       priority: 'low'
     },
-    { 
-      id: 'PROD-004', 
+    {
+      id: 'PROD-004',
       orderNumber: 'PROD-STOCK-001',
       rawMaterial: 'Blue Full Roll (BL004)',
       state: 'In Production',
@@ -90,6 +95,15 @@ const ProductionList = () => {
       priority: 'medium'
     }
   ];
+
+  // Use local state so status updates reflect immediately
+  const production = productionData || sampleProduction;
+  const setProduction = (updater) => {
+    setProductionData((prev) => {
+      const current = prev || sampleProduction;
+      return typeof updater === 'function' ? updater(current) : updater;
+    });
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -112,66 +126,66 @@ const ProductionList = () => {
 
   // Filter production based on search and status
   const filteredProduction = production.filter(item => {
-    const matchesSearch = 
+    const matchesSearch =
       item.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.rawMaterial.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.technician.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.id.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = filterStatus === 'all' || item.status === filterStatus;
-    
+
     return matchesSearch && matchesStatus;
   });
 
   // DataTable column definitions
   const columns = [
-    { 
-      field: 'id', 
-      label: 'Production ID', 
-      bold: true, 
-      width: '15%' 
+    {
+      field: 'id',
+      label: 'Production ID',
+      bold: true,
+      width: '15%'
     },
-    { 
-      field: 'orderNumber', 
-      label: 'Order Number', 
-      width: '15%' 
+    {
+      field: 'orderNumber',
+      label: 'Order Number',
+      width: '15%'
     },
-    { 
-      field: 'rawMaterial', 
-      label: 'Raw Material', 
-      width: '20%' 
+    {
+      field: 'rawMaterial',
+      label: 'Raw Material',
+      width: '20%'
     },
-    { 
-      field: 'state', 
-      label: 'State', 
-      type: 'chip', 
-      chipColor: getStatusColor, 
-      width: '12%' 
+    {
+      field: 'state',
+      label: 'State',
+      type: 'chip',
+      chipColor: getStatusColor,
+      width: '12%'
     },
-    { 
-      field: 'slittedOutput', 
-      label: 'Slitted Output', 
-      width: '12%' 
+    {
+      field: 'slittedOutput',
+      label: 'Slitted Output',
+      width: '12%'
     },
-    { 
-      field: 'readyChannelOutput', 
-      label: 'Ready Channel', 
-      width: '12%' 
+    {
+      field: 'readyChannelOutput',
+      label: 'Ready Channel',
+      width: '12%'
     },
-    { 
-      field: 'waste', 
-      label: 'Waste', 
-      width: '8%' 
+    {
+      field: 'waste',
+      label: 'Waste',
+      width: '8%'
     },
-    { 
-      field: 'technician', 
-      label: 'Technician', 
-      width: '12%' 
+    {
+      field: 'technician',
+      label: 'Technician',
+      width: '12%'
     },
-    { 
-      field: 'actions', 
-      label: 'Actions', 
-      width: '14%' 
+    {
+      field: 'actions',
+      label: 'Actions',
+      width: '14%'
     }
   ];
 
@@ -183,45 +197,56 @@ const ProductionList = () => {
     waste: item.waste > 0 ? `${item.waste}ft` : 'None',
     actions: (
       <Stack direction="row" gap={0.5} flexWrap="wrap">
-        <IconButton 
-          size="small" 
-          sx={{ color: palette.info.main }}
-          onClick={() => handleViewProduction(item)}
-          title="View Details"
-        >
-          <Visibility fontSize="small" />
-        </IconButton>
-        <IconButton 
-          size="small" 
+        <IconButton
+          size="small"
           sx={{ color: palette.primary.main }}
           onClick={() => handleEditProduction(item)}
           title="Edit Production"
         >
           <Edit fontSize="small" />
         </IconButton>
-        {item.status === 'in-progress' ? (
-          <IconButton 
-            size="small" 
-            sx={{ color: palette.warning.main }}
-            onClick={() => handlePauseProduction(item)}
-            title="Pause Production"
+        {item.status === 'pending' && (
+          <IconButton
+            size="small"
+            sx={{ color: palette.success.main }}
+            onClick={() => openStatusDialog(item, 'In Progress')}
+            title="Start Production"
           >
-            <Pause fontSize="small" />
+            <PlayArrow fontSize="small" />
           </IconButton>
-        ) : (
-          item.status === 'pending' && (
-            <IconButton 
-              size="small" 
-              sx={{ color: palette.success.main }}
-              onClick={() => handleStartProduction(item)}
-              title="Start Production"
-            >
-              <PlayArrow fontSize="small" />
-            </IconButton>
-          )
         )}
-        <IconButton 
-          size="small" 
+        {item.status === 'in-progress' && (
+          <IconButton
+            size="small"
+            sx={{ color: palette.success.main }}
+            onClick={() => openStatusDialog(item, 'Completed')}
+            title="Mark Completed"
+          >
+            <CheckCircle fontSize="small" />
+          </IconButton>
+        )}
+        {(item.status === 'pending' || item.status === 'in-progress') && (
+          <IconButton
+            size="small"
+            sx={{ color: palette.warning.main }}
+            onClick={() => openStatusDialog(item, 'Cancelled')}
+            title="Cancel Production"
+          >
+            <CancelIcon fontSize="small" />
+          </IconButton>
+        )}
+        {item.status === 'cancelled' && (
+          <IconButton
+            size="small"
+            sx={{ color: palette.warning.main }}
+            onClick={() => openStatusDialog(item, 'Pending')}
+            title="Reopen Production"
+          >
+            <PlayArrow fontSize="small" />
+          </IconButton>
+        )}
+        <IconButton
+          size="small"
           sx={{ color: palette.error.main }}
           onClick={() => handleDeleteProduction(item)}
           title="Delete Production"
@@ -240,18 +265,42 @@ const ProductionList = () => {
     navigate(`/admin/production/edit/${item.id}`);
   };
 
-  const handleStartProduction = (item) => {
-    if (window.confirm(`Start production for ${item.id}?`)) {
-      item.status = 'in-progress';
-      alert(`Production ${item.id} started!`);
-    }
+  // ── Status Dialog Handlers ──
+  const openStatusDialog = (item, newStatus) => {
+    setStatusDialog({ open: true, production: item, newStatus });
   };
 
-  const handlePauseProduction = (item) => {
-    if (window.confirm(`Pause production for ${item.id}?`)) {
-      item.status = 'pending';
-      alert(`Production ${item.id} paused!`);
-    }
+  const closeStatusDialog = () => {
+    setStatusDialog({ open: false, production: null, newStatus: null });
+  };
+
+  const handleStatusConfirm = (prod, newStatus) => {
+    setStatusLoading(true);
+    // Map display status to internal status key
+    const statusMap = {
+      'Pending': 'pending',
+      'In Progress': 'in-progress',
+      'Completed': 'completed',
+      'Cancelled': 'cancelled',
+    };
+    const stateMap = {
+      'Pending': 'Pending',
+      'In Progress': 'In Production',
+      'Completed': 'Completed',
+      'Cancelled': 'Cancelled',
+    };
+    const newInternalStatus = statusMap[newStatus] || 'pending';
+    const newState = stateMap[newStatus] || 'Pending';
+
+    // Update local state
+    setProduction((prev) =>
+      prev.map((p) =>
+        p.id === prod.id ? { ...p, status: newInternalStatus, state: newState } : p
+      )
+    );
+    toast.success(`Production ${prod.id} → ${newStatus}`);
+    setStatusLoading(false);
+    closeStatusDialog();
   };
 
   const handleDeleteProduction = (item) => {
@@ -379,6 +428,16 @@ const ProductionList = () => {
         onClose={handleCloseDeleteDialog}
         onConfirm={handleConfirmDelete}
         loading={deleteLoading}
+      />
+
+      {/* Status Update Dialog */}
+      <StatusUpdateDialog
+        open={statusDialog.open}
+        production={statusDialog.production}
+        newStatus={statusDialog.newStatus}
+        onClose={closeStatusDialog}
+        onConfirm={handleStatusConfirm}
+        loading={statusLoading}
       />
     </PageContainer>
   );

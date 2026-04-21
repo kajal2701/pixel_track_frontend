@@ -222,6 +222,10 @@ const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }
       payload.channel_length = null;
       // Don't send the formatted possible_feet to backend
       payload.possible_feet = null;
+
+      if (data.inventory_type === 'Slitted') {
+        payload.price = null;
+      }
     } else if (data.inventory_type === 'Ready Channel') {
       payload.channel_length = null;
       payload.size = null;
@@ -287,18 +291,6 @@ const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }
             displayEmpty
           />
 
-          <FormTextField
-            control={control}
-            name="price"
-            id="price"
-            label="Price *"
-            rules={decimalRules('Price')}
-            type="number"
-            placeholder="Enter price"
-            inputProps={{ step: '0.01', min: '0' }}
-            onChangeOverride={handleDecimalChange}
-          />
-
           <FormSelectField
             control={control}
             name="inventory_type"
@@ -307,6 +299,20 @@ const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }
             rules={{ required: 'Inventory Type is required' }}
             options={inventoryTypeOptions}
           />
+
+          {selectedType !== 'Slitted' && (
+            <FormTextField
+              control={control}
+              name="price"
+              id="price"
+              label="Price *"
+              rules={decimalRules('Price')}
+              type="number"
+              placeholder="Enter price"
+              inputProps={{ step: '0.01', min: '0' }}
+              onChangeOverride={handleDecimalChange}
+            />
+          )}
 
           {/* ── Section: Full Roll & Slitted (shared) ── */}
           {showRollSlittedFields && (

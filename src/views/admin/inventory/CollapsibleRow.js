@@ -91,7 +91,7 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
             {stages.map((s) => {
               const status = getStatusInfo(s.state, s.qty);
               let displayValue = s.qty;
-              
+
               // Show total feet for Full Roll and Slitted
               if (s.label === 'Full Roll' && row.fullRoll_size && row.fullRoll_qty) {
                 const totalFeet = (parseFloat(row.fullRoll_size) * parseFloat(row.fullRoll_qty)).toFixed(1);
@@ -100,7 +100,7 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
                 const totalFeet = (parseFloat(row.slitted_size) * parseFloat(row.slitted_qty)).toFixed(1);
                 displayValue = `${totalFeet} ft`;
               }
-              
+
               return (
                 <Chip
                   key={s.label}
@@ -201,7 +201,7 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
                         ))}
 
                         {stage.label === 'Ready Channel' && (
-                          <Box sx={{ mt: 1.5 }}>
+                          <Box >
                             {(row.ready_variants || []).length === 0 ? (
                               <Typography variant="body2" color="text.secondary">
                                 No ready-channel variants found.
@@ -214,7 +214,7 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
                                   alignItems="center"
                                   justifyContent="space-between"
                                   sx={{
-                                    py: 0.75,
+                                    py: 0.15,
                                     borderBottom: '1px solid',
                                     borderColor: 'divider',
                                     '&:last-child': { borderBottom: 'none' },

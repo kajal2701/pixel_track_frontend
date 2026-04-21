@@ -14,8 +14,9 @@ const ProductionNew = () => {
   const onSubmit = async (data) => {
     setLoading(true);
     try {
+      const payload = { ...data, status: data.status || 'Pending' };
       // TODO: Replace with actual API call
-      console.log('Add New Production record:', data);
+      console.log('Add New Production record:', payload);
       toast.success('Production record created successfully!');
       navigate('/admin/production');
     } catch (err) {

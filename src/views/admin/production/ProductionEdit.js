@@ -21,8 +21,20 @@ const ProductionEdit = () => {
         // TODO: Replace with actual API call
         // const response = await productionService.getProductionById(id);
         // setProduction(response.data);
-        
-        // Mock data for now
+
+        // Mock data for now — includes status for the stepper
+        setProduction({
+          id,
+          productionType: 'Inventory',
+          orderNumber: '',
+          rawMaterial: '',
+          targetState: 'Slitted',
+          slittedQuantity: 2,
+          slittedSize: '50 ft',
+          readyChannelLength: '',
+          wasteQuantity: 0,
+          status: 'Pending',
+        });
         setFetchLoading(false);
       } catch (err) {
         if (err.message?.includes('not found')) {
