@@ -40,6 +40,27 @@ const columns = [
     },
   },
   { field: 'stock', label: 'Stock', width: '100px', minWidth: '100px' },
+  {
+    field: 'full_roll_length',
+    label: 'Roll Length',
+    width: '120px',
+    minWidth: '120px',
+    render: (row) => row.full_roll_length != null ? `${row.full_roll_length} ft` : '98 ft',
+  },
+  {
+    field: 'slits_per_roll',
+    label: 'Slits/Roll',
+    width: '110px',
+    minWidth: '110px',
+    render: (row) => row.slits_per_roll != null ? `× ${row.slits_per_roll}` : '× 6',
+  },
+  {
+    field: 'slitted_roll_length',
+    label: 'Slit Length',
+    width: '120px',
+    minWidth: '120px',
+    render: (row) => row.slitted_roll_length != null ? `${row.slitted_roll_length} ft` : '98 ft',
+  },
   { field: 'created_at', label: 'Created', width: '160px', minWidth: '160px' },
   { field: 'actions', label: 'Actions', width: '120px', minWidth: '120px' },
 ];

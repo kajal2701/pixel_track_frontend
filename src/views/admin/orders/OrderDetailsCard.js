@@ -23,10 +23,10 @@ const OrderDetailsCard = ({ order }) => {
           Channel Type: <strong>{order.channel_type || '—'}</strong>
         </Typography>
         <Typography variant="caption" color="text.secondary">
-          Channel Length: <strong>{order.channel_length || '—'}</strong>
+          Channel Length: <strong>{order.channel_length ? `${order.channel_length} ft (${order.hole_distance || Math.round(order.channel_length * 1.5)} Holes)` : '—'}</strong>
         </Typography>
         <Typography variant="caption" color="text.secondary">
-          Hole Distance: <strong>{order.hole_distance ? `${order.hole_distance}"` : '—'}</strong>
+          Holes: <strong>{order.hole_distance || '—'}</strong>
         </Typography>
         <Typography variant="caption" color="text.secondary">
           Total Length: <strong>{order.total_length ? `${order.total_length} ft` : '—'}</strong>

@@ -11,6 +11,7 @@ import PageContainer from 'src/components/container/PageContainer';
 import Breadcrumb from 'src/layouts/full/shared/breadcrumb/Breadcrumb';
 import DataTable from 'src/components/shared/DataTable';
 import orderService from 'src/services/orderService';
+import productionService from 'src/services/productionService';
 import StatusDialog from './StatusDialog';
 import NotesDialog from './NotesDialog';
 import NotesCell from './NotesCell';
@@ -153,9 +154,7 @@ const Orders = () => {
         const awaitingMaterialStatus = 'Awaiting material';
         await orderService.updateStatus(order.id, awaitingMaterialStatus);
         toast.success(`Order ${order.order_id} → ${awaitingMaterialStatus}`);
-        setAllOrders((prev) =>
-          prev.map((o) => o.id === order.id ? { ...o, order_status: awaitingMaterialStatus } : o)
-        );
+        await fetchOrders();
         closeStatusDialog();
         navigate('/admin/inventory');
       } catch (err) {
@@ -169,14 +168,29 @@ const Orders = () => {
     if (type === 'CONFIRM' && options.action === 'request-production') {
       setActionLoading(true);
       try {
-        // First confirm the order
-        await orderService.updateStatus(order.id, 'Confirmed');
+        // First confirm the order so it holds any Ready Channel parts
+        await orderService.confirmOrder(order.id);
         toast.success(`Order ${order.order_id} → Confirmed`);
+        await fetchOrders();
         const updatedOrder = { ...order, order_status: 'Confirmed' };
-        setAllOrders((prev) => prev.map((o) => o.id === order.id ? updatedOrder : o));
         closeStatusDialog();
         // Then open production dialog
         openProductionDialog(updatedOrder, options.inventoryResult);
+      } catch (err) {
+        toast.error(err.message || 'Failed to confirm order.');
+      } finally {
+        setActionLoading(false);
+      }
+      return;
+    }
+
+    if (type === 'CONFIRM' && (!options.action || options.action === 'confirm')) {
+      setActionLoading(true);
+      try {
+        await orderService.confirmOrder(order.id);
+        toast.success(`Order ${order.order_id} → Confirmed`);
+        await fetchOrders();
+        closeStatusDialog();
       } catch (err) {
         toast.error(err.message || 'Failed to confirm order.');
       } finally {
@@ -192,9 +206,8 @@ const Orders = () => {
     try {
       await orderService.updateStatus(order.id, newStatus);
       toast.success(`Order ${order.order_id} → ${newStatus}`);
-      // Update locally — no re-fetch needed
+      await fetchOrders();
       const updatedOrder = { ...order, order_status: newStatus };
-      setAllOrders((prev) => prev.map((o) => o.id === order.id ? updatedOrder : o));
       closeStatusDialog();
 
       const inventoryResult = options.inventoryResult || null;
@@ -221,10 +234,7 @@ const Orders = () => {
     try {
       await orderService.updateNotes(order.id, notes);
       toast.success('Notes saved.');
-      // Update locally
-      setAllOrders((prev) =>
-        prev.map((o) => o.id === order.id ? { ...o, additional_notes: notes } : o)
-      );
+      await fetchOrders();
       closeNotesDialog();
     } catch (err) {
       toast.error(err.message || 'Failed to save notes.');
@@ -236,18 +246,29 @@ const Orders = () => {
   const handleProductionRequest = async (requestData) => {
     setActionLoading(true);
     try {
-      // Dummy flow step: hold slitted/full-roll and create production rows.
-      console.log('Production request payload:', requestData);
-      toast.success('Production request created and email sent to assigned person.');
+      const { order, inventoryResult, assignee, notes } = requestData;
+
+      const payload = {
+        order_id: order.order_id,
+        color: order.color,
+        channel_length: order.channel_length,
+        needs: {
+          slittedPieces: inventoryResult?.slittedUsed || 0,
+          fullRollPieces: inventoryResult?.fullRollUsed || 0,
+        },
+        assignee: assignee?.name || '',
+        source_type: ((inventoryResult?.slittedUsed || 0) > 0) ? 'Slitted' : 'Full Roll',
+        notes: notes || ''
+      };
+
+
+      await productionService.createProductionRequest(payload);
+      toast.success('Production request created.');
 
       // Order is already confirmed, just change to Awaiting production
       const awaitingProductionStatus = 'Awaiting production';
-      await orderService.updateStatus(requestData.order.id, awaitingProductionStatus);
-      setAllOrders((prev) =>
-        prev.map((o) =>
-          o.id === requestData.order.id ? { ...o, order_status: awaitingProductionStatus } : o
-        )
-      );
+      await orderService.updateStatus(order.id, awaitingProductionStatus);
+      await fetchOrders();
       closeProductionDialog();
       navigate('/admin/production');
     } catch (err) {

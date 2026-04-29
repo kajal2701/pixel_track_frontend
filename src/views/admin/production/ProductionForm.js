@@ -4,100 +4,34 @@ import {
   FormHelperText, RadioGroup, FormControlLabel, Radio,
   FormControl, CircularProgress, Divider, Alert, Chip, Stack
 } from '@mui/material';
-import { Save, Cancel, InfoOutlined, ArrowForward, HourglassEmpty, PlayArrow, CheckCircle, Cancel as CancelIcon } from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles';
+import { Save, Cancel, InfoOutlined, ArrowForward } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import CustomTextField from '../../../components/forms/theme-elements/CustomTextField';
 import CustomFormLabel from '../../../components/forms/theme-elements/CustomFormLabel';
 import CustomSelect from '../../../components/forms/theme-elements/CustomSelect';
 import inventoryService from '../../../services/inventoryService';
-import orderService from '../../../services/orderService'; // adjust import as needed
+import productService from '../../../services/productService';
 import toast from 'react-hot-toast';
-import { READY_CHANNEL_LENGTH_OPTIONS, getPieceLength } from 'src/utils/helpers';
+import { CHANNEL_LENGTH_OPTIONS, getPieceLength } from 'src/utils/helpers';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const DEFAULT_VALUES = {
-  productionType: 'Order',
+  productionType: 'General Inventory',
   orderNumber: '',
   rawMaterial: '',
-  targetState: 'Slitted',
-  slittedQuantity: '',
-  slittedSize: '',
-  readyChannelLength: '',
-  wasteQuantity: 0,
-  status: 'Pending',
+  targetState: 'Ready Channel',
+  qty: '',
+  size: '',
+  channelLength: '',
+  wasteQty: 0,
+  assignee: '',
+  notes: '',
 };
 
-const PRODUCTION_STATUSES = [
-  { value: 'Pending', label: 'Pending', color: 'warning', icon: <HourglassEmpty fontSize="small" /> },
-  { value: 'In Progress', label: 'In Progress', color: 'info', icon: <PlayArrow fontSize="small" /> },
-  { value: 'Completed', label: 'Completed', color: 'success', icon: <CheckCircle fontSize="small" /> },
-  { value: 'Cancelled', label: 'Cancelled', color: 'error', icon: <CancelIcon fontSize="small" /> },
-];
+// ─── Output Preview ─────────────────────────────────────────────────────────
 
-// ─── Output Preview Calculator ─────────────────────────────────────────────────
-
-const OutputPreview = ({ selectedItem, targetState, slittedQuantity, slittedSize, readyChannelLength }) => {
-  const preview = useMemo(() => {
-    if (!selectedItem) return null;
-
-    const totalLength = parseFloat(selectedItem.length) || parseFloat(selectedItem.size) || 0;
-    const availableQty = parseFloat(selectedItem.quantity) || 0;
-    const inventoryType = selectedItem.inventory_type || '';
-
-    if (targetState === 'Slitted') {
-      const qty = parseInt(slittedQuantity) || 0;
-      const sizeStr = slittedSize || '';
-      const sizeMatch = sizeStr.match(/[\d.]+/);
-      const sizeNum = sizeMatch ? parseFloat(sizeMatch[0]) : 0;
-
-      if (qty > 0 && sizeNum > 0) {
-        const totalOutput = qty * sizeNum;
-
-        return {
-          inputLabel: inventoryType === 'Full Roll'
-            ? `${availableQty} full roll(s) (${totalLength} ft each)`
-            : `${availableQty} pieces (${totalLength} ft each)`,
-          outputLabel: `${qty} slitted roll(s) × ${sizeNum} ft = ${totalOutput} ft`,
-
-          valid: totalOutput <= totalLength * availableQty,
-        };
-      }
-      return {
-        inputLabel: inventoryType === 'Full Roll'
-          ? `${availableQty} full roll(s) (${totalLength} ft each)`
-          : `${availableQty} pieces (${totalLength} ft each)`,
-        outputLabel: 'Enter quantity & size to see output',
-
-        valid: true,
-      };
-    }
-
-    if (targetState === 'Ready Channel') {
-      const chLenFt = getPieceLength(readyChannelLength);
-      if (chLenFt > 0 && totalLength > 0) {
-        const piecesPerRoll = Math.floor(totalLength / chLenFt);
-        const totalPieces = piecesPerRoll * availableQty;
-
-        return {
-          inputLabel: `${availableQty} piece(s) (${totalLength} ft each)`,
-          outputLabel: `${totalPieces} channel piece(s) × ${chLenFt} ft (${piecesPerRoll}/piece)`,
-
-          valid: true,
-        };
-      }
-      return {
-        inputLabel: `${availableQty} piece(s) (${totalLength} ft each)`,
-        outputLabel: 'Select channel length to see output',
-
-        valid: true,
-      };
-    }
-
-    return null;
-  }, [selectedItem, targetState, slittedQuantity, slittedSize, readyChannelLength]);
-
+const OutputPreview = ({ preview }) => {
   if (!preview) return null;
 
   return (
@@ -109,7 +43,6 @@ const OutputPreview = ({ selectedItem, targetState, slittedQuantity, slittedSize
         flexWrap: 'wrap',
         p: 1.5,
         borderRadius: '10px',
-        bgcolor: 'primary.lighter',
         border: '1px solid',
         borderColor: preview.valid ? 'primary.light' : 'error.light',
         bgcolor: preview.valid ? 'primary.lighter' : 'error.lighter',
@@ -128,38 +61,12 @@ const OutputPreview = ({ selectedItem, targetState, slittedQuantity, slittedSize
   );
 };
 
-// ─── Order Detail Display (read-only) ─────────────────────────────────────────
-
-const OrderDetail = ({ label, value }) => (
-  <Box>
-    <CustomFormLabel sx={{ mt: 0, mb: 0.5, fontSize: '0.75rem', color: 'text.secondary' }}>
-      {label}
-    </CustomFormLabel>
-    <Box
-      sx={{
-        px: 1.5, py: 1, borderRadius: '8px',
-        border: '1px solid', borderColor: 'divider',
-        bgcolor: 'action.hover', minHeight: 40,
-        display: 'flex', alignItems: 'center',
-      }}
-    >
-      <Typography variant="body2" fontWeight={500}>{value || '—'}</Typography>
-    </Box>
-  </Box>
-);
-
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 const ProductionForm = ({ production, onSubmit, loading, isEdit = false, onCancel }) => {
-  const theme = useTheme();
-  const { palette } = theme;
-
   const [inventoryItems, setInventoryItems] = useState([]);
   const [inventoryLoading, setInventoryLoading] = useState(false);
-
-  // For Order type: order details fetched from API
-  const [orderDetails, setOrderDetails] = useState(null);
-  const [orderLoading, setOrderLoading] = useState(false);
+  const [allProducts, setAllProducts] = useState([]);
 
   const {
     control,
@@ -175,33 +82,32 @@ const ProductionForm = ({ production, onSubmit, loading, isEdit = false, onCance
   const selectedType = watch('productionType');
   const targetState = watch('targetState');
   const selectedRawMaterial = watch('rawMaterial');
-  const slittedQuantity = watch('slittedQuantity');
-  const slittedSize = watch('slittedSize');
-  const readyChannelLength = watch('readyChannelLength');
-  const orderNumber = watch('orderNumber');
-  const currentStatus = watch('status');
+  const qty = watch('qty');
+  const size = watch('size');
+  const channelLength = watch('channelLength');
 
   // ── Reset on edit/new ──
   useEffect(() => {
+
     if (production && isEdit) {
       reset({
-        productionType: production.productionType || 'Order',
+        productionType: production.productionType || 'General Inventory',
         orderNumber: production.orderNumber || '',
         rawMaterial: production.rawMaterial || '',
-        targetState: production.targetState || 'Slitted',
-        slittedQuantity: production.slittedQuantity || '',
-        slittedSize: production.slittedSize || '',
-        readyChannelLength: production.readyChannelLength || '',
-        wasteQuantity: production.wasteQuantity || 0,
-        status: production.status || 'Pending',
+        targetState: production.targetState || 'Ready Channel',
+        qty: production.qty || '',
+        size: production.size || '',
+        channelLength: production.channelLength || '',
+        wasteQty: production.wasteQty || 0,
+        assignee: production.assignee || '',
+        notes: production.notes || '',
       });
     } else if (!isEdit) {
       reset(DEFAULT_VALUES);
-      setOrderDetails(null);
     }
   }, [production, isEdit, reset]);
 
-  // ── Fetch inventory (for Inventory type) ──
+  // ── Fetch inventory ──
   useEffect(() => {
     const fetchInventory = async () => {
       setInventoryLoading(true);
@@ -217,85 +123,133 @@ const ProductionForm = ({ production, onSubmit, loading, isEdit = false, onCance
     fetchInventory();
   }, []);
 
-  // ── Fetch order details when Order type + orderNumber filled ──
+  // ── Fetch products for supplier config ──
   useEffect(() => {
-    if (selectedType !== 'Order' || !orderNumber?.trim()) {
-      setOrderDetails(null);
-      return;
-    }
-    const timeout = setTimeout(async () => {
-      setOrderLoading(true);
+    const fetchProducts = async () => {
       try {
-        // Adjust this call to your actual order service method
-        const response = await orderService.getProductionDetailsByOrder(orderNumber.trim());
-        setOrderDetails(response.data || null);
-        if (response.data) {
-          // Optionally auto-fill fields from order
-          setValue('rawMaterial', response.data.rawMaterialId || '');
-          setValue('targetState', response.data.targetState || 'Slitted');
-        }
-      } catch {
-        setOrderDetails(null);
-      } finally {
-        setOrderLoading(false);
-      }
-    }, 500);
-    return () => clearTimeout(timeout);
-  }, [orderNumber, selectedType, setValue]);
+        const response = await productService.getAllProducts();
+        setAllProducts(response.data || []);
+      } catch (err) { /* silent */ }
+    };
+    fetchProducts();
+  }, []);
 
-  // ── Filtered inventory: only Full Roll + Slitted ──
-  const filteredInventory = useMemo(
-    () => inventoryItems.filter((item) =>
-      item.inventory_type === 'Full Roll' || item.inventory_type === 'Slitted'
-    ),
-    [inventoryItems]
-  );
-
-  // ── Selected inventory item helpers ──
+  // ── Selected inventory item ──
   const selectedItem = useMemo(
     () => inventoryItems.find((i) => i.id === selectedRawMaterial) || null,
     [inventoryItems, selectedRawMaterial]
   );
-  const availableQty = selectedItem ? parseFloat(selectedItem.quantity) || 0 : 0;
-  const availableLength = selectedItem
-    ? parseFloat(selectedItem.length) || parseFloat(selectedItem.size) || 0
-    : 0;
+
+  // ── Derive supplier config from selected item's supplier ──
+  const supplierConfig = useMemo(() => {
+    if (!selectedItem?.supplier) return { full_roll_length: 98, slits_per_roll: 6, slitted_roll_length: 98 };
+    const match = allProducts.find(
+      (p) => p.manufacturer && p.manufacturer.toLowerCase().trim() === selectedItem.supplier.toLowerCase().trim()
+    );
+    return match
+      ? { full_roll_length: match.full_roll_length || 98, slits_per_roll: match.slits_per_roll || 6, slitted_roll_length: match.slitted_roll_length || 98 }
+      : { full_roll_length: 98, slits_per_roll: 6, slitted_roll_length: 98 };
+  }, [selectedItem, allProducts]);
+
+  // ── Filtered inventory: only Full Roll + Slitted with available stock > 0 (or currently selected) ──
+  const filteredInventory = useMemo(
+    () => inventoryItems.filter((item) =>
+      (item.inventory_type === 'Full Roll' || item.inventory_type === 'Slitted') &&
+      ((parseFloat(item.available_quantity) || 0) > 0 || String(item.id) === String(selectedRawMaterial))
+    ),
+    [inventoryItems, selectedRawMaterial]
+  );
+
+  // ── Effective available quantity (adds back currently-held qty when editing same item) ──
+  const effectiveAvailable = useMemo(() => {
+    if (!selectedItem) return 0;
+    const base = parseFloat(selectedItem.available_quantity ?? selectedItem.quantity ?? 0);
+    const heldBack = isEdit && String(selectedItem.id) === String(production?.rawMaterial)
+      ? Number(production?.qty || 0)
+      : 0;
+    return base + heldBack;
+  }, [selectedItem, isEdit, production]);
 
   const getInventoryLabel = (item) => {
     const type = item.inventory_type || '';
     const color = item.color_name ? `${item.color_name} (${item.color_code || ''})` : '';
     const mfr = item.supplier || '';
-    const size = item.size ? `${item.size} ft` : '';
-    const qty = item.quantity || 0;
-    return `${type} — ${color}${mfr ? ` · ${mfr}` : ''} · Qty: ${qty}${size ? ` · ${size}` : ''}`;
+    return `${type} — ${color}${mfr ? ` · ${mfr}` : ''}`;
   };
 
-  // ── Auto-fill from selected inventory ──
+  // ── Auto-fill size from selected raw material ──
   useEffect(() => {
-    if (!selectedItem || isEdit || selectedType !== 'Inventory') return;
-    const qty = parseFloat(selectedItem.quantity) || 0;
-    const size = selectedItem.size ? `${selectedItem.size} ft` : '';
-    setValue('slittedQuantity', qty);
-    setValue('slittedSize', size);
-    setValue('readyChannelLength', '');
-    trigger(['slittedQuantity', 'slittedSize']);
-  }, [selectedItem, isEdit, selectedType, setValue, trigger]);
+    if (!selectedItem || isEdit) return;
+    const sz = selectedItem.size ? `${selectedItem.size} ft` : '';
+    setValue('size', sz);
+    trigger('size');
+  }, [selectedItem, isEdit, setValue, trigger]);
 
-  // ── Validators ──
-  const validateQty = (value) => {
-    if (!selectedItem) return true;
-    const v = Number(value) || 0;
-    if (v > availableQty) return `Exceeds available stock (${availableQty})`;
-    return true;
-  };
+  // ── Preview & Waste Calculation ──
+  const preview = useMemo(() => {
+    if (!selectedItem) return null;
 
-  const validateSize = (value) => {
-    if (!selectedItem) return true;
-    const match = (value || '').match(/[\d.]+/);
-    const num = match ? parseFloat(match[0]) : 0;
-    if (num > availableLength) return `Exceeds available size (${availableLength} ft)`;
-    return true;
-  };
+    const qtyNum = parseInt(qty) || 0;
+    const sizeMatch = (size || '').match(/[\d.]+/);
+    const sizeNum = sizeMatch ? parseFloat(sizeMatch[0]) : 0;
+
+    if (qtyNum <= 0 || sizeNum <= 0) {
+      return {
+        inputLabel: `${selectedItem.inventory_type} — ${selectedItem.color_name || ''}`,
+        outputLabel: 'Enter qty & size to see output',
+        valid: true,
+      };
+    }
+
+    const totalRawFeet = qtyNum * sizeNum;
+
+    if (targetState === 'Ready Channel') {
+      const chLen = getPieceLength(channelLength);
+      if (chLen > 0) {
+        // Use supplier config for tracks per slit
+        const slitLen = supplierConfig?.slitted_roll_length || sizeNum;
+        const tracksPerSlit = Math.floor(slitLen / chLen);
+        const outputPieces = qtyNum * tracksPerSlit;
+        const wastePerSlit = slitLen - (tracksPerSlit * chLen);
+        const totalWaste = (qtyNum * wastePerSlit).toFixed(2);
+        return {
+          inputLabel: `${qtyNum} slit(s) × ${slitLen} ft`,
+          outputLabel: `${outputPieces} ready channel(s) @ ${chLen} ft each, ~${totalWaste} ft waste`,
+          valid: outputPieces > 0,
+          totalWaste,
+        };
+      }
+      return {
+        inputLabel: `${qtyNum} × ${sizeNum} ft = ${totalRawFeet} ft`,
+        outputLabel: 'Select channel length to see output',
+        valid: true,
+      };
+    }
+
+    if (targetState === 'Slitted') {
+      const slitsPerRoll = supplierConfig?.slits_per_roll || 6;
+      const slitLength = supplierConfig?.slitted_roll_length || sizeNum;
+      const outputPieces = qtyNum * slitsPerRoll;
+      return {
+        inputLabel: `${qtyNum} roll(s) × ${sizeNum} ft`,
+        outputLabel: `${outputPieces} slitted roll(s), ${slitLength} ft each`,
+        valid: true,
+      };
+    }
+
+    return null;
+  }, [selectedItem, targetState, qty, size, channelLength, supplierConfig]);
+
+  // ── Auto-fill wasteQty from preview ──
+  useEffect(() => {
+    if (isEdit) return;
+    if (preview && preview.totalWaste !== undefined) {
+      setValue('wasteQty', preview.totalWaste);
+      trigger('wasteQty');
+    } else {
+      setValue('wasteQty', '0');
+    }
+  }, [preview, isEdit, setValue, trigger]);
 
   // ── Submit ──
   const onFormSubmit = (data) => {
@@ -304,11 +258,12 @@ const ProductionForm = ({ production, onSubmit, loading, isEdit = false, onCance
       orderNumber: data.orderNumber?.trim(),
       rawMaterial: data.rawMaterial,
       targetState: data.targetState,
-      slittedQuantity: Number(data.slittedQuantity) || 0,
-      slittedSize: data.slittedSize?.trim(),
-      readyChannelLength: data.readyChannelLength,
-      wasteQuantity: Number(data.wasteQuantity) || 0,
-      status: data.status || 'Pending',
+      qty: Number(data.qty) || 0,
+      size: data.size?.trim(),
+      channelLength: data.channelLength,
+      wasteQty: Number(data.wasteQty) || 0,
+      assignee: data.assignee?.trim(),
+      notes: data.notes?.trim(),
     });
   };
 
@@ -327,61 +282,6 @@ const ProductionForm = ({ production, onSubmit, loading, isEdit = false, onCance
       <form onSubmit={handleSubmit(onFormSubmit)} noValidate>
         <Grid container columnSpacing={3} rowSpacing={0}>
 
-          {/* ── Status Stepper (edit mode only) ────────────────── */}
-          {isEdit && (
-            <>
-              <SectionHeading title="Production Status" />
-              <Grid item xs={12}>
-                <Controller
-                  name="status"
-                  control={control}
-                  render={({ field }) => (
-                    <Box sx={{ mt: 1, mb: 1 }}>
-                      <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
-                        {PRODUCTION_STATUSES.map((s) => {
-                          const isActive = field.value === s.value;
-                          return (
-                            <Chip
-                              key={s.value}
-                              icon={s.icon}
-                              label={s.label}
-                              color={isActive ? s.color : 'default'}
-                              variant={isActive ? 'filled' : 'outlined'}
-                              onClick={() => field.onChange(s.value)}
-                              sx={{
-                                fontWeight: 600,
-                                fontSize: '0.8rem',
-                                px: 1,
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                ...(!isActive && {
-                                  '&:hover': {
-                                    borderColor: `${s.color}.main`,
-                                    backgroundColor: `${s.color}.lighter`,
-                                  },
-                                }),
-                              }}
-                            />
-                          );
-                        })}
-                      </Stack>
-                      {currentStatus === 'Completed' && (
-                        <Alert severity="success" sx={{ mt: 1.5, borderRadius: '8px' }}>
-                          Marking as completed — backend will update inventory accordingly.
-                        </Alert>
-                      )}
-                      {currentStatus === 'Cancelled' && (
-                        <Alert severity="error" sx={{ mt: 1.5, borderRadius: '8px' }}>
-                          This production will be cancelled.
-                        </Alert>
-                      )}
-                    </Box>
-                  )}
-                />
-              </Grid>
-            </>
-          )}
-
           {/* ── Production Type ────────────────────────────────── */}
           <SectionHeading title="Production Information" />
 
@@ -395,8 +295,8 @@ const ProductionForm = ({ production, onSubmit, loading, isEdit = false, onCance
                   <CustomFormLabel sx={{ mt: 0 }}>Production For</CustomFormLabel>
                   <FormControl component="fieldset">
                     <RadioGroup row {...field}>
-                      <FormControlLabel value="Order" control={<Radio />} label="Specific Order" />
-                      <FormControlLabel value="Inventory" control={<Radio />} label="General Inventory" />
+                      <FormControlLabel value="General Inventory" control={<Radio />} label="General Inventory" />
+                      <FormControlLabel value="Specific Order" control={<Radio />} label="Specific Order" />
                     </RadioGroup>
                   </FormControl>
                 </Box>
@@ -404,292 +304,21 @@ const ProductionForm = ({ production, onSubmit, loading, isEdit = false, onCance
             />
           </Grid>
 
-          {/* ════════════════════════════════════════════════════
-              ORDER MODE
-          ════════════════════════════════════════════════════ */}
-          {selectedType === 'Order' && (
-            <>
-              {/* Order Number input */}
-              <Grid item xs={12} md={6}>   {/* ← was md={4}, now md={6} */}
-                <Controller
-                  name="orderNumber"
-                  control={control}
-                  rules={{ required: 'Order Number is required' }}
-                  render={({ field, fieldState: { error } }) => (
-                    <Box>
-                      <CustomFormLabel htmlFor="order-number">Order Number *</CustomFormLabel>
-                      <CustomTextField
-                        {...field}
-                        id="order-number"
-                        fullWidth
-                        placeholder="e.g., ORD-1025"
-                        error={!!error}
-                        helperText={error?.message}
-                        InputProps={{
-                          endAdornment: orderLoading
-                            ? <CircularProgress size={16} />
-                            : null,
-                        }}
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                      />
-                    </Box>
-                  )}
-                />
-              </Grid>
-
-              {/* Spacer — keeps the row balanced on md+ screens */}
-              <Grid item xs={false} md={6} sx={{ display: { xs: 'none', md: 'block' } }} />
-            </>
-          )}
-
-          {/* ════════════════════════════════════════════════════
-              INVENTORY MODE
-          ════════════════════════════════════════════════════ */}
-
-          <>
-            {/* Raw Material dropdown */}
+          {/* ── Order Number (only for Specific Order) ── */}
+          {selectedType === 'Specific Order' && (
             <Grid item xs={12} md={6}>
               <Controller
-                name="rawMaterial"
+                name="orderNumber"
                 control={control}
-                rules={{ required: 'Raw Material is required' }}
+                rules={{ required: 'Order Number is required' }}
                 render={({ field, fieldState: { error } }) => (
                   <Box>
-                    <CustomFormLabel htmlFor="raw-material">Select Raw Material *</CustomFormLabel>
-                    <CustomSelect
-                      {...field}
-                      id="raw-material"
-                      fullWidth
-                      displayEmpty
-                      error={!!error}
-                      sx={{ borderRadius: '8px' }}
-                    >
-                      <MenuItem value="" disabled>Select Material</MenuItem>
-                      {inventoryLoading
-                        ? <MenuItem disabled>Loading...</MenuItem>
-                        : filteredInventory.length === 0
-                          ? <MenuItem disabled>No inventory available</MenuItem>
-                          : filteredInventory.map((item) => (
-                            <MenuItem key={item.id} value={item.id}>
-                              {getInventoryLabel(item)}
-                            </MenuItem>
-                          ))
-                      }
-                    </CustomSelect>
-                    {error && <FormHelperText error>{error.message}</FormHelperText>}
-                  </Box>
-                )}
-              />
-            </Grid>
-
-            {/* Target State dropdown */}
-            <Grid item xs={12} md={6}>
-              <Controller
-                name="targetState"
-                control={control}
-                rules={{ required: 'Target State is required' }}
-                render={({ field, fieldState: { error } }) => (
-                  <Box>
-                    <CustomFormLabel htmlFor="target-state">Change State To *</CustomFormLabel>
-                    <CustomSelect
-                      {...field}
-                      id="target-state"
-                      fullWidth
-                      error={!!error}
-                      sx={{ borderRadius: '8px' }}
-                    >
-                      <MenuItem value="Slitted">Slitted</MenuItem>
-                      <MenuItem value="Ready Channel">Ready Channel</MenuItem>
-                    </CustomSelect>
-                    {error && <FormHelperText error>{error.message}</FormHelperText>}
-                  </Box>
-                )}
-              />
-            </Grid>
-
-            {/* ── SLITTED fields ── */}
-            {targetState === 'Slitted' && (
-              <>
-                <Grid item xs={12} md={6}>
-                  <Controller
-                    name="slittedQuantity"
-                    control={control}
-                    rules={{
-                      required: 'Quantity is required',
-                      min: { value: 1, message: 'Must be at least 1' },
-                      validate: validateQty,
-                    }}
-                    render={({ field, fieldState: { error } }) => (
-                      <Box>
-                        <CustomFormLabel htmlFor="slitted-quantity">
-                          Quantity *{selectedItem ? ` (Available: ${availableQty})` : ''}
-                        </CustomFormLabel>
-                        <CustomTextField
-                          {...field}
-                          id="slitted-quantity"
-                          fullWidth
-                          type="number"
-                          placeholder="Number of slitted pieces"
-                          error={!!error}
-                          helperText={error?.message}
-                          onChange={(e) => { field.onChange(e); trigger('slittedQuantity'); }}
-                          sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                        />
-                      </Box>
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Controller
-                    name="slittedSize"
-                    control={control}
-                    rules={{
-                      required: 'Size is required',
-                      validate: validateSize,
-                    }}
-                    render={({ field, fieldState: { error } }) => (
-                      <Box>
-                        <CustomFormLabel htmlFor="slitted-size">
-                          Size per Piece *{selectedItem ? ` (Available: ${availableLength} ft)` : ''}
-                        </CustomFormLabel>
-                        <CustomTextField
-                          {...field}
-                          id="slitted-size"
-                          fullWidth
-                          placeholder="e.g., 90 ft"
-                          error={!!error}
-                          helperText={error?.message}
-                          onChange={(e) => { field.onChange(e); trigger('slittedSize'); }}
-                          sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                        />
-                      </Box>
-                    )}
-                  />
-                </Grid>
-              </>
-            )}
-
-            {/* ── READY CHANNEL fields ── */}
-            {targetState === 'Ready Channel' && (
-              <>
-                <Grid item xs={12} md={4}>
-                  <Controller
-                    name="readyChannelLength"
-                    control={control}
-                    rules={{ required: 'Channel Length is required' }}
-                    render={({ field, fieldState: { error } }) => (
-                      <Box>
-                        <CustomFormLabel htmlFor="ready-channel-length">Length per Piece *</CustomFormLabel>
-                        <CustomSelect
-                          {...field}
-                          id="ready-channel-length"
-                          fullWidth
-                          displayEmpty
-                          error={!!error}
-                          sx={{ borderRadius: '8px' }}
-                        >
-                          {READY_CHANNEL_LENGTH_OPTIONS.map((opt) => (
-                            <MenuItem key={opt.value} value={opt.value} disabled={opt.disabled}>
-                              {opt.label}
-                            </MenuItem>
-                          ))}
-                        </CustomSelect>
-                        {error && <FormHelperText error>{error.message}</FormHelperText>}
-                      </Box>
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={4}>
-                  <Controller
-                    name="slittedQuantity"
-                    control={control}
-                    rules={{
-                      required: 'Quantity is required',
-                      min: { value: 1, message: 'Must be at least 1' },
-                      validate: validateQty,
-                    }}
-                    render={({ field, fieldState: { error } }) => (
-                      <Box>
-                        <CustomFormLabel htmlFor="rc-quantity">
-                          Quantity *{selectedItem ? ` (Available: ${availableQty})` : ''}
-                        </CustomFormLabel>
-                        <CustomTextField
-                          {...field}
-                          id="rc-quantity"
-                          fullWidth
-                          type="number"
-                          placeholder="Number of pieces"
-                          error={!!error}
-                          helperText={error?.message}
-                          onChange={(e) => { field.onChange(e); trigger('slittedQuantity'); }}
-                          sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                        />
-                      </Box>
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={4}>
-                  <Controller
-                    name="slittedSize"
-                    control={control}
-                    rules={{
-                      required: 'Size is required',
-                      validate: validateSize,
-                    }}
-                    render={({ field, fieldState: { error } }) => (
-                      <Box>
-                        <CustomFormLabel htmlFor="rc-size">
-                          Size per Piece *{selectedItem ? ` (Available: ${availableLength} ft)` : ''}
-                        </CustomFormLabel>
-                        <CustomTextField
-                          {...field}
-                          id="rc-size"
-                          fullWidth
-                          placeholder="e.g., 90 ft"
-                          error={!!error}
-                          helperText={error?.message}
-                          onChange={(e) => { field.onChange(e); trigger('slittedSize'); }}
-                          sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                        />
-                      </Box>
-                    )}
-                  />
-                </Grid>
-              </>
-            )}
-
-            {/* ── Output Preview ── */}
-            {selectedItem && (
-              <Grid item xs={12} sx={{ mt: 2 }}>
-                <OutputPreview
-                  selectedItem={selectedItem}
-                  targetState={targetState}
-                  slittedQuantity={slittedQuantity}
-                  slittedSize={slittedSize}
-                  readyChannelLength={readyChannelLength}
-                />
-              </Grid>
-            )}
-
-            {/* ── Waste Tracking ── */}
-            <SectionHeading title="Waste Tracking" color="error.main" />
-            <Grid item xs={12} md={4}>
-              <Controller
-                name="wasteQuantity"
-                control={control}
-                rules={{ min: { value: 0, message: 'Cannot be negative' } }}
-                render={({ field, fieldState: { error } }) => (
-                  <Box>
-                    <CustomFormLabel htmlFor="waste-quantity">Waste Quantity</CustomFormLabel>
+                    <CustomFormLabel htmlFor="order-number">Order Number *</CustomFormLabel>
                     <CustomTextField
                       {...field}
-                      id="waste-quantity"
+                      id="order-number"
                       fullWidth
-                      type="number"
-                      placeholder="Quantity of waste"
+                      placeholder="e.g., ORD-1776521329-1"
                       error={!!error}
                       helperText={error?.message}
                       sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
@@ -698,8 +327,240 @@ const ProductionForm = ({ production, onSubmit, loading, isEdit = false, onCance
                 )}
               />
             </Grid>
-          </>
+          )}
 
+          {/* ── Raw Material ── */}
+          <Grid item xs={12} md={6}>
+            <Controller
+              name="rawMaterial"
+              control={control}
+              rules={{ required: 'Raw Material is required' }}
+              render={({ field, fieldState: { error } }) => (
+                <Box>
+                  <CustomFormLabel htmlFor="raw-material">Select Raw Material *</CustomFormLabel>
+                  <CustomSelect
+                    {...field}
+                    id="raw-material"
+                    fullWidth
+                    displayEmpty
+                    error={!!error}
+                    sx={{ borderRadius: '8px' }}
+                  >
+                    <MenuItem value="" disabled>Select Material</MenuItem>
+                    {inventoryLoading
+                      ? <MenuItem disabled>Loading...</MenuItem>
+                      : filteredInventory.length === 0
+                        ? <MenuItem disabled>No inventory available</MenuItem>
+                        : filteredInventory.map((item) => (
+                          <MenuItem key={item.id} value={item.id}>
+                            {getInventoryLabel(item)}
+                          </MenuItem>
+                        ))
+                    }
+                  </CustomSelect>
+                  {error && <FormHelperText error>{error.message}</FormHelperText>}
+                </Box>
+              )}
+            />
+          </Grid>
+
+          {/* ── Target State ── */}
+          <Grid item xs={12} md={6}>
+            <Controller
+              name="targetState"
+              control={control}
+              rules={{ required: 'Target State is required' }}
+              render={({ field, fieldState: { error } }) => (
+                <Box>
+                  <CustomFormLabel htmlFor="target-state">Change State To *</CustomFormLabel>
+                  <CustomSelect
+                    {...field}
+                    id="target-state"
+                    fullWidth
+                    error={!!error}
+                    sx={{ borderRadius: '8px' }}
+                  >
+                    <MenuItem value="Ready Channel">Ready Channel</MenuItem>
+                    <MenuItem value="Slitted">Slitted</MenuItem>
+                  </CustomSelect>
+                  {error && <FormHelperText error>{error.message}</FormHelperText>}
+                </Box>
+              )}
+            />
+          </Grid>
+
+          {/* ── Qty & Size (always shown) ── */}
+          <SectionHeading title="Production Details" />
+
+          <Grid item xs={12} md={targetState === 'Ready Channel' ? 3 : 6}>
+            <Controller
+              name="qty"
+              control={control}
+              rules={{
+                required: 'Quantity is required',
+                min: { value: 1, message: 'Must be at least 1' },
+                validate: (value) => {
+                  if (!selectedItem) return true;
+                  return Number(value) <= effectiveAvailable || `Cannot exceed available quantity (${effectiveAvailable})`;
+                }
+              }}
+              render={({ field, fieldState: { error } }) => (
+                <Box>
+                  <CustomFormLabel htmlFor="prod-qty">
+                    Quantity *{selectedItem ? ` (Available: ${effectiveAvailable})` : ''}
+                  </CustomFormLabel>
+                  <CustomTextField
+                    {...field}
+                    id="prod-qty"
+                    fullWidth
+                    type="number"
+                    placeholder="Number of rolls/pieces"
+                    error={!!error}
+                    helperText={error?.message}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                  />
+                </Box>
+              )}
+            />
+          </Grid>
+
+          <Grid item xs={12} md={targetState === 'Ready Channel' ? 3 : 6}>
+            <Controller
+              name="size"
+              control={control}
+              rules={{
+                required: 'Size is required',
+                validate: (value) => {
+                  if (!selectedItem || !selectedItem.size) return true;
+                  const availableSize = parseFloat(selectedItem.size);
+                  const enteredSize = parseFloat((value || '').toString().match(/[\d.]+/)?.[0] || 0);
+                  // For size, we don't strictly need to add back production.size unless it was a partial roll hold, but it's safe to bypass or use the max roll size.
+                  // Since size represents the physical roll size, availableSize from the selected item is the max.
+                  return enteredSize <= availableSize || `Cannot exceed available size (${availableSize} ft)`;
+                }
+              }}
+              render={({ field, fieldState: { error } }) => (
+                <Box>
+                  <CustomFormLabel htmlFor="prod-size">
+                    Size *{selectedItem ? ` (Available: ${selectedItem.size || 0} ft)` : ''}
+                  </CustomFormLabel>
+                  <CustomTextField
+                    {...field}
+                    id="prod-size"
+                    fullWidth
+                    placeholder="e.g., 90 ft"
+                    error={!!error}
+                    helperText={error?.message}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                  />
+                </Box>
+              )}
+            />
+          </Grid>
+
+          {/* ── Channel Length (only for Ready Channel) ── */}
+          {targetState === 'Ready Channel' && (
+            <>
+              <Grid item xs={12} md={3}>
+                <Controller
+                  name="channelLength"
+                  control={control}
+                  rules={{ required: 'Channel Length is required' }}
+                  render={({ field, fieldState: { error } }) => (
+                    <Box>
+                      <CustomFormLabel htmlFor="channel-length">Channel Length *</CustomFormLabel>
+                      <CustomSelect
+                        {...field}
+                        id="channel-length"
+                        fullWidth
+                        displayEmpty
+                        error={!!error}
+                        sx={{ borderRadius: '8px' }}
+                      >
+                        {CHANNEL_LENGTH_OPTIONS.map((opt) => (
+                          <MenuItem key={opt.value} value={opt.value} disabled={opt.disabled}>
+                            {opt.label}
+                          </MenuItem>
+                        ))}
+                      </CustomSelect>
+                      {error && <FormHelperText error>{error.message}</FormHelperText>}
+                    </Box>
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={3}>
+                <Controller
+                  name="wasteQty"
+                  control={control}
+                  rules={{ min: { value: 0, message: 'Cannot be negative' } }}
+                  render={({ field, fieldState: { error } }) => (
+                    <Box>
+                      <CustomFormLabel htmlFor="waste-qty">Waste Qty</CustomFormLabel>
+                      <CustomTextField
+                        {...field}
+                        id="waste-qty"
+                        fullWidth
+                        type="number"
+                        placeholder="0"
+                        error={!!error}
+                        helperText={error?.message}
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                      />
+                    </Box>
+                  )}
+                />
+              </Grid>
+            </>
+          )}
+
+          {/* ── Output Preview ── */}
+          {selectedItem && (
+            <Grid item xs={12} sx={{ mt: 2 }}>
+              <OutputPreview preview={preview} />
+            </Grid>
+          )}
+
+          {/* ── Notes ── */}
+          <SectionHeading title="Additional Information" />
+
+          <Grid item xs={12} md={6}>
+            <Controller
+              name="assignee"
+              control={control}
+              render={({ field }) => (
+                <Box>
+                  <CustomFormLabel htmlFor="assignee">Assignee</CustomFormLabel>
+                  <CustomTextField
+                    {...field}
+                    id="assignee"
+                    fullWidth
+                    placeholder="Worker name"
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                  />
+                </Box>
+              )}
+            />
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Controller
+              name="notes"
+              control={control}
+              render={({ field }) => (
+                <Box>
+                  <CustomFormLabel htmlFor="notes">Notes</CustomFormLabel>
+                  <CustomTextField
+                    {...field}
+                    id="notes"
+                    fullWidth
+                    placeholder="Any additional notes"
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                  />
+                </Box>
+              )}
+            />
+          </Grid>
 
           {/* ── Actions ── */}
           <Grid item xs={12}>
@@ -716,7 +577,7 @@ const ProductionForm = ({ production, onSubmit, loading, isEdit = false, onCance
               <Button
                 type="submit"
                 variant="contained"
-                disabled={loading || (selectedType === 'Order' && !orderDetails)}
+                disabled={loading}
                 startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <Save />}
                 sx={{ borderRadius: '8px', minWidth: 160 }}
               >

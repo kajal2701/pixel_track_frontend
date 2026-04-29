@@ -1,17 +1,13 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import {
   Box,
-  Typography,
   Button,
+  Typography,
   Paper,
   Grid,
   MenuItem,
   FormHelperText,
   CircularProgress,
-  Radio,
-  RadioGroup,
-  FormControlLabel,
-  FormControl,
   Chip,
   Stack,
 } from '@mui/material';
@@ -22,17 +18,13 @@ import CustomTextField from '../../../components/forms/theme-elements/CustomText
 import CustomFormLabel from '../../../components/forms/theme-elements/CustomFormLabel';
 import CustomSelect from '../../../components/forms/theme-elements/CustomSelect';
 import {
-  formatDate,
   CHANNEL_LENGTH_OPTIONS as channelLengthOptions,
-  HOLE_DISTANCE_OPTIONS as holeDistanceOptions,
   INVENTORY_TYPE_OPTIONS as inventoryTypeOptions,
-  READY_CHANNEL_LENGTH_OPTIONS as readyChannelLengthOptions,
   handleDecimalChange,
   handleIntegerInput,
   decimalRules,
   integerRules,
   getPieceLength,
-  mapToChannelLengthLabel,
   calculateProductionDetails,
 } from 'src/utils/helpers';
 import productService from 'src/services/productService';
@@ -133,8 +125,8 @@ const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }
     if (!initialValues) return null;
     return {
       ...initialValues,
-      channel_length: mapToChannelLengthLabel(initialValues.channel_length),
-      length: mapToChannelLengthLabel(initialValues.length),
+      // hole_distance stores hole count (8, 9, 10) — map it for the dropdown
+      hole_distance: initialValues.hole_distance ? String(parseInt(initialValues.hole_distance, 10) || '') : '',
     };
   }, [initialValues]);
 
@@ -159,7 +151,6 @@ const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }
   const selectedType = watch('inventory_type');
   const watchSize = watch('size');
   const watchQuantity = watch('quantity');
-  const watchChannelLength = watch('channel_length');
   const selectedSupplier = watch('supplier');
   const selectedColorName = watch('color_name');
 
@@ -204,6 +195,26 @@ const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }
     }
   }, [selectedColorName, selectedSupplier, filteredColors, setValue, isEditing]);
 
+  // Auto-set size based on product configuration
+  useEffect(() => {
+    if (selectedSupplier && selectedColorName && selectedType) {
+      const currentSize = watchSize ? parseFloat(watchSize) : 0;
+      // Only auto-fill if: not editing, OR editing but size is 0/empty
+      const shouldAutoFill = !isEditing || currentSize === 0 || watchSize === '' || watchSize == null;
+      if (!shouldAutoFill) return;
+      const match = allProducts.find(
+        (p) => p.manufacturer === selectedSupplier && p.color === selectedColorName
+      );
+      if (match) {
+        if (selectedType === 'Full Roll' && match.full_roll_length) {
+          setValue('size', match.full_roll_length.toString());
+        } else if (selectedType === 'Slitted' && match.slitted_roll_length) {
+          setValue('size', match.slitted_roll_length.toString());
+        }
+      }
+    }
+  }, [selectedSupplier, selectedColorName, selectedType, allProducts, setValue, isEditing, watchSize]);
+
   // ── Reset with mapped values ──
   useEffect(() => {
     if (processedInitialValues) {
@@ -231,6 +242,10 @@ const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }
       payload.size = null;
       payload.quantity = null;
       payload.possible_feet = null;
+      // Auto-calculate length from hole count: holes / 1.5
+      if (data.hole_distance) {
+        payload.length = getPieceLength(data.hole_distance);
+      }
     }
     onSubmit(payload);
   };
@@ -354,16 +369,16 @@ const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }
                     if (s > 0 && q > 0) {
                       const calculation = calculateProductionDetails(s, q);
                       const lengths = [
-                        { label: '4ft', color: 'primary' },
-                        { label: '6ft', color: 'success' },
-                        { label: '8ft', color: 'warning' }
+                        { label: '10H (6.67ft)', color: 'primary' },
+                        { label: '9H (6ft)', color: 'success' },
+                        { label: '8H (5.33ft)', color: 'warning' }
                       ];
 
                       return (
                         <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
                           {lengths.map((length, index) => {
-                            const match = calculation.match(new RegExp(`${length.label}: ([\\d.]+) pcs`));
-                            const pieces = match ? match[1] : '0.0';
+                            const match = calculation.match(new RegExp(`${length.label.replace(/[()./]/g, '\\$&')}: ([\\d.]+) pcs`));
+                            const pieces = match ? match[1] : '0';
                             return (
                               <Chip
                                 key={index}
@@ -407,28 +422,15 @@ const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }
           {/* ── Section: Ready Channel ── */}
           {selectedType === 'Ready Channel' && (
             <>
-              <Grid item xs={12} md={4}>
-                <Controller
-                  name="hole_distance"
-                  control={control}
-                  rules={{ required: 'Hole distance is required' }}
-                  render={({ field, fieldState: { error } }) => (
-                    <Box>
-                      <CustomFormLabel htmlFor="hole-distance">Hole Distance *</CustomFormLabel>
-                      <FormControl component="fieldset" error={!!error}>
-                        <RadioGroup row {...field}>
-                          <FormControlLabel
-                            value="8"
-                            control={<Radio />}
-                            label='8" center-to-center'
-                          />
-                        </RadioGroup>
-                      </FormControl>
-                      {error && <FormHelperText error>{error.message}</FormHelperText>}
-                    </Box>
-                  )}
-                />
-              </Grid>
+              <FormSelectField
+                control={control}
+                name="hole_distance"
+                id="hole-count"
+                label="Channel Length (Holes) *"
+                rules={{ required: 'Channel length is required' }}
+                options={channelLengthOptions}
+                displayEmpty
+              />
 
               <FormTextField
                 control={control}
@@ -442,15 +444,21 @@ const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }
                 onInputOverride={handleIntegerInput}
               />
 
-              <FormSelectField
-                control={control}
-                name="length"
-                id="length"
-                label="Length per Piece *"
-                rules={{ required: 'Length per Piece is required' }}
-                options={readyChannelLengthOptions}
-                displayEmpty
-              />
+              <Grid item xs={12} md={4}>
+                <CustomFormLabel>Length per Piece</CustomFormLabel>
+                <CustomTextField
+                  value={watch('hole_distance') ? `${getPieceLength(watch('hole_distance'))} ft` : ''}
+                  placeholder="Select hole count above"
+                  disabled
+                  fullWidth
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px',
+                      backgroundColor: palette.action.hover
+                    }
+                  }}
+                />
+              </Grid>
             </>
           )}
 

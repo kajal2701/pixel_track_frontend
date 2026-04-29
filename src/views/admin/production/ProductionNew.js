@@ -6,6 +6,8 @@ import toast from 'react-hot-toast';
 
 import PageContainer from '../../../components/container/PageContainer';
 import ProductionForm from './ProductionForm';
+import productionService from '../../../services/productionService';
+import { getPieceLength } from 'src/utils/helpers';
 
 const ProductionNew = () => {
   const navigate = useNavigate();
@@ -14,9 +16,29 @@ const ProductionNew = () => {
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      const payload = { ...data, status: data.status || 'Pending' };
-      // TODO: Replace with actual API call
-      console.log('Add New Production record:', payload);
+      // Parse size numeric from string like "90 ft"
+      const sizeMatch = (data.size || '').match(/[\d.]+/);
+      const sizeNum = sizeMatch ? parseFloat(sizeMatch[0]) : 0;
+
+      // channel_length stores feet value
+      let channelLengthNum = null;
+      if (data.targetState === 'Ready Channel' && data.channelLength) {
+        channelLengthNum = getPieceLength(data.channelLength);
+      }
+
+      await productionService.createProduction({
+        production_type: data.productionType,
+        order_id: data.productionType === 'Specific Order' ? data.orderNumber : null,
+        raw_material_id: data.rawMaterial,
+        target_state: data.targetState,
+        qty: data.qty,
+        size: data.size,
+        channel_length: channelLengthNum,
+        waste_qty: data.wasteQty || 0,
+        assignee: data.assignee || '',
+        notes: data.notes || '',
+      });
+
       toast.success('Production record created successfully!');
       navigate('/admin/production');
     } catch (err) {
@@ -26,9 +48,7 @@ const ProductionNew = () => {
     }
   };
 
-  const handleCancel = () => {
-    navigate('/admin/production');
-  };
+  const handleCancel = () => navigate('/admin/production');
 
   return (
     <PageContainer title="Add New Production" description="Process inventory for production">
@@ -43,9 +63,7 @@ const ProductionNew = () => {
           >
             Back to Production
           </Button>
-          <Typography variant="h4" fontWeight={700}>
-            Add New Production
-          </Typography>
+          <Typography variant="h4" fontWeight={700}>Add New Production</Typography>
         </Box>
 
         <ProductionForm

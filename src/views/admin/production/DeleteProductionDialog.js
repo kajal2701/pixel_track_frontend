@@ -43,19 +43,19 @@ const DeleteProductionDialog = ({ open, production, onClose, onConfirm, loading 
               <Typography variant="caption" color="text.secondary" display="block">
                 Production ID: <strong>{production.id}</strong>
               </Typography>
-              {production.productionType && (
+              {production.production_type && (
                 <Typography variant="caption" color="text.secondary" display="block">
-                  Type: <strong>{production.productionType}</strong>
+                  Type: <strong>{production.production_type}</strong>
                 </Typography>
               )}
-              {production.orderNumber && (
+              {production.order_id && (
                 <Typography variant="caption" color="text.secondary" display="block">
-                  Order Number: <strong>{production.orderNumber}</strong>
+                  Order: <strong>{production.order_id}</strong>
                 </Typography>
               )}
-              {production.targetState && (
+              {production.target_state && (
                 <Typography variant="caption" color="text.secondary" display="block">
-                  Target State: <strong>{production.targetState}</strong>
+                  Target State: <strong>{production.target_state}</strong>
                 </Typography>
               )}
             </Box>

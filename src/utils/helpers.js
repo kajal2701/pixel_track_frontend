@@ -39,21 +39,9 @@ export const generateColorOptions = (products) => {
 
 export const CHANNEL_LENGTH_OPTIONS = [
   { value: '', label: 'Select Channel Length', disabled: true },
-  { value: '4 Feet/48"', label: '4 Feet/48"' },
-  { value: '6 Feet/72"', label: '6 Feet/72"' },
-  { value: '8 Feet/96"', label: '8 Feet/96"' },
-];
-
-export const HOLE_DISTANCE_OPTIONS = [
-  { value: '', label: 'Select Hole Distance', disabled: true },
-  { value: '8', label: '8" center-to-center' },
-];
-
-export const READY_CHANNEL_LENGTH_OPTIONS = [
-  { value: '', label: 'Select Length per Piece', disabled: true },
-  { value: '4 Feet/48"', label: '4 Feet/48"' },
-  { value: '6 Feet/72"', label: '6 Feet/72"' },
-  { value: '8 Feet/96"', label: '8 Feet/96"' },
+  { value: '10', label: '10 Holes — 6.67 ft' },
+  { value: '9', label: '9 Holes — 6.00 ft' },
+  { value: '8', label: '8 Holes — 5.33 ft' },
 ];
 
 export const INVENTORY_TYPE_OPTIONS = [
@@ -97,24 +85,33 @@ export const integerRules = (label) => ({
   pattern: { value: /^\d+$/, message: 'Only whole numbers allowed' },
 });
 
-// Map numeric channel length value to its display label
+// Map stored channel_length value (feet or hole count) to dropdown value (hole count)
 export const mapToChannelLengthLabel = (value) => {
   if (!value) return value;
-  const num = parseFloat(value);
-  if (num === 4) return '4 Feet/48"';
-  if (num === 6) return '6 Feet/72"';
-  if (num === 8) return '8 Feet/96"';
-  return value;
+
+  // If it's already a hole count string (e.g. '10', '9', '8')
+  const numInt = parseInt(value, 10);
+  if ([8, 9, 10].includes(numInt) && String(numInt) === String(value)) return String(numInt);
+
+  // If it's a feet value from DB (e.g. 6.67, 6.00, 5.33), convert to hole count
+  const numFloat = parseFloat(value);
+  if (Math.abs(numFloat - 6.67) < 0.1) return '10';
+  if (Math.abs(numFloat - 6.00) < 0.1) return '9';
+  if (Math.abs(numFloat - 5.33) < 0.1) return '8';
+
+  // Legacy mappings
+  if (numFloat === 4) return '10'; // 4ft -> 10 holes mapping for legacy data
+  if (numFloat === 8) return '8';  // 8ft -> 8 holes mapping for legacy data
+
+  return String(value);
 };
 
-// Calculate piece length based on channel length string
+// Calculate piece length in feet from hole count
+// Formula: channel_length_ft = holes / 1.5
 export const getPieceLength = (channelLength) => {
-  if (channelLength === '4 Feet/48"') return 4;
-  if (channelLength === '6 Feet/72"') return 6;
-  if (channelLength === '8 Feet/96"') return 8;
-  // Fallback for legacy data
-  if (channelLength === '6 Hole (4 Feet)') return 4;
-  return 6.67;
+  const holes = parseInt(channelLength, 10);
+  if (holes > 0) return parseFloat((holes / 1.5).toFixed(2));
+  return 0;
 };
 
 // Calculate total pieces from total length and channel length
@@ -178,14 +175,14 @@ export const calculateProductionDetails = (size, qty) => {
   const totalFeet = parseFloat(size) * parseFloat(qty);
   if (totalFeet <= 0) return '—';
 
-  const lengths = [
-    { label: '4ft', value: 4 },
-    { label: '6ft', value: 6 },
-    { label: '8ft', value: 8 }
+  const holes = [
+    { label: '10H (6.67ft)', value: 6.67 },
+    { label: '9H (6ft)', value: 6 },
+    { label: '8H (5.33ft)', value: 5.33 }
   ];
 
-  return lengths.map(length =>
-    `${length.label}: ${(totalFeet / length.value).toFixed(1)} pcs`
+  return holes.map(h =>
+    `${h.label}: ${Math.floor(totalFeet / h.value)} pcs`
   ).join(' | ');
 };
 
@@ -233,5 +230,19 @@ export const getMinPickupDate = (isReadySatisfied) => {
   const currentHour = new Date().getHours();
   const daysToAdd = (currentHour < 12 && isReadySatisfied) ? 1 : 2;
   return addBusinessDays(new Date(), daysToAdd);
+};
+
+export const getStatusColor = (status) => {
+  switch (status) {
+    case 'Pending': return 'warning';
+    case 'In Progress': return 'info';
+    case 'Completed': return 'success';
+    case 'Cancelled': return 'error';
+    default: return 'default';
+  }
+};
+
+export const getTypeColor = (type) => {
+  return type === 'Specific Order' ? 'primary' : 'secondary';
 };
 

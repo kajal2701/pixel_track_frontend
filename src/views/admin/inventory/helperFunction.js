@@ -1,14 +1,10 @@
 import {
   CHANNEL_LENGTH_OPTIONS as channelLengthOptions,
-  HOLE_DISTANCE_OPTIONS as holeDistanceOptions,
-  READY_CHANNEL_LENGTH_OPTIONS as readyChannelLengthOptions,
   INVENTORY_TYPE_OPTIONS as inventoryTypeOptions,
 } from 'src/utils/helpers';
 
 export {
   channelLengthOptions,
-  holeDistanceOptions,
-  readyChannelLengthOptions,
   inventoryTypeOptions,
 };
 
@@ -20,9 +16,10 @@ export const statusConfig = {
 };
 
 export const getStatusInfo = (state, qty) => {
+  // If quantity is 0 or less, always show as out of stock regardless of DB state
+  if (qty <= 0) return statusConfig.not_in_stock;
   if (state && statusConfig[state]) return statusConfig[state];
-  if (qty > 0) return statusConfig.available;
-  return statusConfig.not_in_stock;
+  return statusConfig.available;
 };
 
 // ── Summary card config ──────────────────────────────────────────
@@ -96,15 +93,21 @@ export const groupBySupplierColor = (items) => {
     group.ids.push(item.id);
 
     if (item.inventory_type === 'Full Roll') {
-      group.fullRoll_qty += parseFloat(item.quantity) || 0;
-      group.fullRoll_size = item.size ? `${item.size} ft` : group.fullRoll_size;
+      const q = parseFloat(item.quantity) || 0;
+      group.fullRoll_qty += q;
+      if (item.size) {
+        group.fullRoll_size = `${item.size} ft`;
+      }
       group.fullRoll_state = item.state || group.fullRoll_state;
       group.fullRoll_feet += parseFloat(item.possible_feet) || 0;
       group.fullRoll_id = item.id;
       group.fullRoll_channel_length = item.channel_length || group.fullRoll_channel_length;
     } else if (item.inventory_type === 'Slitted') {
-      group.slitted_qty += parseFloat(item.quantity) || 0;
-      group.slitted_size = item.size ? `${item.size} ft` : group.slitted_size;
+      const q = parseFloat(item.quantity) || 0;
+      group.slitted_qty += q;
+      if (item.size) {
+        group.slitted_size = `${item.size} ft`;
+      }
       group.slitted_state = item.state || group.slitted_state;
       group.slitted_feet += parseFloat(item.possible_feet) || 0;
       group.slitted_id = item.id;

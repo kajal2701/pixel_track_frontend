@@ -18,6 +18,7 @@ import {
   calculateFinalLength,
   generateColorOptions,
   getMinPickupDate,
+  getPieceLength,
 } from 'src/utils/helpers';
 import OrderConfiguration from './OrderConfiguration';
 import DeliveryOptions from './DeliveryOptions';
@@ -42,7 +43,6 @@ const PlaceOrder = () => {
     defaultValues: {
       channelType: '',
       color: '',
-      holeDistance: '',
       channelLength: '',
       totalLength: '',
       deliveryMethod: '',
@@ -100,8 +100,8 @@ const PlaceOrder = () => {
         customer_id: customer.id,
         channel_type: data.channelType,
         color: data.color,
-        hole_distance: Number(data.holeDistance),
-        channel_length: data.channelLength,
+        hole_distance: data.channelLength,  // channelLength now stores hole count (8, 9, 10)
+        channel_length: getPieceLength(data.channelLength), // Store feet value in DB
         total_length: Number(data.totalLength),
         total_pieces: totalPieces,
         final_length: finalLength,

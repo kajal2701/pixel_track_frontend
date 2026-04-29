@@ -6,6 +6,8 @@ import toast from 'react-hot-toast';
 
 import PageContainer from '../../../components/container/PageContainer';
 import ProductionForm from './ProductionForm';
+import productionService from '../../../services/productionService';
+import { mapToChannelLengthLabel, getPieceLength } from '../../../utils/helpers';
 
 const ProductionEdit = () => {
   const navigate = useNavigate();
@@ -18,30 +20,28 @@ const ProductionEdit = () => {
     const fetchProduction = async () => {
       setFetchLoading(true);
       try {
-        // TODO: Replace with actual API call
-        // const response = await productionService.getProductionById(id);
-        // setProduction(response.data);
+        const res = await productionService.getProductionById(id);
+        const p = res.data;
 
-        // Mock data for now — includes status for the stepper
+        // Map channel_length number to label string for the dropdown
+        const channelLengthLabel = mapToChannelLengthLabel(p.channel_length);
+
         setProduction({
-          id,
-          productionType: 'Inventory',
-          orderNumber: '',
-          rawMaterial: '',
-          targetState: 'Slitted',
-          slittedQuantity: 2,
-          slittedSize: '50 ft',
-          readyChannelLength: '',
-          wasteQuantity: 0,
-          status: 'Pending',
+          id: p.id,
+          productionType: p.production_type || 'General Inventory',
+          orderNumber: p.order_id || '',
+          rawMaterial: p.raw_material_id || '',
+          targetState: p.target_state || 'Ready Channel',
+          qty: p.qty || '',
+          size: p.size || '',
+          channelLength: channelLengthLabel ? String(channelLengthLabel) : '',
+          wasteQty: p.waste_qty || 0,
+          assignee: p.assignee || '',
+          notes: p.notes || '',
+          status: p.status || 'Pending',
         });
-        setFetchLoading(false);
       } catch (err) {
-        if (err.message?.includes('not found')) {
-          toast.error('Production record not found');
-        } else {
-          toast.error(err.message || 'Failed to fetch production record');
-        }
+        toast.error(err.message || 'Failed to fetch production record.');
         navigate('/admin/production');
       } finally {
         setFetchLoading(false);
@@ -54,8 +54,24 @@ const ProductionEdit = () => {
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      // TODO: Replace with actual API call
-      console.log('Update Production record:', data);
+      // channel_length stores feet
+      let channelLengthNum = null;
+      if (data.targetState === 'Ready Channel' && data.channelLength) {
+        channelLengthNum = getPieceLength(data.channelLength);
+      }
+
+      await productionService.updateProduction(id, {
+        production_type: data.productionType,
+        order_id: data.productionType === 'Specific Order' ? data.orderNumber : null,
+        raw_material_id: data.rawMaterial,
+        target_state: data.targetState,
+        qty: data.qty,
+        size: data.size,
+        channel_length: channelLengthNum,
+        waste_qty: data.wasteQty || 0,
+        assignee: data.assignee || '',
+        notes: data.notes || '',
+      });
       toast.success('Production record updated successfully!');
       navigate('/admin/production');
     } catch (err) {
@@ -65,9 +81,7 @@ const ProductionEdit = () => {
     }
   };
 
-  const handleCancel = () => {
-    navigate('/admin/production');
-  };
+  const handleCancel = () => navigate('/admin/production');
 
   if (fetchLoading) {
     return (
@@ -92,9 +106,7 @@ const ProductionEdit = () => {
           >
             Back to Production
           </Button>
-          <Typography variant="h4" fontWeight={700}>
-            Edit Production
-          </Typography>
+          <Typography variant="h4" fontWeight={700}>Edit Production</Typography>
         </Box>
 
         <ProductionForm

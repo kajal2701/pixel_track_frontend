@@ -36,10 +36,32 @@ const orderService = {
       throw error.response?.data || { message: 'Network error occurred' };
     }
   },
-   getAllOrders: async () => {
+  getAllOrders: async () => {
     try {
       const response = await apiClient.get('/orders');
       return response.data; // { data: [...], summary: {...} }
+    } catch (error) {
+      throw error.response?.data || { message: 'Network error occurred' };
+    }
+  },
+
+  // Find an order by its string order_id (e.g. "ORD-1776521329-1")
+  getOrderByOrderIdString: async (orderIdStr) => {
+    try {
+      const response = await apiClient.get('/orders', { params: { search: orderIdStr } });
+      const orders = response.data?.data || [];
+      // Return exact match on order_id string
+      const match = orders.find((o) => o.order_id === orderIdStr);
+      if (!match) throw { message: `Order "${orderIdStr}" not found.` };
+      return { data: match };
+    } catch (error) {
+      throw error.response?.data || error || { message: 'Network error occurred' };
+    }
+  },
+  confirmOrder: async (id) => {
+    try {
+      const response = await apiClient.post(`/orders/${id}/confirm`);
+      return response.data;
     } catch (error) {
       throw error.response?.data || { message: 'Network error occurred' };
     }

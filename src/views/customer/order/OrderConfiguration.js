@@ -14,7 +14,6 @@ import { Controller } from 'react-hook-form';
 import ParentCard from '../../../components/shared/ParentCard';
 import {
   CHANNEL_LENGTH_OPTIONS,
-  HOLE_DISTANCE_OPTIONS,
 } from 'src/utils/helpers';
 
 const OrderConfiguration = ({
@@ -93,39 +92,8 @@ const OrderConfiguration = ({
           </FormControl>
         </Grid>
 
-        {/* Hole Distance */}
+        {/* Channel Length (Hole Count) */}
         <Grid item xs={12} md={6}>
-          <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
-            Hole Distance *
-          </Typography>
-          <FormControl component="fieldset" error={!!errors.holeDistance}>
-            <Controller
-              name="holeDistance"
-              control={control}
-              rules={{ required: 'Hole distance is required' }}
-              render={({ field }) => (
-                <RadioGroup row {...field}>
-                  {HOLE_DISTANCE_OPTIONS.filter((opt) => !opt.disabled).map((opt) => (
-                    <FormControlLabel
-                      key={opt.value}
-                      value={opt.value}
-                      control={<Radio />}
-                      label={opt.label}
-                    />
-                  ))}
-                </RadioGroup>
-              )}
-            />
-            {errors.holeDistance && (
-              <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1 }}>
-                {errors.holeDistance.message}
-              </Typography>
-            )}
-          </FormControl>
-        </Grid>
-
-        {/* Channel Length */}
-        <Grid item xs={12}>
           <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
             Channel Length *
           </Typography>

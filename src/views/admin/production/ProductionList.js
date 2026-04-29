@@ -1,6 +1,13 @@
-import React, { useState } from 'react';
-import { Box, Typography, Button, TextField, InputAdornment, Chip, IconButton, FormControl, InputLabel, Select, MenuItem, Stack, Grid } from '@mui/material';
-import { Search, Add, Edit, Delete, Visibility, FilterList, PlayArrow, CheckCircle, Cancel as CancelIcon } from '@mui/icons-material';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  Box, Typography, Button, TextField, InputAdornment, Chip,
+  IconButton, FormControl, InputLabel, Select, MenuItem,
+  Stack, Grid, CircularProgress,
+} from '@mui/material';
+import {
+  Search, Add, Edit, Delete, FilterList,
+  PlayArrow, CheckCircle, Cancel as CancelIcon,
+} from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import PageContainer from '../../../components/container/PageContainer';
@@ -9,315 +16,165 @@ import ChildCard from '../../../components/shared/ChildCard';
 import DataTable from '../../../components/shared/DataTable';
 import DeleteProductionDialog from './DeleteProductionDialog';
 import StatusUpdateDialog from './StatusUpdateDialog';
+import productionService from '../../../services/productionService';
 import toast from 'react-hot-toast';
+import { getStatusColor, getTypeColor } from '../../../utils/helpers';
 
 const ProductionList = () => {
-  const theme = useTheme();
-  const { palette } = theme;
+  const { palette } = useTheme();
   const navigate = useNavigate();
+
+  const [production, setProduction] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedProduction, setSelectedProduction] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
   const [statusDialog, setStatusDialog] = useState({ open: false, production: null, newStatus: null });
   const [statusLoading, setStatusLoading] = useState(false);
-  const [productionData, setProductionData] = useState(null); // will be set after initial load
 
-  // Sample production data matching specifications
-  const sampleProduction = [
-    {
-      id: 'PROD-001',
-      orderNumber: 'ORD-2024-001',
-      rawMaterial: 'White Full Roll (WH001)',
-      state: 'In Production',
-      slittedQuantity: 0,
-      slittedSize: '',
-      slittedLength: 0,
-      readyChannelHoleDistance: '',
-      readyChannelPieces: 0,
-      readyChannelLength: 0,
-      waste: 0,
-      technician: 'John Smith',
-      deadline: '2024-03-25',
-      status: 'in-progress',
-      priority: 'high'
-    },
-    {
-      id: 'PROD-002',
-      orderNumber: 'ORD-2024-002',
-      rawMaterial: 'Black Full Roll (BK002)',
-      state: 'Completed',
-      slittedQuantity: 2,
-      slittedSize: '50ft',
-      slittedLength: 100,
-      readyChannelHoleDistance: '8 inches',
-      readyChannelPieces: 12,
-      readyChannelLength: 96,
-      waste: 4,
-      technician: 'Mike Johnson',
-      deadline: '2024-03-20',
-      status: 'completed',
-      priority: 'medium'
-    },
-    {
-      id: 'PROD-003',
-      orderNumber: 'ORD-2024-003',
-      rawMaterial: 'Red Full Roll (RD003)',
-      state: 'Pending',
-      slittedQuantity: 0,
-      slittedSize: '',
-      slittedLength: 0,
-      readyChannelHoleDistance: '',
-      readyChannelPieces: 0,
-      readyChannelLength: 0,
-      waste: 0,
-      technician: 'Unassigned',
-      deadline: '2024-03-30',
-      status: 'pending',
-      priority: 'low'
-    },
-    {
-      id: 'PROD-004',
-      orderNumber: 'PROD-STOCK-001',
-      rawMaterial: 'Blue Full Roll (BL004)',
-      state: 'In Production',
-      slittedQuantity: 1,
-      slittedSize: '25ft',
-      slittedLength: 25,
-      readyChannelHoleDistance: '9 inches',
-      readyChannelPieces: 0,
-      readyChannelLength: 0,
-      waste: 0,
-      technician: 'Sarah Wilson',
-      deadline: '2024-03-28',
-      status: 'in-progress',
-      priority: 'medium'
+  // ── Fetch ────────────────────────────────────────────────────
+  const fetchProduction = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await productionService.getAllProduction();
+      setProduction(res.data || []);
+    } catch (err) {
+      toast.error(err.message || 'Failed to fetch production records.');
+    } finally {
+      setLoading(false);
     }
-  ];
+  }, []);
 
-  // Use local state so status updates reflect immediately
-  const production = productionData || sampleProduction;
-  const setProduction = (updater) => {
-    setProductionData((prev) => {
-      const current = prev || sampleProduction;
-      return typeof updater === 'function' ? updater(current) : updater;
-    });
-  };
+  useEffect(() => { fetchProduction(); }, [fetchProduction]);
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'pending': return 'warning';
-      case 'in-progress': return 'info';
-      case 'completed': return 'success';
-      case 'cancelled': return 'error';
-      default: return 'default';
-    }
-  };
-
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'high': return 'error';
-      case 'medium': return 'warning';
-      case 'low': return 'success';
-      default: return 'default';
-    }
-  };
-
-  // Filter production based on search and status
-  const filteredProduction = production.filter(item => {
+  // ── Filter ───────────────────────────────────────────────────
+  const filteredProduction = production.filter((item) => {
+    const term = searchTerm.toLowerCase();
     const matchesSearch =
-      item.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.rawMaterial.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.technician.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.id.toLowerCase().includes(searchTerm.toLowerCase());
+      (item.order_id || '').toLowerCase().includes(term) ||
+      (item.assignee || '').toLowerCase().includes(term) ||
+      (item.production_type || '').toLowerCase().includes(term) ||
+      (item.target_state || '').toLowerCase().includes(term) ||
+      (item.raw_material_color || '').toLowerCase().includes(term) ||
+      String(item.id || '').toLowerCase().includes(term);
 
     const matchesStatus = filterStatus === 'all' || item.status === filterStatus;
-
     return matchesSearch && matchesStatus;
   });
 
-  // DataTable column definitions
+  // ── Columns ──────────────────────────────────────────────────
   const columns = [
+    { field: 'id', label: 'ID', bold: true, width: '5%' },
+    { field: 'typeChip', label: 'Type', type: 'chip', chipColor: (row) => getTypeColor(row.production_type), width: '12%' },
     {
-      field: 'id',
-      label: 'Production ID',
-      bold: true,
-      width: '15%'
+      field: 'target_state', label: 'Target', width: '10%', render: (row) => (
+        <Stack direction="row" alignItems="center" gap={0.5}>
+          <Typography variant="body1">{row.target_state}</Typography>
+          {row.isAuto && <Chip label="Auto" size="small" color="info" variant="outlined" sx={{ height: 20, fontSize: '0.65rem' }} />}
+        </Stack>
+      )
     },
-    {
-      field: 'orderNumber',
-      label: 'Order Number',
-      width: '15%'
-    },
-    {
-      field: 'rawMaterial',
-      label: 'Raw Material',
-      width: '20%'
-    },
-    {
-      field: 'state',
-      label: 'State',
-      type: 'chip',
-      chipColor: getStatusColor,
-      width: '12%'
-    },
-    {
-      field: 'slittedOutput',
-      label: 'Slitted Output',
-      width: '12%'
-    },
-    {
-      field: 'readyChannelOutput',
-      label: 'Ready Channel',
-      width: '12%'
-    },
-    {
-      field: 'waste',
-      label: 'Waste',
-      width: '8%'
-    },
-    {
-      field: 'technician',
-      label: 'Technician',
-      width: '12%'
-    },
-    {
-      field: 'actions',
-      label: 'Actions',
-      width: '14%'
-    }
+    { field: 'rawMaterialDisplay', label: 'Raw Material', width: '18%' },
+    { field: 'qtyDisplay', label: 'Qty / Size', width: '12%' },
+    { field: 'channelDisplay', label: 'Ch. Length', width: '8%' },
+    { field: 'assignee', label: 'Assignee', width: '10%' },
+    { field: 'statusChip', label: 'Status', type: 'chip', chipColor: (row) => getStatusColor(row.status), width: '10%' },
+    { field: 'actions', label: 'Actions', width: '12%' },
   ];
 
-  // Format rows for DataTable with action buttons
-  const rows = filteredProduction.map(item => ({
-    ...item,
-    slittedOutput: item.slittedQuantity > 0 ? `${item.slittedQuantity}x ${item.slittedSize}` : 'None',
-    readyChannelOutput: item.readyChannelPieces > 0 ? `${item.readyChannelPieces}x ${item.readyChannelHoleDistance}` : 'None',
-    waste: item.waste > 0 ? `${item.waste}ft` : 'None',
-    actions: (
-      <Stack direction="row" gap={0.5} flexWrap="wrap">
-        <IconButton
-          size="small"
-          sx={{ color: palette.primary.main }}
-          onClick={() => handleEditProduction(item)}
-          title="Edit Production"
-        >
-          <Edit fontSize="small" />
-        </IconButton>
-        {item.status === 'pending' && (
-          <IconButton
-            size="small"
-            sx={{ color: palette.success.main }}
-            onClick={() => openStatusDialog(item, 'In Progress')}
-            title="Start Production"
-          >
-            <PlayArrow fontSize="small" />
+  // ── Rows ─────────────────────────────────────────────────────
+  const rows = filteredProduction.map((item) => {
+    // Build channel length display: "6.67 ft (10H)"
+    let channelDisplay = '—';
+    if (item.channel_length) {
+      const ft = parseFloat(item.channel_length);
+      const holes = Math.round(ft * 1.5);
+      channelDisplay = `${ft} ft (${holes}H)`;
+    }
+
+    // Check if auto-created
+    const isAuto = (item.notes || '').toLowerCase().includes('auto-created');
+
+    return {
+      ...item,
+      typeChip: item.production_type === 'Specific Order'
+        ? `Order: ${item.order_id || '—'}`
+        : 'General',
+      rawMaterialDisplay: item.raw_material_color
+        ? `${item.raw_material_type || ''} — ${item.raw_material_color} (${item.raw_material_color_code || ''})`
+        : '—',
+      qtyDisplay: `${item.qty || 0} × ${item.size || '—'}`,
+      channelDisplay,
+      statusChip: item.status,
+      isAuto,
+      actions: (
+        <Stack direction="row" gap={0.5} flexWrap="wrap">
+          {(item.status === 'Pending' || item.status === 'In Progress') && (
+            <IconButton size="small" sx={{ color: palette.primary.main }} onClick={() => navigate(`/admin/production/edit/${item.id}`)} title="Edit">
+              <Edit fontSize="small" />
+            </IconButton>
+          )}
+          {item.status === 'Pending' && (
+            <IconButton size="small" sx={{ color: palette.success.main }} onClick={() => openStatusDialog(item, 'In Progress')} title="Start">
+              <PlayArrow fontSize="small" />
+            </IconButton>
+          )}
+          {item.status === 'In Progress' && (
+            <IconButton size="small" sx={{ color: palette.success.main }} onClick={() => openStatusDialog(item, 'Completed')} title="Mark Completed">
+              <CheckCircle fontSize="small" />
+            </IconButton>
+          )}
+          {(item.status === 'Pending' || item.status === 'In Progress') && (
+            <IconButton size="small" sx={{ color: palette.warning.main }} onClick={() => openStatusDialog(item, 'Cancelled')} title="Cancel">
+              <CancelIcon fontSize="small" />
+            </IconButton>
+          )}
+          <IconButton size="small" sx={{ color: palette.error.main }} onClick={() => handleDeleteProduction(item)} title="Delete">
+            <Delete fontSize="small" />
           </IconButton>
-        )}
-        {item.status === 'in-progress' && (
-          <IconButton
-            size="small"
-            sx={{ color: palette.success.main }}
-            onClick={() => openStatusDialog(item, 'Completed')}
-            title="Mark Completed"
-          >
-            <CheckCircle fontSize="small" />
-          </IconButton>
-        )}
-        {(item.status === 'pending' || item.status === 'in-progress') && (
-          <IconButton
-            size="small"
-            sx={{ color: palette.warning.main }}
-            onClick={() => openStatusDialog(item, 'Cancelled')}
-            title="Cancel Production"
-          >
-            <CancelIcon fontSize="small" />
-          </IconButton>
-        )}
-        {item.status === 'cancelled' && (
-          <IconButton
-            size="small"
-            sx={{ color: palette.warning.main }}
-            onClick={() => openStatusDialog(item, 'Pending')}
-            title="Reopen Production"
-          >
-            <PlayArrow fontSize="small" />
-          </IconButton>
-        )}
-        <IconButton
-          size="small"
-          sx={{ color: palette.error.main }}
-          onClick={() => handleDeleteProduction(item)}
-          title="Delete Production"
-        >
-          <Delete fontSize="small" />
-        </IconButton>
-      </Stack>
-    )
-  }));
+        </Stack>
+      ),
+    };
+  });
 
-  const handleViewProduction = (item) => {
-    alert(`Production Details:\n\nID: ${item.id}\nOrder: ${item.orderNumber}\nRaw Material: ${item.rawMaterial}\nState: ${item.state}\nTechnician: ${item.technician}\nDeadline: ${item.deadline}\n\nSlitted Output: ${item.slittedQuantity > 0 ? `${item.slittedQuantity}x ${item.slittedSize} (${item.slittedLength}ft)` : 'None'}\nReady Channel: ${item.readyChannelPieces > 0 ? `${item.readyChannelPieces}x ${item.readyChannelHoleDistance} (${item.readyChannelLength}ft)` : 'None'}\nWaste: ${item.waste}ft`);
-  };
+  // ── Status Dialog ─────────────────────────────────────────────
+  const openStatusDialog = (item, newStatus) => setStatusDialog({ open: true, production: item, newStatus });
+  const closeStatusDialog = () => setStatusDialog({ open: false, production: null, newStatus: null });
 
-  const handleEditProduction = (item) => {
-    navigate(`/admin/production/edit/${item.id}`);
-  };
-
-  // ── Status Dialog Handlers ──
-  const openStatusDialog = (item, newStatus) => {
-    setStatusDialog({ open: true, production: item, newStatus });
-  };
-
-  const closeStatusDialog = () => {
-    setStatusDialog({ open: false, production: null, newStatus: null });
-  };
-
-  const handleStatusConfirm = (prod, newStatus) => {
+  const handleStatusConfirm = async (prod, newStatus) => {
     setStatusLoading(true);
-    // Map display status to internal status key
-    const statusMap = {
-      'Pending': 'pending',
-      'In Progress': 'in-progress',
-      'Completed': 'completed',
-      'Cancelled': 'cancelled',
-    };
-    const stateMap = {
-      'Pending': 'Pending',
-      'In Progress': 'In Production',
-      'Completed': 'Completed',
-      'Cancelled': 'Cancelled',
-    };
-    const newInternalStatus = statusMap[newStatus] || 'pending';
-    const newState = stateMap[newStatus] || 'Pending';
-
-    // Update local state
-    setProduction((prev) =>
-      prev.map((p) =>
-        p.id === prod.id ? { ...p, status: newInternalStatus, state: newState } : p
-      )
-    );
-    toast.success(`Production ${prod.id} → ${newStatus}`);
-    setStatusLoading(false);
-    closeStatusDialog();
+    try {
+      await productionService.updateStatus(prod.id, newStatus);
+      toast.success(`Production #${prod.id} → ${newStatus}`);
+      await fetchProduction();
+    } catch (err) {
+      toast.error(err.message || 'Failed to update status.');
+    } finally {
+      setStatusLoading(false);
+      closeStatusDialog();
+    }
   };
 
+  // ── Delete ────────────────────────────────────────────────────
   const handleDeleteProduction = (item) => {
     setSelectedProduction(item);
     setDeleteDialogOpen(true);
   };
 
-  const handleConfirmDelete = async (production) => {
+  const handleConfirmDelete = async (prod) => {
     setDeleteLoading(true);
     try {
-      // TODO: Replace with actual API call
-      console.log('Delete production:', production.id);
-      alert(`Production ${production.id} deleted!`);
+      await productionService.deleteProduction(prod.id);
+      toast.success(`Production #${prod.id} deleted.`);
+      await fetchProduction();
       setDeleteDialogOpen(false);
       setSelectedProduction(null);
     } catch (err) {
-      alert('Failed to delete production');
+      toast.error(err.message || 'Failed to delete production.');
     } finally {
       setDeleteLoading(false);
     }
@@ -328,8 +185,14 @@ const ProductionList = () => {
     setSelectedProduction(null);
   };
 
+  // ── Summary counts ────────────────────────────────────────────
+  const pending = production.filter((i) => i.status === 'Pending').length;
+  const inProgress = production.filter((i) => i.status === 'In Progress').length;
+  const completed = production.filter((i) => i.status === 'Completed').length;
+  const cancelled = production.filter((i) => i.status === 'Cancelled').length;
+
   return (
-    <PageContainer title="Production Management" description="Manage production orders and schedules">
+    <PageContainer title="Production Management" description="Manage production records">
       {/* Header */}
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
@@ -341,20 +204,17 @@ const ProductionList = () => {
       >
         <Typography variant="h4" fontWeight={700}>Production Management</Typography>
         <Stack direction="row" gap={1} flexWrap="wrap">
-          <Button variant="outlined" startIcon={<FilterList />} sx={{ borderRadius: '8px' }}>
-            Filter
-          </Button>
           <Button variant="contained" startIcon={<Add />} onClick={() => navigate('/admin/production/new')} sx={{ borderRadius: '8px' }}>
             New Production
           </Button>
         </Stack>
       </Stack>
 
-      {/* Search and Filter Bar */}
+      {/* Search + Filter */}
       <Stack direction={{ xs: 'column', md: 'row' }} gap={2} mb={3} alignItems="center">
         <TextField
           fullWidth
-          placeholder="Search production by ID, order, raw material, or technician..."
+          placeholder="Search by order #, assignee, type, target state, color..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           InputProps={{
@@ -366,59 +226,55 @@ const ProductionList = () => {
           }}
           sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
         />
-        <FormControl sx={{ minWidth: 150 }}>
+        <FormControl sx={{ minWidth: 170 }}>
           <InputLabel>Status</InputLabel>
-          <Select
-            value={filterStatus}
-            label="Status"
-            onChange={(e) => setFilterStatus(e.target.value)}
-            size="medium"
-          >
+          <Select value={filterStatus} label="Status" onChange={(e) => setFilterStatus(e.target.value)}>
             <MenuItem value="all">All Status</MenuItem>
-            <MenuItem value="pending">Pending</MenuItem>
-            <MenuItem value="in-progress">In Progress</MenuItem>
-            <MenuItem value="completed">Completed</MenuItem>
+            <MenuItem value="Pending">Pending</MenuItem>
+            <MenuItem value="In Progress">In Progress</MenuItem>
+            <MenuItem value="Completed">Completed</MenuItem>
+            <MenuItem value="Cancelled">Cancelled</MenuItem>
           </Select>
         </FormControl>
       </Stack>
 
-      {/* Production Summary Cards */}
+      {/* Summary Cards */}
       <Grid container spacing={3} mb={3}>
-        <Grid item xs={12} sm={4}>
-          <ChildCard title="Pending Production">
-            <Typography variant="h4" fontWeight={600} color="warning.main">
-              {production.filter(item => item.status === 'pending').length}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              Awaiting raw materials
-            </Typography>
+        <Grid item xs={12} sm={3}>
+          <ChildCard title="Pending">
+            <Typography variant="h4" fontWeight={600} color="warning.main">{pending}</Typography>
+            <Typography variant="body2" color="textSecondary">Awaiting start</Typography>
           </ChildCard>
         </Grid>
-        <Grid item xs={12} sm={4}>
-          <ChildCard title="In Production">
-            <Typography variant="h4" fontWeight={600} color="info.main">
-              {production.filter(item => item.status === 'in-progress').length}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              Currently being processed
-            </Typography>
+        <Grid item xs={12} sm={3}>
+          <ChildCard title="In Progress">
+            <Typography variant="h4" fontWeight={600} color="info.main">{inProgress}</Typography>
+            <Typography variant="body2" color="textSecondary">Currently being processed</Typography>
           </ChildCard>
         </Grid>
-        <Grid item xs={12} sm={4}>
-          <ChildCard title="Completed Today">
-            <Typography variant="h4" fontWeight={600} color="success.main">
-              {production.filter(item => item.status === 'completed').length}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              Ready for delivery
-            </Typography>
+        <Grid item xs={12} sm={3}>
+          <ChildCard title="Completed">
+            <Typography variant="h4" fontWeight={600} color="success.main">{completed}</Typography>
+            <Typography variant="body2" color="textSecondary">Finished</Typography>
+          </ChildCard>
+        </Grid>
+        <Grid item xs={12} sm={3}>
+          <ChildCard title="Cancelled">
+            <Typography variant="h4" fontWeight={600} color="error.main">{cancelled}</Typography>
+            <Typography variant="body2" color="textSecondary">Cancelled</Typography>
           </ChildCard>
         </Grid>
       </Grid>
 
-      {/* Production Table */}
-      <ParentCard title="Production Management">
-        <DataTable rows={rows} columns={columns} defaultRows={10} />
+      {/* Table */}
+      <ParentCard title="Production Records">
+        {loading ? (
+          <Box display="flex" justifyContent="center" py={6}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <DataTable rows={rows} columns={columns} defaultRows={10} emptyMessage="No production records found." />
+        )}
       </ParentCard>
 
       {/* Delete Dialog */}
