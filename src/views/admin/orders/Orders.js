@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Button, TextField, InputAdornment,
-  IconButton, Stack, Card, CircularProgress,
+  IconButton, Stack, Card, CircularProgress, Chip,
 } from '@mui/material';
-import { Search, Add, Check, Close, Delete, Refresh, CheckCircle } from '@mui/icons-material';
+import { Search, Add, Check, Close, Delete, Refresh, CheckCircle, LocalShipping, Store, LocationOn } from '@mui/icons-material';
 import { useTheme, alpha } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -16,6 +16,7 @@ import StatusDialog from './StatusDialog';
 import NotesDialog from './NotesDialog';
 import NotesCell from './NotesCell';
 import ProductionRequestDialog from './ProductionRequestDialog';
+import DispatchDialog from './DispatchDialog';
 import { formatDate, ORDER_TABLE_DATA, getSummaryCardsData } from 'src/utils/helpers';
 
 const columns = [
@@ -48,6 +49,7 @@ const Orders = () => {
     'Awaiting production': '',
     'Awaiting material': '',
     Ready: '',
+    'Ready for Pickup/Delivery': '',
     Cancelled: ''
   });
 
@@ -101,6 +103,7 @@ const Orders = () => {
         order.created_at,
         order.final_length,
         order.additional_notes,
+        order.customer_notes,
       ].some((f) => f?.toString().toLowerCase().includes(term));
     });
   };
@@ -112,6 +115,7 @@ const Orders = () => {
     awaitingProduction: allOrders.filter((o) => o.order_status === 'Awaiting production').length,
     awaitingMaterial: allOrders.filter((o) => o.order_status === 'Awaiting material').length,
     ready: allOrders.filter((o) => o.order_status === 'Ready').length,
+    readyForPickup: allOrders.filter((o) => o.order_status === 'Ready for Pickup/Delivery').length,
     cancelled: allOrders.filter((o) => o.order_status === 'Cancelled').length,
   };
 
@@ -125,12 +129,32 @@ const Orders = () => {
   const closeProductionDialog = () =>
     setProductionDialog({ open: false, order: null, inventoryResult: null });
 
+  // Dispatch dialog
+  const [dispatchDialog, setDispatchDialog] = useState({ open: false, order: null });
+  const openDispatchDialog = (order) => setDispatchDialog({ open: true, order });
+  const closeDispatchDialog = () => setDispatchDialog({ open: false, order: null });
+
+  const handleDispatchConfirm = async (order, location) => {
+    setActionLoading(true);
+    try {
+      await orderService.updateStatus(order.id, 'Ready for Pickup/Delivery', location);
+      toast.success(`Order ${order.order_id} dispatched for ${order.delivery_method === 'pickup' ? 'pickup' : 'delivery'}`);
+      await fetchOrders();
+      closeDispatchDialog();
+    } catch (err) {
+      toast.error(err.message || 'Failed to dispatch order.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleStatusConfirm = async (type, order, options = {}) => {
     const statusMap = {
       CONFIRM: 'Confirmed',
       CANCEL: 'Cancelled',
       REOPEN: 'Pending',
       READY: 'Ready',
+      PICKUP_DELIVERY: 'Ready for Pickup/Delivery',
     };
 
     if (type === 'DELETE') {
@@ -142,6 +166,21 @@ const Orders = () => {
         closeStatusDialog();
       } catch (err) {
         toast.error(err.message || 'Failed to delete order.');
+      } finally {
+        setActionLoading(false);
+      }
+      return;
+    }
+
+    if (type === 'CONFIRM' && options.action === 'request-modification') {
+      setActionLoading(true);
+      try {
+        await orderService.requestModification(order.id, options.modificationNotes);
+        toast.success(`Modification requested for order ${order.order_id}`);
+        await fetchOrders();
+        closeStatusDialog();
+      } catch (err) {
+        toast.error(err.message || 'Failed to request modification.');
       } finally {
         setActionLoading(false);
       }
@@ -256,7 +295,7 @@ const Orders = () => {
           slittedPieces: inventoryResult?.slittedUsed || 0,
           fullRollPieces: inventoryResult?.fullRollUsed || 0,
         },
-        assignee: assignee?.name || '',
+        assignee: assignee?.id || null,
         source_type: ((inventoryResult?.slittedUsed || 0) > 0) ? 'Slitted' : 'Full Roll',
         notes: notes || ''
       };
@@ -283,6 +322,30 @@ const Orders = () => {
     ...order,
     notes: (
       <NotesCell order={order} onOpenNotes={openNotesDialog} />
+    ),
+    // Location column for Ready orders
+    location: (
+      <Stack direction="row" alignItems="center" spacing={0.5}>
+        <LocationOn sx={{ fontSize: 16, color: palette.text.secondary }} />
+        <Typography variant="body2" fontWeight={500}>Warehouse</Typography>
+      </Stack>
+    ),
+    // Dispatch info column for Ready for Pickup/Delivery orders
+    dispatch_info: (
+      <Stack spacing={0.5}>
+        <Chip
+          icon={order.delivery_method === 'pickup' ? <Store sx={{ fontSize: 14 }} /> : <LocalShipping sx={{ fontSize: 14 }} />}
+          label={order.delivery_method === 'pickup' ? 'Pickup' : 'Delivery'}
+          color={order.delivery_method === 'pickup' ? 'info' : 'success'}
+          size="small"
+          sx={{ fontWeight: 600, borderRadius: '6px', width: 'fit-content' }}
+        />
+        <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 200, display: 'block' }}>
+          {order.delivery_method === 'pickup'
+            ? (order.pickup_location || '—')
+            : (order.delivery_address || '—')}
+        </Typography>
+      </Stack>
     ),
     actions: (
       <Stack direction="row" gap={0.5} flexWrap="wrap">
@@ -311,9 +374,6 @@ const Orders = () => {
         )}
         {order.order_status === 'Awaiting production' && (
           <>
-            <IconButton size="small" sx={{ color: palette.info.main }} onClick={() => openStatusDialog('READY', order)} title="Mark Ready">
-              <CheckCircle fontSize="small" />
-            </IconButton>
             <IconButton size="small" sx={{ color: palette.error.main }} onClick={() => openStatusDialog('CANCEL', order)} title="Cancel">
               <Close fontSize="small" />
             </IconButton>
@@ -333,6 +393,19 @@ const Orders = () => {
           </>
         )}
         {order.order_status === 'Ready' && (
+          <>
+            <IconButton size="small" sx={{ color: palette.success.main }} onClick={() => openDispatchDialog(order)} title="Ready for Pickup/Delivery">
+              <LocalShipping fontSize="small" />
+            </IconButton>
+            <IconButton size="small" sx={{ color: palette.warning.main }} onClick={() => openStatusDialog('REOPEN', order)} title="Move to Pending">
+              <Refresh fontSize="small" />
+            </IconButton>
+            <IconButton size="small" sx={{ color: palette.error.main }} onClick={() => openStatusDialog('CANCEL', order)} title="Cancel">
+              <Close fontSize="small" />
+            </IconButton>
+          </>
+        )}
+        {order.order_status === 'Ready for Pickup/Delivery' && (
           <>
             <IconButton size="small" sx={{ color: palette.warning.main }} onClick={() => openStatusDialog('REOPEN', order)} title="Move to Pending">
               <Refresh fontSize="small" />
@@ -426,6 +499,28 @@ const Orders = () => {
             const currentRows = buildRows(getFilteredOrders(status));
             const themeColor = palette[color].main;
             const tableId = `table-${status.replace(/\s+/g, '-')}`;
+
+            // Build dynamic columns per status
+            const tableColumns = [...columns];
+            if (status === 'Ready') {
+              // Insert Location column before Notes
+              const notesIdx = tableColumns.findIndex(c => c.field === 'notes');
+              tableColumns.splice(notesIdx > -1 ? notesIdx : tableColumns.length, 0, {
+                field: 'location',
+                label: 'Location',
+                width: '150px',
+                minWidth: '150px',
+              });
+            } else if (status === 'Ready for Pickup/Delivery') {
+              // Insert Dispatch Info column before Notes
+              const notesIdx = tableColumns.findIndex(c => c.field === 'notes');
+              tableColumns.splice(notesIdx > -1 ? notesIdx : tableColumns.length, 0, {
+                field: 'dispatch_info',
+                label: 'Dispatch Info',
+                width: '220px',
+                minWidth: '220px',
+              });
+            }
             return (
               <Card
                 id={tableId}
@@ -472,7 +567,7 @@ const Orders = () => {
                   </Box>
                   <DataTable
                     rows={currentRows}
-                    columns={columns}
+                    columns={tableColumns}
                     defaultRows={5}
                     emptyMessage={`No ${title.toLowerCase()} found.`}
                   />
@@ -507,6 +602,14 @@ const Orders = () => {
         inventoryResult={productionDialog.inventoryResult}
         onClose={closeProductionDialog}
         onSubmit={handleProductionRequest}
+        loading={actionLoading}
+      />
+
+      <DispatchDialog
+        open={dispatchDialog.open}
+        order={dispatchDialog.order}
+        onClose={closeDispatchDialog}
+        onConfirm={handleDispatchConfirm}
         loading={actionLoading}
       />
 

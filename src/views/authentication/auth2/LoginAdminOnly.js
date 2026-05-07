@@ -67,8 +67,12 @@ const LoginAdminOnly = () => {
       localStorage.setItem('adminData', JSON.stringify(adminData));
       localStorage.setItem('userRole', adminData.role);
 
-      // Navigate to admin dashboard immediately
-      navigate('/admin/orders');
+      // Navigate to correct dashboard based on role
+      if (adminData.role === 'production tech') {
+        navigate('/admin/production');
+      } else {
+        navigate('/admin/orders');
+      }
       
       // Show success toast after navigation
       setTimeout(() => {

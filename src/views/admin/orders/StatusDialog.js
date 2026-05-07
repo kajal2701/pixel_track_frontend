@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, Typography, CircularProgress, Box, IconButton,
-  Stack, Divider, Alert,
+  Stack, Divider, Alert, TextField,
 } from '@mui/material';
 import {
-  Check, Refresh, Delete, CheckCircle, Close, Inventory2,
+  Check, Refresh, Delete, CheckCircle, Close, Inventory2, Edit,
 } from '@mui/icons-material';
 import orderService from 'src/services/orderService';
 import OrderDetailsCard from './OrderDetailsCard';
@@ -41,7 +41,7 @@ const DIALOG_CONFIG = {
     title: 'Mark as Ready',
     icon: <CheckCircle sx={{ color: 'info.main', fontSize: 40 }} />,
     message: (order) => `Mark order ${order?.order_id} as Ready?`,
-    sub: 'Customer will be notified for pickup/delivery.',
+    sub: 'Product will be stored in warehouse. Inventory holds remain active.',
     confirmLabel: 'Mark Ready',
     confirmColor: 'info',
   },
@@ -63,6 +63,7 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, loading }) => {
 
   const [inventoryResult, setInventoryResult] = useState(null);
   const [inventoryLoading, setInventoryLoading] = useState(false);
+  const [modificationNotes, setModificationNotes] = useState('');
 
   // Fetch inventory and run check when CONFIRM dialog opens
   useEffect(() => {
@@ -79,8 +80,10 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, loading }) => {
         }
       };
       fetchAndCheck();
+      setModificationNotes(order.modification_notes || '');
     } else {
       setInventoryResult(null);
+      setModificationNotes('');
     }
   }, [open, type, order]);
 
@@ -88,7 +91,7 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, loading }) => {
 
   const isConfirm = type === 'CONFIRM';
   const hasShortage = isConfirm && inventoryResult && !inventoryResult.error && Number(inventoryResult.shortage || 0) > 0;
-  const needsProduction = isConfirm && inventoryResult && !inventoryResult.error && 
+  const needsProduction = isConfirm && inventoryResult && !inventoryResult.error &&
     (Number(inventoryResult.slittedUsed || 0) > 0 || Number(inventoryResult.fullRollUsed || 0) > 0);
 
   return (
@@ -151,9 +154,33 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, loading }) => {
             ) : null}
           </Box>
         )}
+
+        {/* ── Modification Request (CONFIRM only) ── */}
+        {isConfirm && (
+          <Box sx={{ mt: 2 }}>
+            <Divider sx={{ mb: 2 }} />
+            <Stack direction="row" spacing={1} alignItems="center" mb={1.5}>
+              <Edit sx={{ color: 'warning.main', fontSize: 20 }} />
+              <Typography variant="subtitle2" fontWeight={700}>
+                Request Modification
+              </Typography>
+            </Stack>
+
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              placeholder="e.g., Customer wants to change pickup location, reduce quantity to 50 pieces..."
+              value={modificationNotes}
+              onChange={(e) => setModificationNotes(e.target.value)}
+              size="small"
+              sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+            />
+          </Box>
+        )}
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+      <DialogActions sx={{ px: 3, pb: 2, gap: 1, flexWrap: 'wrap' }}>
         <Button
           onClick={onClose}
           variant="outlined"
@@ -162,6 +189,19 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, loading }) => {
         >
           Cancel
         </Button>
+        {isConfirm && (
+          <Button
+            onClick={() => onConfirm(type, order, { action: 'request-modification', modificationNotes: modificationNotes.trim() })}
+            variant="contained"
+            color="primary"
+            disabled={loading || !modificationNotes.trim()}
+            sx={{ borderRadius: '8px', minWidth: 180 }}
+          >
+            {loading
+              ? <CircularProgress size={18} color="inherit" />
+              : 'Request Modification'}
+          </Button>
+        )}
         {!hasShortage && !needsProduction && (
           <Button
             onClick={() => onConfirm(type, order, { inventoryResult, action: 'confirm' })}

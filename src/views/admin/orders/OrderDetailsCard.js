@@ -38,7 +38,13 @@ const OrderDetailsCard = ({ order }) => {
           Final Length: <strong>{order.final_length || '—'}</strong>
         </Typography>
         <Typography variant="caption" color="text.secondary">
-          Delivery: <strong>{order.delivery_method || '—'}</strong>
+          Delivery: <strong>{order.delivery_method === 'pickup' ? 'Pickup' : order.delivery_method === 'delivery' ? 'Delivery' : '—'}</strong>
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          Address: <strong>{order.delivery_method === 'pickup' ? (order.pickup_location || '—') : (order.delivery_address || '—')}</strong>
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {order.delivery_method === 'pickup' ? 'Pickup' : 'Delivery'} Date: <strong>{order.pickup_date ? new Date(order.pickup_date).toLocaleDateString('en-GB') : '—'}</strong>
         </Typography>
       </Box>
     </Box>

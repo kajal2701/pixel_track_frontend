@@ -76,12 +76,14 @@ export const groupBySupplierColor = (items) => {
         fullRoll_feet: 0,
         fullRoll_id: null,
         fullRoll_channel_length: '',
+        fullRoll_location: '',
         slitted_qty: 0,
         slitted_size: '',
         slitted_state: null,
         slitted_feet: 0,
         slitted_id: null,
         slitted_channel_length: '',
+        slitted_location: '',
         ready_pieces: 0,
         ready_state: null,
         ready_variants: [],
@@ -102,6 +104,7 @@ export const groupBySupplierColor = (items) => {
       group.fullRoll_feet += parseFloat(item.possible_feet) || 0;
       group.fullRoll_id = item.id;
       group.fullRoll_channel_length = item.channel_length || group.fullRoll_channel_length;
+      group.fullRoll_location = item.location || group.fullRoll_location || 'Warehouse';
     } else if (item.inventory_type === 'Slitted') {
       const q = parseFloat(item.quantity) || 0;
       group.slitted_qty += q;
@@ -112,6 +115,7 @@ export const groupBySupplierColor = (items) => {
       group.slitted_feet += parseFloat(item.possible_feet) || 0;
       group.slitted_id = item.id;
       group.slitted_channel_length = item.channel_length || group.slitted_channel_length;
+      group.slitted_location = item.location || group.slitted_location || 'Warehouse';
     } else if (item.inventory_type === 'Ready Channel') {
       const readyPieces = parseFloat(item.pieces) || 0;
       const itemLength = parseFloat(item.length);
@@ -126,6 +130,7 @@ export const groupBySupplierColor = (items) => {
         length: formattedLength,
         hole_distance: holeDistance,
         state: item.state || null,
+        location: item.location || 'Warehouse',
       });
     }
   });

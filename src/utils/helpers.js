@@ -1,3 +1,6 @@
+import React from 'react';
+import { Chip } from '@mui/material';
+
 // Status chip color mapping for order statuses
 export const STATUS_CHIP_COLOR = (status) =>
 ({
@@ -6,6 +9,7 @@ export const STATUS_CHIP_COLOR = (status) =>
   'Awaiting production': 'primary',
   'Awaiting material': 'secondary',
   Ready: 'info',
+  'Ready for Pickup/Delivery': 'success',
   Cancelled: 'error',
 }[status] || 'default');
 
@@ -48,6 +52,16 @@ export const INVENTORY_TYPE_OPTIONS = [
   { value: 'Full Roll', label: 'Full Roll' },
   { value: 'Slitted', label: 'Slitted' },
   { value: 'Ready Channel', label: 'Ready Channel' },
+];
+
+export const ROLE_OPTIONS = [
+  { value: '', label: 'Select Role', disabled: true },
+  { value: 'production tech', label: 'Production Tech' },
+];
+
+export const STATUS_OPTIONS = [
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
 ];
 
 // ── Validation & Input Helpers ───────────────────────────────
@@ -156,8 +170,14 @@ export const ORDER_TABLE_DATA = [
   {
     status: 'Ready',
     title: 'Ready Orders',
-    subtitle: 'Completed orders that are ready for dispatch or pickup.',
+    subtitle: 'Orders produced and stored in warehouse.',
     color: 'info'
+  },
+  {
+    status: 'Ready for Pickup/Delivery',
+    title: 'Ready for Pickup/Delivery',
+    subtitle: 'Orders dispatched to pickup location or out for delivery.',
+    color: 'success'
   },
   {
     status: 'Cancelled',
@@ -221,7 +241,8 @@ export const getSummaryCardsData = (counts) => [
   { title: 'Confirmed', count: counts.confirmed, sub: 'Confirmed orders', accent: 'success.main', dot: 'success.main', target: 'table-Confirmed' },
   { title: 'Awaiting Prod.', count: counts.awaitingProduction, sub: 'Production requested', accent: 'primary.main', dot: 'primary.main', target: 'table-Awaiting-production' },
   { title: 'Awaiting Material', count: counts.awaitingMaterial, sub: 'Need stock update', accent: 'secondary.main', dot: 'secondary.main', target: 'table-Awaiting-material' },
-  { title: 'Ready', count: counts.ready, sub: 'Ready for dispatch', accent: 'info.main', dot: 'info.main', target: 'table-Ready' },
+  { title: 'Ready', count: counts.ready, sub: 'In warehouse', accent: 'info.main', dot: 'info.main', target: 'table-Ready' },
+  { title: 'Dispatched', count: counts.readyForPickup, sub: 'Out for pickup/delivery', accent: 'success.main', dot: 'success.main', target: 'table-Ready-for-Pickup/Delivery' },
   { title: 'Cancelled', count: counts.cancelled, sub: 'Orders cancelled', accent: 'error.main', dot: 'error.main', target: 'table-Cancelled' },
 ];
 
@@ -245,4 +266,51 @@ export const getStatusColor = (status) => {
 export const getTypeColor = (type) => {
   return type === 'Specific Order' ? 'primary' : 'secondary';
 };
+
+// ── Location Options ──────────────────────────────────────────────
+export const LOCATION_OPTIONS = [
+  { value: 'Warehouse', label: 'Warehouse' },
+  { value: '4783 CAWSEY Terrace SW, Edmonton AB T6W 5M7', label: '4783 CAWSEY Terrace SW' },
+  { value: '2322 chokecherry close sw Edmonton, AB T6X2M7', label: '2322 Chokecherry Close SW' },
+];
+
+// ── Role Chip Color ──────────────────────────────────────────────
+export const getRoleChipColor = (role) => {
+  switch (role) {
+    case 'superadmin': return 'primary';
+    case 'production tech': return 'info';
+    default: return 'default';
+  }
+};
+
+// ── Inventory Type Color ─────────────────────────────────────────
+export const getInventoryTypeColor = (type) => {
+  switch (type) {
+    case 'Full Roll': return '#5D87FF';
+    case 'Slitted': return '#FFAE1F';
+    case 'Ready Channel': return '#13DEB9';
+    default: return '#8e8e8e';
+  }
+};
+
+// ── Order Grouping Colors ─────────────────────────────────────────
+export const ORDER_COLORS = [
+  '#5D87FF', '#49BEFF', '#13DEB9', '#FFAE1F', '#FA896B',
+  '#9C27B0', '#00BCD4', '#FF5722', '#8BC34A', '#3F51B5',
+];
+
+// ── Type Chip with Order Color Grouping ───────────────────────────
+export const TypeChipWithOrderColor = ({ item, orderColor }) => (
+  <Chip
+    label={item.production_type === 'Specific Order' ? `Order: ${item.order_id || '—'}` : 'General'}
+    size="small"
+    sx={{
+      borderRadius: '6px',
+      ...(orderColor
+        ? { backgroundColor: orderColor, color: '#fff', fontWeight: 600 }
+        : {}),
+    }}
+    {...(!orderColor ? { color: 'secondary' } : {})}
+  />
+);
 

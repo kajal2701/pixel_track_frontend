@@ -15,11 +15,9 @@ const ProductForm = ({ product, onSubmit, loading, isEdit = false, onCancel }) =
   } = useForm({
     mode: 'onChange',
     defaultValues: {
-      product_name: '',
       manufacturer: '',
       color: '',
       color_code: '',
-      price: '',
       stock: '',
       full_roll_length: '98',
       slits_per_roll: '6',
@@ -30,11 +28,9 @@ const ProductForm = ({ product, onSubmit, loading, isEdit = false, onCancel }) =
   useEffect(() => {
     if (product && isEdit) {
       reset({
-        product_name: product.product_name || '',
         manufacturer: product.manufacturer || '',
         color: product.color || '',
         color_code: product.color_code || '',
-        price: product.price ?? '',
         stock: product.stock ?? '',
         full_roll_length: product.full_roll_length ?? '98',
         slits_per_roll: product.slits_per_roll ?? '6',
@@ -45,11 +41,9 @@ const ProductForm = ({ product, onSubmit, loading, isEdit = false, onCancel }) =
 
     if (!isEdit) {
       reset({
-        product_name: '',
         manufacturer: '',
         color: '',
         color_code: '',
-        price: '',
         stock: '',
         full_roll_length: '98',
         slits_per_roll: '6',
@@ -60,11 +54,11 @@ const ProductForm = ({ product, onSubmit, loading, isEdit = false, onCancel }) =
 
   const onFormSubmit = (data) => {
     const payload = {
-      product_name: data.product_name?.trim(),
+      product_name: null,
       manufacturer: data.manufacturer?.trim(),
       color: data.color?.trim(),
       color_code: data.color_code?.trim() || null,
-      price: data.price === '' ? null : Number(data.price),
+      price: null,
       stock: data.stock === '' ? 0 : Number(data.stock),
       full_roll_length: data.full_roll_length === '' ? 98 : Number(data.full_roll_length),
       slits_per_roll: data.slits_per_roll === '' ? 6 : Number(data.slits_per_roll),
@@ -91,21 +85,6 @@ const ProductForm = ({ product, onSubmit, loading, isEdit = false, onCancel }) =
             <Typography variant="h6" sx={{ mb: 0, color: palette.primary.main, fontWeight: 600 }}>
               Product Information
             </Typography>
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
-              Product Name *
-            </Typography>
-            <TextField
-              fullWidth
-              variant="outlined"
-              placeholder="Enter product name"
-              {...register('product_name', { required: 'Product name is required' })}
-              error={!!errors.product_name}
-              helperText={errors.product_name?.message}
-              sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-            />
           </Grid>
 
           <Grid item xs={12} md={6}>
@@ -149,27 +128,6 @@ const ProductForm = ({ product, onSubmit, loading, isEdit = false, onCancel }) =
               {...register('color_code', { required: 'Color code is required' })}
               error={!!errors.color_code}
               helperText={errors.color_code?.message}
-              sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-            />
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
-              Price *
-            </Typography>
-            <TextField
-              fullWidth
-              type="number"
-              inputProps={{ min: 0, step: '0.01' }}
-              variant="outlined"
-              placeholder="0.00"
-              {...register('price', {
-                required: 'Price is required',
-                validate: (v) =>
-                  (Number.isFinite(Number(v)) && Number(v) >= 0) || 'Price must be 0 or higher',
-              })}
-              error={!!errors.price}
-              helperText={errors.price?.message}
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
             />
           </Grid>

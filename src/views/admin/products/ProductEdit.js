@@ -77,7 +77,7 @@ const ProductEdit = () => {
             Back to Products
           </Button>
           <Typography variant="h4" fontWeight={700}>
-            Edit Product - {product?.product_name}
+            Edit Product - {product?.color} ({product?.color_code || product?.id})
           </Typography>
         </Box>
 

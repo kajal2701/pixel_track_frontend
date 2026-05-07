@@ -33,7 +33,7 @@ const DeleteProductDialog = ({ open, product, onClose, onConfirm, loading }) => 
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 1, gap: 1.5 }}>
           <Delete sx={{ color: 'error.main', fontSize: 40 }} />
           <Typography variant="body1" textAlign="center" fontWeight={500}>
-            Are you sure you want to delete {product?.product_name}?
+            Are you sure you want to delete {product?.color} ({product?.color_code || product?.id})?
           </Typography>
           <Typography variant="caption" color="text.secondary" textAlign="center">
             This action cannot be undone.

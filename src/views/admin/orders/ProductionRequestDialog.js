@@ -4,12 +4,7 @@ import {
   Box, IconButton, Stack, TextField, MenuItem, Alert, CircularProgress,
 } from '@mui/material';
 import { Close, PrecisionManufacturing } from '@mui/icons-material';
-
-const DUMMY_ASSIGNEES = [
-  { id: 'tech-01', name: 'John Smith' },
-  { id: 'tech-02', name: 'Sarah Wilson' },
-  { id: 'tech-03', name: 'Mike Johnson' },
-];
+import adminUserService from '../../../services/adminUserService';
 
 const ProductionRequestDialog = ({
   open,
@@ -21,6 +16,18 @@ const ProductionRequestDialog = ({
 }) => {
   const [assigneeId, setAssigneeId] = useState('');
   const [notes, setNotes] = useState('');
+  const [productionTechUsers, setProductionTechUsers] = useState([]);
+
+  // Fetch production tech users
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await adminUserService.getProductionTechUsers();
+        setProductionTechUsers(response.data || []);
+      } catch (err) { /* silent */ }
+    };
+    fetchUsers();
+  }, []);
 
   useEffect(() => {
     if (!open) {
@@ -50,7 +57,7 @@ const ProductionRequestDialog = ({
     return lines;
   }, [inventoryResult, order]);
 
-  const selectedAssignee = DUMMY_ASSIGNEES.find((p) => p.id === assigneeId);
+  const selectedAssignee = productionTechUsers.find((u) => String(u.id) === String(assigneeId));
   const disableSubmit = loading || !assigneeId || productionLines.length === 0;
 
   return (
@@ -101,14 +108,14 @@ const ProductionRequestDialog = ({
 
           <TextField
             select
-            label="Assign Person *"
+            label="Assign *"
             value={assigneeId}
             onChange={(e) => setAssigneeId(e.target.value)}
             fullWidth
           >
-            {DUMMY_ASSIGNEES.map((person) => (
-              <MenuItem key={person.id} value={person.id}>
-                {person.name}
+            {productionTechUsers.map((user) => (
+              <MenuItem key={user.id} value={user.id}>
+                {user.username}
               </MenuItem>
             ))}
           </TextField>
@@ -134,7 +141,7 @@ const ProductionRequestDialog = ({
             onSubmit({
               order,
               inventoryResult,
-              assignee: selectedAssignee,
+              assignee: selectedAssignee ? { id: selectedAssignee.id, name: selectedAssignee.username } : null,
               notes,
               productionLines,
             })

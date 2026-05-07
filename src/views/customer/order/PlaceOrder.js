@@ -18,6 +18,7 @@ import {
   calculateFinalLength,
   generateColorOptions,
   getMinPickupDate,
+  getEstimatedDeliveryDate,
   getPieceLength,
 } from 'src/utils/helpers';
 import OrderConfiguration from './OrderConfiguration';
@@ -91,10 +92,12 @@ const PlaceOrder = () => {
     setLoading(true);
     try {
       const deliveryMethodValue = data.deliveryMethod;
-      const pickupDateValue =
-        deliveryMethodValue === 'pickup' && data.pickupDate
-          ? format(new Date(data.pickupDate), 'yyyy-MM-dd')
-          : null;
+      let pickupDateValue = null;
+      if (deliveryMethodValue === 'pickup' && data.pickupDate) {
+        pickupDateValue = format(new Date(data.pickupDate), 'yyyy-MM-dd');
+      } else if (deliveryMethodValue === 'delivery') {
+        pickupDateValue = getEstimatedDeliveryDate();
+      }
 
       const payload = {
         customer_id: customer.id,
@@ -111,7 +114,7 @@ const PlaceOrder = () => {
         pickup_date: pickupDateValue,
         delivery_address:
           deliveryMethodValue === 'delivery' ? data.deliveryAddress?.trim() || null : null,
-        notes: data.notes?.trim() || null,
+        customer_notes: data.notes?.trim() || null,
       };
       await orderService.createOrder(payload);
       toast.success('Order placed successfully!');

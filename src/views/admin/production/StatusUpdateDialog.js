@@ -66,7 +66,7 @@ const StatusUpdateDialog = ({ open, production, newStatus, onClose, onConfirm, l
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 2, gap: 2 }}>
           {/* Production ID */}
           <Typography variant="caption" color="text.secondary">
-            Production: <strong>{production.id}</strong>
+            Production ID: <strong>{production.id}</strong>
           </Typography>
 
           {/* Status Transition Visual */}

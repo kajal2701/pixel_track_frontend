@@ -8,7 +8,7 @@ import {
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { getStatusInfo } from './helperFunction';
-import { calculateProductionDetails } from 'src/utils/helpers';
+import { calculateProductionDetails, getInventoryTypeColor } from 'src/utils/helpers';
 
 const CollapsibleRow = ({ row, onEdit, onDelete }) => {
   const [open, setOpen] = useState(false);
@@ -26,6 +26,7 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
         { label: 'Quantity', value: row.fullRoll_qty },
         { label: 'Size', value: row.fullRoll_size || '—' },
         { label: 'Possible Production', value: calculateProductionDetails(row.fullRoll_size, row.fullRoll_qty) },
+        { label: 'Location', value: row.fullRoll_location || 'Warehouse' },
       ],
     },
     {
@@ -38,6 +39,7 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
         { label: 'Quantity', value: row.slitted_qty },
         { label: 'Size', value: row.slitted_size || '—' },
         { label: 'Possible Production', value: calculateProductionDetails(row.slitted_size, row.slitted_qty) },
+        { label: 'Location', value: row.slitted_location || 'Warehouse' },
       ],
     },
     {
@@ -105,10 +107,15 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
                 <Chip
                   key={s.label}
                   label={`${s.label}: ${displayValue}`}
-                  color={status.color}
                   variant={s.qty > 0 ? 'filled' : 'outlined'}
                   size="small"
-                  sx={{ borderRadius: '8px', fontWeight: 500 }}
+                  sx={{
+                    borderRadius: '8px',
+                    fontWeight: 500,
+                    ...(s.qty > 0
+                      ? { backgroundColor: getInventoryTypeColor(s.label), color: '#fff' }
+                      : { borderColor: getInventoryTypeColor(s.label), color: getInventoryTypeColor(s.label) }),
+                  }}
                 />
               );
             })}
@@ -221,7 +228,7 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
                                   }}
                                 >
                                   <Typography variant="body2" color="text.secondary">
-                                    {`${variant.length ?? '—'} ft | ${variant.pieces} pcs | Hole ${variant.hole_distance}`}
+                                    {`${variant.length ?? '—'} ft | ${variant.pieces} pcs | Hole ${variant.hole_distance} | ${variant.location || 'Warehouse'}`}
                                   </Typography>
                                   <Stack direction="row" spacing={0.5}>
                                     <IconButton

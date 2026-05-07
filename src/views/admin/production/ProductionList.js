@@ -18,7 +18,7 @@ import DeleteProductionDialog from './DeleteProductionDialog';
 import StatusUpdateDialog from './StatusUpdateDialog';
 import productionService from '../../../services/productionService';
 import toast from 'react-hot-toast';
-import { getStatusColor, getTypeColor } from '../../../utils/helpers';
+import { getStatusColor, getTypeColor, ORDER_COLORS, TypeChipWithOrderColor } from '../../../utils/helpers';
 
 const ProductionList = () => {
   const { palette } = useTheme();
@@ -36,12 +36,25 @@ const ProductionList = () => {
   const [statusDialog, setStatusDialog] = useState({ open: false, production: null, newStatus: null });
   const [statusLoading, setStatusLoading] = useState(false);
 
+  // Current user info for role-based filtering
+  const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+  const isProductionTech = adminData.role === 'production tech';
+
   // ── Fetch ────────────────────────────────────────────────────
   const fetchProduction = useCallback(async () => {
     setLoading(true);
     try {
       const res = await productionService.getAllProduction();
-      setProduction(res.data || []);
+      let records = res.data || [];
+
+      // Production tech users only see their assigned productions
+      if (isProductionTech && adminData.username) {
+        records = records.filter(
+          (item) => String(item.assignee) === String(adminData.id)
+        );
+      }
+
+      setProduction(records);
     } catch (err) {
       toast.error(err.message || 'Failed to fetch production records.');
     } finally {
@@ -56,7 +69,7 @@ const ProductionList = () => {
     const term = searchTerm.toLowerCase();
     const matchesSearch =
       (item.order_id || '').toLowerCase().includes(term) ||
-      (item.assignee || '').toLowerCase().includes(term) ||
+      (item.assignee_name || '').toLowerCase().includes(term) ||
       (item.production_type || '').toLowerCase().includes(term) ||
       (item.target_state || '').toLowerCase().includes(term) ||
       (item.raw_material_color || '').toLowerCase().includes(term) ||
@@ -69,7 +82,7 @@ const ProductionList = () => {
   // ── Columns ──────────────────────────────────────────────────
   const columns = [
     { field: 'id', label: 'ID', bold: true, width: '5%' },
-    { field: 'typeChip', label: 'Type', type: 'chip', chipColor: (row) => getTypeColor(row.production_type), width: '12%' },
+    { field: 'typeChip', label: 'Type', width: '12%' },
     {
       field: 'target_state', label: 'Target', width: '10%', render: (row) => (
         <Stack direction="row" alignItems="center" gap={0.5}>
@@ -81,10 +94,24 @@ const ProductionList = () => {
     { field: 'rawMaterialDisplay', label: 'Raw Material', width: '18%' },
     { field: 'qtyDisplay', label: 'Qty / Size', width: '12%' },
     { field: 'channelDisplay', label: 'Ch. Length', width: '8%' },
-    { field: 'assignee', label: 'Assignee', width: '10%' },
-    { field: 'statusChip', label: 'Status', type: 'chip', chipColor: (row) => getStatusColor(row.status), width: '10%' },
+    { field: 'assignee_name', label: 'Assign', width: '10%' },
+    { field: 'statusChip', label: 'Status', type: 'chip', chipColor: (value) => getStatusColor(value), width: '10%' },
     { field: 'actions', label: 'Actions', width: '12%' },
   ];
+
+  // ── Order Color Grouping ─────────────────────────────────────
+  // Assign a consistent color to each unique order_id
+  const orderColorMap = React.useMemo(() => {
+    const map = {};
+    let colorIdx = 0;
+    filteredProduction.forEach((item) => {
+      if (item.order_id && !map[item.order_id]) {
+        map[item.order_id] = ORDER_COLORS[colorIdx % ORDER_COLORS.length];
+        colorIdx++;
+      }
+    });
+    return map;
+  }, [filteredProduction]);
 
   // ── Rows ─────────────────────────────────────────────────────
   const rows = filteredProduction.map((item) => {
@@ -99,11 +126,12 @@ const ProductionList = () => {
     // Check if auto-created
     const isAuto = (item.notes || '').toLowerCase().includes('auto-created');
 
+    // Order color for grouping
+    const orderColor = item.order_id ? orderColorMap[item.order_id] : null;
+
     return {
       ...item,
-      typeChip: item.production_type === 'Specific Order'
-        ? `Order: ${item.order_id || '—'}`
-        : 'General',
+      typeChip: <TypeChipWithOrderColor item={item} orderColor={orderColor} />,
       rawMaterialDisplay: item.raw_material_color
         ? `${item.raw_material_type || ''} — ${item.raw_material_color} (${item.raw_material_color_code || ''})`
         : '—',

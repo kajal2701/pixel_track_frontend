@@ -36,7 +36,7 @@ const ProductionEdit = () => {
           size: p.size || '',
           channelLength: channelLengthLabel ? String(channelLengthLabel) : '',
           wasteQty: p.waste_qty || 0,
-          assignee: p.assignee || '',
+          assignee: p.assignee ? Number(p.assignee) : '',
           notes: p.notes || '',
           status: p.status || 'Pending',
         });
@@ -69,7 +69,7 @@ const ProductionEdit = () => {
         size: data.size,
         channel_length: channelLengthNum,
         waste_qty: data.wasteQty || 0,
-        assignee: data.assignee || '',
+        assignee: data.assignee || null,
         notes: data.notes || '',
       });
       toast.success('Production record updated successfully!');

@@ -20,6 +20,7 @@ import CustomSelect from '../../../components/forms/theme-elements/CustomSelect'
 import {
   CHANNEL_LENGTH_OPTIONS as channelLengthOptions,
   INVENTORY_TYPE_OPTIONS as inventoryTypeOptions,
+  LOCATION_OPTIONS as locationOptions,
   handleDecimalChange,
   handleIntegerInput,
   decimalRules,
@@ -145,6 +146,7 @@ const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }
       hole_distance: '',
       pieces: '',
       length: '',
+      location: 'Warehouse',
     },
   });
 
@@ -313,6 +315,15 @@ const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }
             label="Inventory Type *"
             rules={{ required: 'Inventory Type is required' }}
             options={inventoryTypeOptions}
+          />
+
+          <FormSelectField
+            control={control}
+            name="location"
+            id="location"
+            label="Location"
+            rules={{ required: 'Location is required' }}
+            options={locationOptions}
           />
 
           {selectedType !== 'Slitted' && (

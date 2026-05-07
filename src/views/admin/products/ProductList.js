@@ -23,43 +23,42 @@ import DeleteProductDialog from './DeleteProductDialog';
 import { formatDate } from 'src/utils/helpers';
 
 const columns = [
-  { field: 'product_name', label: 'Product', bold: true, width: '220px', minWidth: '220px' },
-  { field: 'manufacturer', label: 'Manufacturer', width: '180px', minWidth: '180px' },
+  { field: 'manufacturer', label: 'Manufacturer', bold: true, width: '220px', minWidth: '220px' },
   { field: 'color', label: 'Color', width: '140px', minWidth: '140px' },
   { field: 'color_code', label: 'Color Code', width: '140px', minWidth: '140px' },
-  {
-    field: 'price',
-    label: 'Price',
-    width: '120px',
-    minWidth: '120px',
-    render: (row) => {
-      if (row.price == null || row.price === '') return '-';
-      const num = Number(row.price);
-      if (!Number.isFinite(num)) return row.price;
-      return `$${num.toFixed(2)}`;
-    },
-  },
   { field: 'stock', label: 'Stock', width: '100px', minWidth: '100px' },
   {
     field: 'full_roll_length',
     label: 'Roll Length',
     width: '120px',
     minWidth: '120px',
-    render: (row) => row.full_roll_length != null ? `${row.full_roll_length} ft` : '98 ft',
+    render: (row) => (
+      <Typography variant="h6" fontWeight="400">
+        {row.full_roll_length != null ? `${row.full_roll_length} ft` : '98 ft'}
+      </Typography>
+    ),
   },
   {
     field: 'slits_per_roll',
     label: 'Slits/Roll',
     width: '110px',
     minWidth: '110px',
-    render: (row) => row.slits_per_roll != null ? `× ${row.slits_per_roll}` : '× 6',
+    render: (row) => (
+      <Typography variant="h6" fontWeight="400">
+        {row.slits_per_roll != null ? `× ${row.slits_per_roll}` : '× 6'}
+      </Typography>
+    ),
   },
   {
     field: 'slitted_roll_length',
     label: 'Slit Length',
     width: '120px',
     minWidth: '120px',
-    render: (row) => row.slitted_roll_length != null ? `${row.slitted_roll_length} ft` : '98 ft',
+    render: (row) => (
+      <Typography variant="h6" fontWeight="400">
+        {row.slitted_roll_length != null ? `${row.slitted_roll_length} ft` : '98 ft'}
+      </Typography>
+    ),
   },
   { field: 'created_at', label: 'Created', width: '160px', minWidth: '160px' },
   { field: 'actions', label: 'Actions', width: '120px', minWidth: '120px' },
@@ -108,11 +107,9 @@ const ProductList = () => {
       if (colorFilter && p.color !== colorFilter) return false;
       if (!q) return true;
       return [
-        p.product_name,
         p.manufacturer,
         p.color,
         p.color_code,
-        String(p.price ?? ''),
         String(p.stock ?? ''),
       ].some((v) =>
         String(v ?? '')
@@ -129,7 +126,7 @@ const ProductList = () => {
     setActionLoading(true);
     try {
       await productService.deleteProduct(product.id);
-      toast.success(`Product "${product.product_name}" deleted successfully.`);
+      toast.success(`Product "${product.color} (${product.color_code || product.id})" deleted successfully.`);
       closeDeleteDialog();
       await fetchProducts();
     } catch (err) {

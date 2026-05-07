@@ -2,39 +2,34 @@ import React, { useState, useEffect } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, TextareaAutosize, Typography, CircularProgress,
-  IconButton, Box,
+  IconButton, Box, Stack, Chip,
 } from '@mui/material';
-import { Close } from '@mui/icons-material';
+import { Close, Person, AdminPanelSettings } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 
 const NotesDialog = ({ open, order, onClose, onSave, loading }) => {
   const { palette } = useTheme();
-  const [notes, setNotes] = useState('');
-  const [error, setError] = useState('');
+  const [adminNotes, setAdminNotes] = useState('');
 
-  // When dialog opens, load existing notes
+  // When dialog opens, load existing admin notes
   useEffect(() => {
     if (open && order) {
-      setNotes(order.additional_notes || '');
-      setError('');
+      setAdminNotes(order.additional_notes || '');
     }
   }, [open, order]);
 
   const handleSave = () => {
-    if (!notes.trim()) {
-      setError('Notes are required');
-      return;
-    }
-    setError('');
-    onSave(order, notes.trim());
+    onSave(order, adminNotes.trim());
   };
+
+  const hasCustomerNotes = order?.customer_notes && order.customer_notes.trim() !== '';
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ 
-        fontWeight: 700, 
-        display: 'flex', 
-        alignItems: 'center', 
+      <DialogTitle sx={{
+        fontWeight: 700,
+        display: 'flex',
+        alignItems: 'center',
         justifyContent: 'space-between',
         pb: 1
       }}>
@@ -48,9 +43,9 @@ const NotesDialog = ({ open, order, onClose, onSave, loading }) => {
             </Typography>
           </Box>
         </Box>
-        <IconButton 
-          onClick={onClose} 
-          size="small" 
+        <IconButton
+          onClick={onClose}
+          size="small"
           sx={{ color: palette.text.secondary }}
         >
           <Close fontSize="small" />
@@ -66,37 +61,64 @@ const NotesDialog = ({ open, order, onClose, onSave, loading }) => {
             <strong>Company:</strong> {order?.company_name}
           </Typography>
         </Box>
-        
-        <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-          Add notes for this order *
-        </Typography>
-        <TextareaAutosize
-          minRows={4}
-          maxRows={10}
-          placeholder="Enter detailed notes about this order..."
-          value={notes}
-          onChange={(e) => {
-            setNotes(e.target.value);
-            setError('');
-          }}
-          style={{
-            width: '100%',
-            padding: '12px',
+
+        {/* ── Customer Notes (read-only) ── */}
+        <Box sx={{ mb: 2.5 }}>
+          <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+            <Chip
+              icon={<Person sx={{ fontSize: 14 }} />}
+              label="Customer Notes"
+              size="small"
+              color="info"
+              variant="outlined"
+              sx={{ fontWeight: 600, borderRadius: '6px' }}
+            />
+          </Stack>
+          <Box sx={{
+            p: 1.5,
             borderRadius: '8px',
-            border: error ? `2px solid ${palette.error.main}` : `1px solid ${palette.divider}`,
-            fontFamily: 'inherit',
-            fontSize: '14px',
-            resize: 'vertical',
-            boxSizing: 'border-box',
-            outline: 'none',
-            backgroundColor: error ? 'rgba(211, 47, 47, 0.04)' : 'transparent',
-          }}
-        />
-        {error && (
-          <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
-            {error}
-          </Typography>
-        )}
+            border: '1px solid',
+            borderColor: 'divider',
+            backgroundColor: palette.action.hover,
+            minHeight: 40,
+          }}>
+            <Typography variant="body2" color={hasCustomerNotes ? 'text.primary' : 'text.disabled'}>
+              {hasCustomerNotes ? order.customer_notes : 'No customer notes provided.'}
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* ── Admin Notes (editable) ── */}
+        <Box>
+          <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+            <Chip
+              icon={<AdminPanelSettings sx={{ fontSize: 14 }} />}
+              label="Admin Notes"
+              size="small"
+              color="warning"
+              variant="outlined"
+              sx={{ fontWeight: 600, borderRadius: '6px' }}
+            />
+          </Stack>
+          <TextareaAutosize
+            minRows={4}
+            maxRows={10}
+            placeholder="Add internal admin notes for this order..."
+            value={adminNotes}
+            onChange={(e) => setAdminNotes(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px',
+              borderRadius: '8px',
+              border: `1px solid ${palette.divider}`,
+              fontFamily: 'inherit',
+              fontSize: '14px',
+              resize: 'vertical',
+              boxSizing: 'border-box',
+              outline: 'none',
+            }}
+          />
+        </Box>
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>

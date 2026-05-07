@@ -46,6 +46,9 @@ const Reports       = Loadable(lazy(() => import('../views/admin/reports/Reports
 const ProductList   = Loadable(lazy(() => import('../views/admin/products/ProductList')));
 const ProductNew    = Loadable(lazy(() => import('../views/admin/products/ProductNew')));
 const ProductEdit   = Loadable(lazy(() => import('../views/admin/products/ProductEdit')));
+const UserList      = Loadable(lazy(() => import('../views/admin/users/UserList')));
+const UserNew       = Loadable(lazy(() => import('../views/admin/users/UserNew')));
+const UserEdit      = Loadable(lazy(() => import('../views/admin/users/UserEdit')));
 
 // ── NEW: Customer order portal pages ──────────────────────────────────────
 const PlaceOrder    = Loadable(lazy(() => import('../views/customer/order/PlaceOrder')));
@@ -73,22 +76,25 @@ const Router = [
     children: [
 
       // ── NEW: Admin routes ──────────────────────────────────────────────
-      { path: '/admin/dashboard',      element: <ProtectedRoute allowedUserType="admin"><Dashboard /></ProtectedRoute> },
-      { path: '/admin/orders',         element: <ProtectedRoute allowedUserType="admin"><Orders /></ProtectedRoute> },
-      { path: '/admin/inventory',      element: <ProtectedRoute allowedUserType="admin"><InventoryList /></ProtectedRoute> },
-      { path: '/admin/inventory/new',  element: <ProtectedRoute allowedUserType="admin"><InventoryNew /></ProtectedRoute> },
-      { path: '/admin/inventory/edit/:id', element: <ProtectedRoute allowedUserType="admin"><InventoryEdit /></ProtectedRoute> },
+      { path: '/admin/dashboard',      element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><Dashboard /></ProtectedRoute> },
+      { path: '/admin/orders',         element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><Orders /></ProtectedRoute> },
+      { path: '/admin/inventory',      element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><InventoryList /></ProtectedRoute> },
+      { path: '/admin/inventory/new',  element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><InventoryNew /></ProtectedRoute> },
+      { path: '/admin/inventory/edit/:id', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><InventoryEdit /></ProtectedRoute> },
       { path: '/admin/production',        element: <ProtectedRoute allowedUserType="admin"><ProductionList /></ProtectedRoute> },
       { path: '/admin/production/new',    element: <ProtectedRoute allowedUserType="admin"><ProductionNew /></ProtectedRoute> },
       { path: '/admin/production/edit/:id', element: <ProtectedRoute allowedUserType="admin"><ProductionEdit /></ProtectedRoute> },
-      { path: '/admin/customers',      element: <ProtectedRoute allowedUserType="admin"><CustomerList /></ProtectedRoute> },
-      { path: '/admin/customers/new',  element: <ProtectedRoute allowedUserType="admin"><CustomerNew /></ProtectedRoute> },
-      { path: '/admin/customers/edit/:id', element: <ProtectedRoute allowedUserType="admin"><CustomerEdit /></ProtectedRoute> },
-      { path: '/admin/products',       element: <ProtectedRoute allowedUserType="admin"><ProductList /></ProtectedRoute> },
-      { path: '/admin/products/new',   element: <ProtectedRoute allowedUserType="admin"><ProductNew /></ProtectedRoute> },
-      { path: '/admin/products/edit/:id', element: <ProtectedRoute allowedUserType="admin"><ProductEdit /></ProtectedRoute> },
-      { path: '/admin/invoices',       element: <ProtectedRoute allowedUserType="admin"><Invoices /></ProtectedRoute> },
-      { path: '/admin/reports',        element: <ProtectedRoute allowedUserType="admin"><Reports /></ProtectedRoute> },
+      { path: '/admin/customers',      element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><CustomerList /></ProtectedRoute> },
+      { path: '/admin/customers/new',  element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><CustomerNew /></ProtectedRoute> },
+      { path: '/admin/customers/edit/:id', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><CustomerEdit /></ProtectedRoute> },
+      { path: '/admin/products',       element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><ProductList /></ProtectedRoute> },
+      { path: '/admin/products/new',   element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><ProductNew /></ProtectedRoute> },
+      { path: '/admin/products/edit/:id', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><ProductEdit /></ProtectedRoute> },
+      { path: '/admin/invoices',       element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><Invoices /></ProtectedRoute> },
+      { path: '/admin/reports',        element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><Reports /></ProtectedRoute> },
+      { path: '/admin/users',          element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin']}><UserList /></ProtectedRoute> },
+      { path: '/admin/users/new',      element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin']}><UserNew /></ProtectedRoute> },
+      { path: '/admin/users/edit/:id', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin']}><UserEdit /></ProtectedRoute> },
 
       // ── NEW: Customer order portal routes ──────────────────────────────
       { path: '/order/new',            element: <ProtectedRoute allowedUserType="customer"><PlaceOrder /></ProtectedRoute> },

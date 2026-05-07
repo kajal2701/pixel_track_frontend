@@ -11,6 +11,7 @@ import CustomFormLabel from '../../../components/forms/theme-elements/CustomForm
 import CustomSelect from '../../../components/forms/theme-elements/CustomSelect';
 import inventoryService from '../../../services/inventoryService';
 import productService from '../../../services/productService';
+import adminUserService from '../../../services/adminUserService';
 import toast from 'react-hot-toast';
 import { CHANNEL_LENGTH_OPTIONS, getPieceLength } from 'src/utils/helpers';
 
@@ -66,6 +67,7 @@ const OutputPreview = ({ preview }) => {
 const ProductionForm = ({ production, onSubmit, loading, isEdit = false, onCancel }) => {
   const [inventoryItems, setInventoryItems] = useState([]);
   const [inventoryLoading, setInventoryLoading] = useState(false);
+  const [productionTechUsers, setProductionTechUsers] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
 
   const {
@@ -132,6 +134,17 @@ const ProductionForm = ({ production, onSubmit, loading, isEdit = false, onCance
       } catch (err) { /* silent */ }
     };
     fetchProducts();
+  }, []);
+
+  // ── Fetch production tech users for assignee dropdown ──
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await adminUserService.getProductionTechUsers();
+        setProductionTechUsers(response.data || []);
+      } catch (err) { /* silent */ }
+    };
+    fetchUsers();
   }, []);
 
   // ── Selected inventory item ──
@@ -262,7 +275,7 @@ const ProductionForm = ({ production, onSubmit, loading, isEdit = false, onCance
       size: data.size?.trim(),
       channelLength: data.channelLength,
       wasteQty: Number(data.wasteQty) || 0,
-      assignee: data.assignee?.trim(),
+      assignee: data.assignee || null,
       notes: data.notes?.trim(),
     });
   };
@@ -528,16 +541,26 @@ const ProductionForm = ({ production, onSubmit, loading, isEdit = false, onCance
             <Controller
               name="assignee"
               control={control}
-              render={({ field }) => (
+              rules={{ required: 'Assign is required' }}
+              render={({ field, fieldState: { error } }) => (
                 <Box>
-                  <CustomFormLabel htmlFor="assignee">Assignee</CustomFormLabel>
-                  <CustomTextField
+                  <CustomFormLabel htmlFor="assignee">Assign *</CustomFormLabel>
+                  <CustomSelect
                     {...field}
                     id="assignee"
                     fullWidth
-                    placeholder="Worker name"
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                  />
+                    displayEmpty
+                    error={!!error}
+                    sx={{ borderRadius: '8px' }}
+                  >
+                    <MenuItem value="" disabled>Select Assign</MenuItem>
+                    {productionTechUsers.map((user) => (
+                      <MenuItem key={user.id} value={user.id}>
+                        {user.username}
+                      </MenuItem>
+                    ))}
+                  </CustomSelect>
+                  {error && <FormHelperText error>{error.message}</FormHelperText>}
                 </Box>
               )}
             />
