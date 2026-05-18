@@ -2,8 +2,10 @@ import React, { useEffect, useState, useMemo } from 'react';
 import {
   Box, Typography, Button, Paper, Grid, MenuItem,
   FormHelperText, RadioGroup, FormControlLabel, Radio,
-  FormControl, CircularProgress, Divider, Alert, Chip, Stack
+  FormControl, CircularProgress, Divider, Alert, Chip, Stack,
+  ListSubheader, InputAdornment, TextField
 } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
 import { Save, Cancel, InfoOutlined, ArrowForward } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import CustomTextField from '../../../components/forms/theme-elements/CustomTextField';
@@ -69,6 +71,7 @@ const ProductionForm = ({ production, onSubmit, loading, isEdit = false, onCance
   const [inventoryLoading, setInventoryLoading] = useState(false);
   const [productionTechUsers, setProductionTechUsers] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
+  const [materialSearch, setMaterialSearch] = useState('');
 
   const {
     control,
@@ -197,6 +200,16 @@ const ProductionForm = ({ production, onSubmit, loading, isEdit = false, onCance
     setValue('size', sz);
     trigger('size');
   }, [selectedItem, isEdit, setValue, trigger]);
+
+  // ── Auto-select target state based on raw material type ──
+  useEffect(() => {
+    if (!selectedItem || isEdit) return;
+    if (selectedItem.inventory_type === 'Full Roll') {
+      setValue('targetState', 'Slitted');
+    } else if (selectedItem.inventory_type === 'Slitted') {
+      setValue('targetState', 'Ready Channel');
+    }
+  }, [selectedItem, isEdit, setValue]);
 
   // ── Preview & Waste Calculation ──
   const preview = useMemo(() => {
@@ -357,18 +370,46 @@ const ProductionForm = ({ production, onSubmit, loading, isEdit = false, onCance
                     fullWidth
                     displayEmpty
                     error={!!error}
+                    onOpen={() => setMaterialSearch('')}
+                    MenuProps={{
+                      autoFocus: false,
+                      PaperProps: { sx: { maxHeight: 300 } },
+                    }}
                     sx={{ borderRadius: '8px' }}
                   >
+                    <ListSubheader sx={{ bgcolor: 'background.paper', pt: 1, pb: 1 }}>
+                      <TextField
+                        size="small"
+                        autoFocus
+                        placeholder="Search material..."
+                        fullWidth
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <SearchIcon fontSize="small" />
+                            </InputAdornment>
+                          ),
+                        }}
+                        value={materialSearch}
+                        onChange={(e) => setMaterialSearch(e.target.value)}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                      />
+                    </ListSubheader>
                     <MenuItem value="" disabled>Select Material</MenuItem>
                     {inventoryLoading
                       ? <MenuItem disabled>Loading...</MenuItem>
                       : filteredInventory.length === 0
                         ? <MenuItem disabled>No inventory available</MenuItem>
-                        : filteredInventory.map((item) => (
-                          <MenuItem key={item.id} value={item.id}>
-                            {getInventoryLabel(item)}
-                          </MenuItem>
-                        ))
+                        : filteredInventory
+                          .filter((item) =>
+                            !materialSearch || getInventoryLabel(item).toLowerCase().includes(materialSearch.toLowerCase())
+                          )
+                          .map((item) => (
+                            <MenuItem key={item.id} value={item.id}>
+                              {getInventoryLabel(item)}
+                            </MenuItem>
+                          ))
                     }
                   </CustomSelect>
                   {error && <FormHelperText error>{error.message}</FormHelperText>}
@@ -393,8 +434,12 @@ const ProductionForm = ({ production, onSubmit, loading, isEdit = false, onCance
                     error={!!error}
                     sx={{ borderRadius: '8px' }}
                   >
-                    <MenuItem value="Ready Channel">Ready Channel</MenuItem>
-                    <MenuItem value="Slitted">Slitted</MenuItem>
+                    {(!selectedItem || selectedItem.inventory_type === 'Slitted') && (
+                      <MenuItem value="Ready Channel">Ready Channel</MenuItem>
+                    )}
+                    {(!selectedItem || selectedItem.inventory_type === 'Full Roll') && (
+                      <MenuItem value="Slitted">Slitted</MenuItem>
+                    )}
                   </CustomSelect>
                   {error && <FormHelperText error>{error.message}</FormHelperText>}
                 </Box>

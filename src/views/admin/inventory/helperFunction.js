@@ -131,6 +131,7 @@ export const groupBySupplierColor = (items) => {
         hole_distance: holeDistance,
         state: item.state || null,
         location: item.location || 'Warehouse',
+        location_stock: item.location_stock || null,
       });
     }
   });

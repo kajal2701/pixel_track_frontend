@@ -124,12 +124,25 @@ const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }
 
   const processedInitialValues = useMemo(() => {
     if (!initialValues) return null;
-    return {
+    const processed = {
       ...initialValues,
       // hole_distance stores hole count (8, 9, 10) — map it for the dropdown
       hole_distance: initialValues.hole_distance ? String(parseInt(initialValues.hole_distance, 10) || '') : '',
     };
-  }, [initialValues]);
+    // For Ready Channel edit: show location-specific pieces instead of total
+    if (isEditing && initialValues.inventory_type === 'Ready Channel' && initialValues.location_stock) {
+      try {
+        const stock = typeof initialValues.location_stock === 'string'
+          ? JSON.parse(initialValues.location_stock)
+          : initialValues.location_stock;
+        const loc = initialValues.location || 'Warehouse';
+        if (stock[loc] !== undefined) {
+          processed.pieces = stock[loc];
+        }
+      } catch (e) { /* keep original pieces */ }
+    }
+    return processed;
+  }, [initialValues, isEditing]);
 
   const { control, handleSubmit, watch, reset, setValue } = useForm({
     shouldUnregister: false,
@@ -155,6 +168,19 @@ const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }
   const watchQuantity = watch('quantity');
   const selectedSupplier = watch('supplier');
   const selectedColorName = watch('color_name');
+  const watchLocation = watch('location');
+
+  // When editing Ready Channel: sync pieces field with selected location from location_stock
+  useEffect(() => {
+    if (!isEditing || selectedType !== 'Ready Channel' || !initialValues?.location_stock) return;
+    try {
+      const stock = typeof initialValues.location_stock === 'string'
+        ? JSON.parse(initialValues.location_stock)
+        : initialValues.location_stock;
+      const locPieces = stock[watchLocation] ?? 0;
+      setValue('pieces', locPieces);
+    } catch (e) { /* ignore parse errors */ }
+  }, [watchLocation, isEditing, selectedType, initialValues, setValue]);
 
   // ── Fetch products for supplier/color dropdowns ──
   useEffect(() => {
@@ -244,6 +270,8 @@ const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }
       payload.size = null;
       payload.quantity = null;
       payload.possible_feet = null;
+      // Don't send location_stock — backend auto-syncs from pieces + location
+      delete payload.location_stock;
       // Auto-calculate length from hole count: holes / 1.5
       if (data.hole_distance) {
         payload.length = getPieceLength(data.hole_distance);

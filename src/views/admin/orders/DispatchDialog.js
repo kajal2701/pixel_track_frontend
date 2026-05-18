@@ -3,14 +3,19 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, Typography, Box, TextField, MenuItem,
   Stack, Chip, CircularProgress, IconButton,
+  LinearProgress,
 } from '@mui/material';
-import { LocalShipping, Store, LocationOn, Close } from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles';
+import { LocalShipping, Store, LocationOn, Close, Inventory, InfoOutlined } from '@mui/icons-material';
+import { useTheme, alpha } from '@mui/material/styles';
 import { LOCATION_OPTIONS } from 'src/utils/helpers';
+import orderService from 'src/services/orderService';
 
 const DispatchDialog = ({ open, order, onClose, onConfirm, loading }) => {
   const { palette } = useTheme();
   const [destination, setDestination] = useState('');
+  const [sourceLocation, setSourceLocation] = useState('');
+  const [inventoryLocations, setInventoryLocations] = useState([]);
+  const [locationsLoading, setLocationsLoading] = useState(false);
 
   const isPickup = order?.delivery_method === 'pickup';
 
@@ -25,10 +30,62 @@ const DispatchDialog = ({ open, order, onClose, onConfirm, loading }) => {
     }
   }, [order, isPickup]);
 
+  // Fetch inventory locations when dialog opens
+  useEffect(() => {
+    if (open && order?.id) {
+      setLocationsLoading(true);
+      setSourceLocation('');
+      setInventoryLocations([]);
+      orderService.getInventoryLocations(order.id)
+        .then((res) => {
+          const locs = res.data || [];
+          setInventoryLocations(locs);
+          // Auto-select first location with stock
+          const firstWithStock = locs.find((l) => l.pieces > 0);
+          if (firstWithStock) setSourceLocation(firstWithStock.location);
+        })
+        .catch(() => setInventoryLocations([]))
+        .finally(() => setLocationsLoading(false));
+    }
+  }, [open, order?.id]);
+
   const handleConfirm = () => {
     if (!destination.trim()) return;
-    onConfirm(order, destination.trim());
+    onConfirm(order, destination.trim(), sourceLocation || undefined);
   };
+
+  // ── Stock calculations ──
+  const orderQty = parseInt(order?.total_pieces) || 0;
+  const selectedStock = inventoryLocations.find((l) => l.location === sourceLocation);
+  const locationPieces = selectedStock ? parseInt(selectedStock.pieces) || 0 : 0;
+  // System-wide available = total_pieces - held_pieces (across all locations)
+  const totalPieces = selectedStock ? parseInt(selectedStock.total_pieces) || 0 : 0;
+  const totalHeld = selectedStock ? parseInt(selectedStock.held_pieces) || 0 : 0;
+  const systemAvailable = Math.max(0, totalPieces - totalHeld);
+
+  // ── Destination stock calculations ──
+  // Check how many pieces already exist at the destination (pickup location)
+  const destStock = inventoryLocations.find((l) => l.location === destination);
+  const destPhysicalPieces = destStock ? parseInt(destStock.pieces) || 0 : 0;
+  // Pieces held by other dispatched orders at the destination
+  const destHeldByOthers = destStock ? parseInt(destStock.held_pieces) || 0 : 0;
+  // Available at destination = physical - held by others
+  const destAvailable = Math.max(0, destPhysicalPieces - destHeldByOthers);
+  // How many pieces need to be transferred from source
+  const needToTransfer = Math.max(0, orderQty - destAvailable);
+  // Remaining at source after transfer
+  const sourceRemaining = Math.max(0, locationPieces - needToTransfer);
+
+  // Check if source has enough for the transfer needed
+  const sourceInsufficient = sourceLocation && destination && orderQty > 0 && needToTransfer > 0 && locationPieces < needToTransfer;
+  // System-wide check
+  const systemInsufficient = sourceLocation && orderQty > 0 && systemAvailable < orderQty;
+  const insufficientStock = sourceInsufficient || systemInsufficient;
+
+  // Show stock breakdown only when both source and destination are selected (pickup only)
+  const showBreakdown = isPickup && sourceLocation && destination && orderQty > 0 && !locationsLoading;
+  // No transfer needed if destination already has enough
+  const noTransferNeeded = showBreakdown && needToTransfer === 0;
 
   if (!order) return null;
 
@@ -67,7 +124,7 @@ const DispatchDialog = ({ open, order, onClose, onConfirm, loading }) => {
                 Pieces: <strong>{order.total_pieces ?? '—'}</strong>
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Final: <strong>{order.final_length ? `${order.final_length} ft` : '—'}</strong>
+                Final: <strong>{order.final_length ? `${order.final_length}` : '—'}</strong>
               </Typography>
             </Stack>
             <Stack direction="row" spacing={1} alignItems="center" mt={0.5}>
@@ -87,24 +144,41 @@ const DispatchDialog = ({ open, order, onClose, onConfirm, loading }) => {
           </Stack>
         </Box>
 
-        {/* Current Location (read-only) */}
+        {/* Pick From Location (source inventory location) */}
         <Box sx={{ mb: 2 }}>
           <Stack direction="row" alignItems="center" spacing={0.5} mb={0.5}>
-            <LocationOn sx={{ fontSize: 18, color: palette.text.secondary }} />
-            <Typography variant="subtitle2" fontWeight={600}>Current Location</Typography>
+            <Inventory sx={{ fontSize: 18, color: palette.primary.main }} />
+            <Typography variant="subtitle2" fontWeight={600}>Pick From Location *</Typography>
           </Stack>
-          <TextField
-            fullWidth
-            value="Warehouse"
-            disabled
-            size="small"
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                borderRadius: '8px',
-                backgroundColor: palette.action.hover,
-              }
-            }}
-          />
+          {locationsLoading ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 1 }}>
+              <CircularProgress size={20} />
+              <Typography variant="body2" color="text.secondary">Loading locations...</Typography>
+            </Box>
+          ) : inventoryLocations.length > 0 ? (
+            <TextField
+              select
+              fullWidth
+              value={sourceLocation}
+              onChange={(e) => setSourceLocation(e.target.value)}
+              size="small"
+              sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+            >
+              {inventoryLocations.map((loc) => (
+                <MenuItem
+                  key={loc.location}
+                  value={loc.location}
+                  disabled={loc.pieces <= 0}
+                >
+                  {loc.location} &nbsp;({loc.pieces} pcs available)
+                </MenuItem>
+              ))}
+            </TextField>
+          ) : (
+            <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
+              No inventory locations found for this order.
+            </Typography>
+          )}
         </Box>
 
         {/* Destination (editable) */}
@@ -146,13 +220,128 @@ const DispatchDialog = ({ open, order, onClose, onConfirm, loading }) => {
           )}
         </Box>
 
+        {/* ── Stock Availability Breakdown (only for pickup when both selected) ── */}
+        {showBreakdown && (
+          <Box sx={{
+            p: 2, mb: 2, borderRadius: '10px',
+            bgcolor: insufficientStock
+              ? alpha(palette.error.main, 0.04)
+              : noTransferNeeded
+                ? alpha(palette.info.main, 0.04)
+                : alpha(palette.success.main, 0.04),
+            border: '1px solid',
+            borderColor: insufficientStock
+              ? alpha(palette.error.main, 0.2)
+              : noTransferNeeded
+                ? alpha(palette.info.main, 0.2)
+                : alpha(palette.success.main, 0.2),
+          }}>
+            <Stack direction="row" alignItems="center" spacing={0.5} mb={1.5}>
+              <InfoOutlined sx={{
+                fontSize: 18,
+                color: insufficientStock ? palette.error.main : noTransferNeeded ? palette.info.main : palette.success.main,
+              }} />
+              <Typography variant="subtitle2" fontWeight={700}
+                color={insufficientStock ? 'error.main' : noTransferNeeded ? 'info.main' : 'success.main'}
+              >
+                Stock Availability for This Order
+              </Typography>
+            </Stack>
+
+            {/* Stock details grid */}
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+              {/* Row 1: Order Needs | At Destination (physical) */}
+              <Box sx={{ p: 1.5, bgcolor: 'background.paper', borderRadius: '8px', textAlign: 'center' }}>
+                <Typography variant="h5" fontWeight={700} color="primary.main">{orderQty}</Typography>
+                <Typography variant="caption" color="text.secondary">Order Needs</Typography>
+              </Box>
+              <Box sx={{ p: 1.5, bgcolor: 'background.paper', borderRadius: '8px', textAlign: 'center' }}>
+                <Typography variant="h5" fontWeight={700} color="text.secondary">{destPhysicalPieces}</Typography>
+                <Typography variant="caption" color="text.secondary">At Destination (physical)</Typography>
+              </Box>
+
+              {/* Row 2: Held by Others (at dest) | Available at Destination */}
+              <Box sx={{ p: 1.5, bgcolor: 'background.paper', borderRadius: '8px', textAlign: 'center' }}>
+                <Typography variant="h5" fontWeight={700}
+                  color={destHeldByOthers > 0 ? 'warning.main' : 'text.secondary'}
+                >{destHeldByOthers}</Typography>
+                <Typography variant="caption" color="text.secondary">Held by Others (at dest)</Typography>
+              </Box>
+              <Box sx={{ p: 1.5, bgcolor: 'background.paper', borderRadius: '8px', textAlign: 'center' }}>
+                <Typography variant="h5" fontWeight={700}
+                  color={destAvailable >= orderQty ? 'success.main' : destAvailable > 0 ? 'info.main' : 'text.secondary'}
+                >{destAvailable}</Typography>
+                <Typography variant="caption" color="text.secondary">Available at Destination</Typography>
+              </Box>
+
+              {/* Row 3: Will Transfer | Source Remaining */}
+              <Box sx={{
+                p: 1.5, borderRadius: '8px', textAlign: 'center',
+                bgcolor: needToTransfer > 0 ? alpha(palette.info.main, 0.08) : 'background.paper',
+                border: needToTransfer > 0 ? `1px solid ${alpha(palette.info.main, 0.2)}` : 'none',
+              }}>
+                <Typography variant="h5" fontWeight={700}
+                  color={needToTransfer > 0 ? 'info.main' : 'success.main'}
+                >{needToTransfer}</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {needToTransfer > 0 ? 'Will Transfer' : 'No Transfer Needed'}
+                </Typography>
+              </Box>
+              <Box sx={{ p: 1.5, bgcolor: 'background.paper', borderRadius: '8px', textAlign: 'center' }}>
+                <Typography variant="h5" fontWeight={700} color="text.secondary">{sourceRemaining}</Typography>
+                <Typography variant="caption" color="text.secondary">Source After Transfer</Typography>
+              </Box>
+            </Box>
+
+            {/* Status message */}
+            {insufficientStock && (
+              <Box sx={{ mt: 1.5, p: 1, bgcolor: alpha(palette.error.main, 0.08), borderRadius: '6px' }}>
+                <Typography variant="caption" color="error.main" fontWeight={600}>
+                  {sourceInsufficient
+                    ? `⚠ Insufficient stock at source! Need to transfer ${needToTransfer} pcs but source only has ${locationPieces} pcs. Short by ${needToTransfer - locationPieces} pcs.`
+                    : `⚠ Insufficient available stock! Only ${systemAvailable} pcs available system-wide (${totalHeld} pcs held by other orders).`}
+                </Typography>
+              </Box>
+            )}
+            {!insufficientStock && noTransferNeeded && (
+              <Box sx={{ mt: 1.5, p: 1, bgcolor: alpha(palette.info.main, 0.08), borderRadius: '6px' }}>
+                <Typography variant="caption" color="info.main" fontWeight={600}>
+                  ✓ Destination already has {destAvailable} pcs available — sufficient for this order. No stock transfer needed.
+                </Typography>
+              </Box>
+            )}
+            {!insufficientStock && !noTransferNeeded && (
+              <Box sx={{ mt: 1.5, p: 1, bgcolor: alpha(palette.success.main, 0.08), borderRadius: '6px' }}>
+                <Typography variant="caption" color="success.main" fontWeight={600}>
+                  ✓ {destAvailable > 0
+                    ? `${destAvailable} pcs already at destination. Only ${needToTransfer} pcs will be transferred from ${sourceLocation}.`
+                    : `${needToTransfer} pcs will be transferred from ${sourceLocation}.`}
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        )}
+
+        {/* Non-pickup stock warning (delivery orders) */}
+        {!isPickup && sourceLocation && orderQty > 0 && insufficientStock && (
+          <Typography variant="caption" color="error" fontWeight={500} sx={{ mt: 0.5, mb: 2, display: 'block' }}>
+            {locationPieces < orderQty
+              ? `⚠ Insufficient stock! This location has ${locationPieces} pcs but order needs ${orderQty} pcs.`
+              : `⚠ Insufficient available stock! Only ${systemAvailable} pcs available system-wide (${totalHeld} pcs held by other orders).`}
+          </Typography>
+        )}
+
         {/* Warning */}
         <Box sx={{
           p: 1.5, bgcolor: 'warning.lighter', borderRadius: '8px',
           border: '1px solid', borderColor: 'warning.light',
         }}>
           <Typography variant="caption" color="warning.dark" fontWeight={500}>
-            ⚠ Inventory will be deducted from warehouse when you confirm.
+            {isPickup && needToTransfer > 0
+              ? `⚠ Only ${needToTransfer} pcs will be transferred from ${sourceLocation || 'source'}. ${destAvailable > 0 ? `${destAvailable} pcs already available at destination.` : ''} Final deduction happens when order is completed.`
+              : isPickup && needToTransfer === 0
+                ? '⚠ No inventory transfer needed — destination already has enough stock. Final deduction happens when order is completed.'
+                : '⚠ Inventory will be transferred from the selected location when you confirm. Final deduction happens when the order is completed.'}
           </Typography>
         </Box>
       </DialogContent>
@@ -165,11 +354,15 @@ const DispatchDialog = ({ open, order, onClose, onConfirm, loading }) => {
           onClick={handleConfirm}
           variant="contained"
           color={isPickup ? 'info' : 'success'}
-          disabled={loading || !destination.trim()}
+          disabled={loading || !destination.trim() || insufficientStock}
           startIcon={loading ? <CircularProgress size={18} color="inherit" /> : (isPickup ? <Store /> : <LocalShipping />)}
           sx={{ borderRadius: '8px', minWidth: 180 }}
         >
-          {loading ? 'Dispatching...' : (isPickup ? 'Transfer & Dispatch' : 'Ship & Dispatch')}
+          {loading
+            ? 'Dispatching...'
+            : isPickup
+              ? (noTransferNeeded ? 'Dispatch (No Transfer)' : `Transfer ${needToTransfer} pcs & Dispatch`)
+              : 'Ship & Dispatch'}
         </Button>
       </DialogActions>
     </Dialog>

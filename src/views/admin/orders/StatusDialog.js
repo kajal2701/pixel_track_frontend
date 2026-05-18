@@ -5,7 +5,7 @@ import {
   Stack, Divider, Alert, TextField,
 } from '@mui/material';
 import {
-  Check, Refresh, Delete, CheckCircle, Close, Inventory2, Edit,
+  Check, Delete, CheckCircle, Close, Inventory2, Edit,
 } from '@mui/icons-material';
 import orderService from 'src/services/orderService';
 import OrderDetailsCard from './OrderDetailsCard';
@@ -29,14 +29,6 @@ const DIALOG_CONFIG = {
     confirmLabel: 'Cancel Order',
     confirmColor: 'error',
   },
-  REOPEN: {
-    title: 'Reopen Order',
-    icon: <Refresh sx={{ color: 'info.main', fontSize: 40 }} />,
-    message: (order) => `Reopen order ${order?.order_id}?`,
-    sub: 'Order will be set back to Pending.',
-    confirmLabel: 'Reopen',
-    confirmColor: 'info',
-  },
   READY: {
     title: 'Mark as Ready',
     icon: <CheckCircle sx={{ color: 'info.main', fontSize: 40 }} />,
@@ -52,6 +44,14 @@ const DIALOG_CONFIG = {
     sub: 'This cannot be undone.',
     confirmLabel: 'Delete',
     confirmColor: 'error',
+  },
+  COMPLETE: {
+    title: 'Complete Order',
+    icon: <CheckCircle sx={{ color: 'success.main', fontSize: 40 }} />,
+    message: (order) => `Mark order ${order?.order_id} as completed?`,
+    sub: 'This confirms the customer has received the order. Inventory will be permanently deducted.',
+    confirmLabel: 'Complete Order',
+    confirmColor: 'success',
   },
 };
 

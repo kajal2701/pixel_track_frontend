@@ -10,6 +10,7 @@ export const STATUS_CHIP_COLOR = (status) =>
   'Awaiting material': 'secondary',
   Ready: 'info',
   'Ready for Pickup/Delivery': 'success',
+  Completed: 'success',
   Cancelled: 'error',
 }[status] || 'default');
 
@@ -180,6 +181,12 @@ export const ORDER_TABLE_DATA = [
     color: 'success'
   },
   {
+    status: 'Completed',
+    title: 'Completed Orders',
+    subtitle: 'Orders that have been picked up or delivered successfully.',
+    color: 'success'
+  },
+  {
     status: 'Cancelled',
     title: 'Cancelled Orders',
     subtitle: 'Orders that have been cancelled or rejected.',
@@ -243,6 +250,7 @@ export const getSummaryCardsData = (counts) => [
   { title: 'Awaiting Material', count: counts.awaitingMaterial, sub: 'Need stock update', accent: 'secondary.main', dot: 'secondary.main', target: 'table-Awaiting-material' },
   { title: 'Ready', count: counts.ready, sub: 'In warehouse', accent: 'info.main', dot: 'info.main', target: 'table-Ready' },
   { title: 'Dispatched', count: counts.readyForPickup, sub: 'Out for pickup/delivery', accent: 'success.main', dot: 'success.main', target: 'table-Ready-for-Pickup/Delivery' },
+  { title: 'Completed', count: counts.completed, sub: 'Picked up / delivered', accent: 'success.main', dot: 'success.main', target: 'table-Completed' },
   { title: 'Cancelled', count: counts.cancelled, sub: 'Orders cancelled', accent: 'error.main', dot: 'error.main', target: 'table-Cancelled' },
 ];
 

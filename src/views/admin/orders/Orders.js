@@ -3,7 +3,7 @@ import {
   Box, Typography, Button, TextField, InputAdornment,
   IconButton, Stack, Card, CircularProgress, Chip,
 } from '@mui/material';
-import { Search, Add, Check, Close, Delete, Refresh, CheckCircle, LocalShipping, Store, LocationOn } from '@mui/icons-material';
+import { Search, Add, Check, Close, Delete, CheckCircle, LocalShipping, Store, LocationOn } from '@mui/icons-material';
 import { useTheme, alpha } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -50,6 +50,7 @@ const Orders = () => {
     'Awaiting material': '',
     Ready: '',
     'Ready for Pickup/Delivery': '',
+    Completed: '',
     Cancelled: ''
   });
 
@@ -116,6 +117,7 @@ const Orders = () => {
     awaitingMaterial: allOrders.filter((o) => o.order_status === 'Awaiting material').length,
     ready: allOrders.filter((o) => o.order_status === 'Ready').length,
     readyForPickup: allOrders.filter((o) => o.order_status === 'Ready for Pickup/Delivery').length,
+    completed: allOrders.filter((o) => o.order_status === 'Completed').length,
     cancelled: allOrders.filter((o) => o.order_status === 'Cancelled').length,
   };
 
@@ -134,10 +136,10 @@ const Orders = () => {
   const openDispatchDialog = (order) => setDispatchDialog({ open: true, order });
   const closeDispatchDialog = () => setDispatchDialog({ open: false, order: null });
 
-  const handleDispatchConfirm = async (order, location) => {
+  const handleDispatchConfirm = async (order, location, sourceLocation) => {
     setActionLoading(true);
     try {
-      await orderService.updateStatus(order.id, 'Ready for Pickup/Delivery', location);
+      await orderService.updateStatus(order.id, 'Ready for Pickup/Delivery', location, sourceLocation);
       toast.success(`Order ${order.order_id} dispatched for ${order.delivery_method === 'pickup' ? 'pickup' : 'delivery'}`);
       await fetchOrders();
       closeDispatchDialog();
@@ -152,9 +154,9 @@ const Orders = () => {
     const statusMap = {
       CONFIRM: 'Confirmed',
       CANCEL: 'Cancelled',
-      REOPEN: 'Pending',
       READY: 'Ready',
       PICKUP_DELIVERY: 'Ready for Pickup/Delivery',
+      COMPLETE: 'Completed',
     };
 
     if (type === 'DELETE') {
@@ -354,9 +356,6 @@ const Orders = () => {
             <IconButton size="small" sx={{ color: palette.success.main }} onClick={() => openStatusDialog('CONFIRM', order)} title="Confirm">
               <Check fontSize="small" />
             </IconButton>
-            <IconButton size="small" sx={{ color: palette.info.main }} onClick={() => openStatusDialog('READY', order)} title="Mark Ready">
-              <CheckCircle fontSize="small" />
-            </IconButton>
             <IconButton size="small" sx={{ color: palette.error.main }} onClick={() => openStatusDialog('CANCEL', order)} title="Cancel">
               <Close fontSize="small" />
             </IconButton>
@@ -381,11 +380,11 @@ const Orders = () => {
         )}
         {order.order_status === 'Awaiting material' && (
           <>
+            <IconButton size="small" sx={{ color: palette.success.main }} onClick={() => openStatusDialog('CONFIRM', order)} title="Confirm">
+              <Check fontSize="small" />
+            </IconButton>
             <IconButton size="small" sx={{ color: palette.primary.main }} onClick={() => navigate('/admin/inventory')} title="Add Inventory">
               <Add fontSize="small" />
-            </IconButton>
-            <IconButton size="small" sx={{ color: palette.warning.main }} onClick={() => openStatusDialog('REOPEN', order)} title="Move to Pending">
-              <Refresh fontSize="small" />
             </IconButton>
             <IconButton size="small" sx={{ color: palette.error.main }} onClick={() => openStatusDialog('CANCEL', order)} title="Cancel">
               <Close fontSize="small" />
@@ -397,32 +396,31 @@ const Orders = () => {
             <IconButton size="small" sx={{ color: palette.success.main }} onClick={() => openDispatchDialog(order)} title="Ready for Pickup/Delivery">
               <LocalShipping fontSize="small" />
             </IconButton>
-            <IconButton size="small" sx={{ color: palette.warning.main }} onClick={() => openStatusDialog('REOPEN', order)} title="Move to Pending">
-              <Refresh fontSize="small" />
-            </IconButton>
             <IconButton size="small" sx={{ color: palette.error.main }} onClick={() => openStatusDialog('CANCEL', order)} title="Cancel">
               <Close fontSize="small" />
             </IconButton>
           </>
         )}
+
         {order.order_status === 'Ready for Pickup/Delivery' && (
           <>
-            <IconButton size="small" sx={{ color: palette.warning.main }} onClick={() => openStatusDialog('REOPEN', order)} title="Move to Pending">
-              <Refresh fontSize="small" />
+            <IconButton size="small" sx={{ color: palette.success.main }} onClick={() => openStatusDialog('COMPLETE', order)} title="Complete Order">
+              <CheckCircle fontSize="small" />
             </IconButton>
             <IconButton size="small" sx={{ color: palette.error.main }} onClick={() => openStatusDialog('CANCEL', order)} title="Cancel">
               <Close fontSize="small" />
             </IconButton>
+            <IconButton size="small" sx={{ color: palette.error.main }} onClick={() => openStatusDialog('DELETE', order)} title="Delete">
+              <Delete fontSize="small" />
+            </IconButton>
           </>
         )}
-        {order.order_status === 'Cancelled' && (
-          <IconButton size="small" sx={{ color: palette.info.main }} onClick={() => openStatusDialog('REOPEN', order)} title="Reopen">
-            <Refresh fontSize="small" />
+
+        {!['Ready for Pickup/Delivery', 'Completed'].includes(order.order_status) && (
+          <IconButton size="small" sx={{ color: palette.error.main }} onClick={() => openStatusDialog('DELETE', order)} title="Delete">
+            <Delete fontSize="small" />
           </IconButton>
         )}
-        <IconButton size="small" sx={{ color: palette.error.main }} onClick={() => openStatusDialog('DELETE', order)} title="Delete">
-          <Delete fontSize="small" />
-        </IconButton>
       </Stack>
     ),
   }));

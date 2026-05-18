@@ -47,10 +47,11 @@ const ProductionList = () => {
       const res = await productionService.getAllProduction();
       let records = res.data || [];
 
-      // Production tech users only see their assigned productions
-      if (isProductionTech && adminData.username) {
+      // Read from localStorage inside callback so [] dependency is truthful
+      const currentAdmin = JSON.parse(localStorage.getItem('adminData') || '{}');
+      if (currentAdmin.role === 'production tech' && currentAdmin.id) {
         records = records.filter(
-          (item) => String(item.assignee) === String(adminData.id)
+          (item) => String(item.assignee) === String(currentAdmin.id)
         );
       }
 
@@ -140,7 +141,7 @@ const ProductionList = () => {
       statusChip: item.status,
       isAuto,
       actions: (
-        <Stack direction="row" gap={0.5} flexWrap="wrap">
+        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.25 }}>
           {(item.status === 'Pending' || item.status === 'In Progress') && (
             <IconButton size="small" sx={{ color: palette.primary.main }} onClick={() => navigate(`/admin/production/edit/${item.id}`)} title="Edit">
               <Edit fontSize="small" />
@@ -164,7 +165,7 @@ const ProductionList = () => {
           <IconButton size="small" sx={{ color: palette.error.main }} onClick={() => handleDeleteProduction(item)} title="Delete">
             <Delete fontSize="small" />
           </IconButton>
-        </Stack>
+        </Box>
       ),
     };
   });

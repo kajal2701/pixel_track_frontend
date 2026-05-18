@@ -4,14 +4,16 @@ import {
   Collapse, Box, Grid, Paper
 } from '@mui/material';
 import {
-  KeyboardArrowDown, KeyboardArrowUp, Edit, Delete
+  KeyboardArrowDown, KeyboardArrowUp, Edit, Delete, Visibility
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { getStatusInfo } from './helperFunction';
 import { calculateProductionDetails, getInventoryTypeColor } from 'src/utils/helpers';
+import LocationStockDialog from './LocationStockDialog';
 
 const CollapsibleRow = ({ row, onEdit, onDelete }) => {
   const [open, setOpen] = useState(false);
+  const [locationDialog, setLocationDialog] = useState({ open: false, variant: null });
   const { palette } = useTheme();
 
   // Build detail sections for the expanded area
@@ -191,6 +193,7 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
                             key={d.label}
                             direction="row"
                             justifyContent="space-between"
+                            alignItems="flex-start"
                             sx={{
                               py: 0.75,
                               borderBottom: '1px solid',
@@ -198,10 +201,10 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
                               '&:last-child': { borderBottom: 'none' },
                             }}
                           >
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100, flexShrink: 0 }}>
                               {d.label}
                             </Typography>
-                            <Typography variant="body2" fontWeight={600}>
+                            <Typography variant="body2" fontWeight={600} sx={{ textAlign: 'right', wordBreak: 'break-word', ml: 1 }}>
                               {d.value}
                             </Typography>
                           </Stack>
@@ -228,9 +231,17 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
                                   }}
                                 >
                                   <Typography variant="body2" color="text.secondary">
-                                    {`${variant.length ?? '—'} ft | ${variant.pieces} pcs | Hole ${variant.hole_distance} | ${variant.location || 'Warehouse'}`}
+                                    {`${variant.length ?? '—'} ft | ${variant.pieces} pcs | Hole ${variant.hole_distance}`}
                                   </Typography>
                                   <Stack direction="row" spacing={0.5}>
+                                    <IconButton
+                                      size="small"
+                                      sx={{ color: palette.primary.main }}
+                                      onClick={(e) => { e.stopPropagation(); setLocationDialog({ open: true, variant }); }}
+                                      title="View Location Breakdown"
+                                    >
+                                      <Visibility fontSize="small" />
+                                    </IconButton>
                                     <IconButton
                                       size="small"
                                       sx={{ color: palette.info.main }}
@@ -262,6 +273,12 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
           </Collapse>
         </TableCell>
       </TableRow>
+      {/* ── Location Stock Dialog ── */}
+      <LocationStockDialog
+        open={locationDialog.open}
+        onClose={() => setLocationDialog({ open: false, variant: null })}
+        variant={locationDialog.variant}
+      />
     </>
   );
 };

@@ -67,11 +67,21 @@ const orderService = {
     }
   },
 
-  updateStatus: async (id, order_status, dispatch_location) => {
+  updateStatus: async (id, order_status, dispatch_location, source_location) => {
     try {
       const body = { order_status };
       if (dispatch_location) body.dispatch_location = dispatch_location;
+      if (source_location) body.source_location = source_location;
       const response = await apiClient.patch(`/orders/${id}/status`, body);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Network error occurred' };
+    }
+  },
+
+  getInventoryLocations: async (id) => {
+    try {
+      const response = await apiClient.get(`/orders/${id}/inventory-locations`);
       return response.data;
     } catch (error) {
       throw error.response?.data || { message: 'Network error occurred' };
