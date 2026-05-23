@@ -11,7 +11,7 @@ const CustomerNew = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
-  // ── Submit → POST /api/customers ──
+  // onSubmit receives full customer object including channel_pricing
   const onSubmit = async (data) => {
     setLoading(true);
     try {
@@ -19,7 +19,6 @@ const CustomerNew = () => {
       toast.success('Customer created successfully!');
       navigate('/admin/customers');
     } catch (err) {
-      // Handle specific backend errors
       if (err.message?.includes('already exists')) {
         toast.error('Customer number or email already exists.');
       } else {
@@ -30,30 +29,21 @@ const CustomerNew = () => {
     }
   };
 
-  const handleCancel = () => {
-    navigate('/admin/customers');
-  };
+  const handleCancel = () => navigate('/admin/customers');
 
   return (
     <PageContainer title="Add New Customer" description="Create a new customer account">
       <Box>
-        {/* ── Header ── */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
           <Button
-            variant="outlined"
-            startIcon={<ArrowBack />}
-            onClick={handleCancel}
-            sx={{ mr: 2, borderRadius: '8px' }}
-            disabled={loading}
+            variant="outlined" startIcon={<ArrowBack />}
+            onClick={handleCancel} sx={{ mr: 2, borderRadius: '8px' }} disabled={loading}
           >
             Back to Customers
           </Button>
-          <Typography variant="h4" fontWeight={700}>
-            Add New Customer
-          </Typography>
+          <Typography variant="h4" fontWeight={700}>Add New Customer</Typography>
         </Box>
 
-        {/* ── Form ── */}
         <CustomerForm
           customer={null}
           onSubmit={onSubmit}

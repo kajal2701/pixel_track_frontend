@@ -500,7 +500,11 @@ const Orders = () => {
 
             // Build dynamic columns per status
             const tableColumns = [...columns];
-            if (status === 'Ready') {
+            if (status === 'Completed') {
+              // No actions for completed orders — remove Actions column
+              const actionsIdx = tableColumns.findIndex(c => c.field === 'actions');
+              if (actionsIdx > -1) tableColumns.splice(actionsIdx, 1);
+            } else if (status === 'Ready') {
               // Insert Location column before Notes
               const notesIdx = tableColumns.findIndex(c => c.field === 'notes');
               tableColumns.splice(notesIdx > -1 ? notesIdx : tableColumns.length, 0, {

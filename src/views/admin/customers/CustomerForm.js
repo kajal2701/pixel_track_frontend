@@ -1,20 +1,21 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box, Typography, Button, TextField,
-  Paper, Grid, CircularProgress,
+  Paper, Grid, CircularProgress, Divider,
+  InputAdornment,
 } from '@mui/material';
-import { Save, Cancel } from '@mui/icons-material';
+import { Save, Cancel, AttachMoney } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { useForm } from 'react-hook-form';
+import { CHANNEL_PRICING_OPTIONS, formatPhoneNumber } from 'src/utils/helpers';
 
-const CustomerForm = ({
-  customer,
-  onSubmit,
-  loading,
-  isEdit = false,
-  onCancel
-}) => {
+
+const CustomerForm = ({ customer, onSubmit, loading, isEdit = false, onCancel }) => {
   const { palette } = useTheme();
+
+  // channel_pricing state: { "10h": "2.50", "9h": "2.75", "8h": "3.00" }
+  const [channelPricing, setChannelPricing] = useState({});
+  const [pricingErrors, setPricingErrors] = useState({});
 
   const {
     register,
@@ -32,7 +33,8 @@ const CustomerForm = ({
     },
   });
 
-  // Reset form when customer data changes (for edit mode)
+
+  // Pre-fill form when editing
   useEffect(() => {
     if (customer && isEdit) {
       reset({
@@ -40,177 +42,215 @@ const CustomerForm = ({
         customer_number: customer.customer_number || '',
         contact_name: customer.contact_name || '',
         email: customer.email || '',
-        phone: customer.phone || '',
+        phone: formatPhoneNumber(customer.phone),
       });
+      // channel_pricing comes as object from API e.g. { "10h": 2.50, "9h": 2.75 }
+      if (customer.channel_pricing) {
+        const existing = typeof customer.channel_pricing === 'string'
+          ? JSON.parse(customer.channel_pricing)
+          : customer.channel_pricing;
+        // Convert values to strings for input fields
+        const asStrings = {};
+        Object.keys(existing).forEach((k) => {
+          asStrings[k] = existing[k] != null ? String(existing[k]) : '';
+        });
+        setChannelPricing(asStrings);
+      } else {
+        setChannelPricing({});
+      }
     } else if (!isEdit) {
-      reset({
-        company_name: '',
-        customer_number: '',
-        contact_name: '',
-        email: '',
-        phone: '',
-      });
+      reset({ company_name: '', customer_number: '', contact_name: '', email: '', phone: '' });
+      setChannelPricing({});
     }
   }, [customer, isEdit, reset]);
 
-  const onFormSubmit = (data) => {
-    // Add access_code (last 4 digits of phone number) to payload
-    const payload = {
-      ...data,
-      access_code: data.phone ? data.phone.slice(-4) : ''
-    };
-    onSubmit(payload);
+  // Handle price input change for a key
+  const handlePriceChange = (key, value) => {
+    setChannelPricing((prev) => ({ ...prev, [key]: value }));
+    // Clear error on change
+    if (value !== '' && parseFloat(value) > 0) {
+      setPricingErrors((prev) => ({ ...prev, [key]: false }));
+    }
   };
+
+  // Shared pricing validation — called on both success and error paths
+  const validatePricing = () => {
+    const errors = {};
+    CHANNEL_PRICING_OPTIONS.forEach(({ key }) => {
+      const val = channelPricing[key];
+      if (!val || val === '' || parseFloat(val) <= 0) {
+        errors[key] = true;
+      }
+    });
+    setPricingErrors(errors);
+    return Object.keys(errors).length === 0; // true = valid
+  };
+
+  const onFormSubmit = (data) => {
+    const access_code = data.phone ? data.phone.replace(/-/g, '').slice(-4) : '';
+
+    if (!validatePricing()) return; // Block submit if pricing invalid
+
+    // Build channel_pricing object
+    const pricingObj = {};
+    Object.keys(channelPricing).forEach((key) => {
+      const val = channelPricing[key];
+      if (val !== '' && val !== null && !isNaN(parseFloat(val))) {
+        pricingObj[key] = parseFloat(val);
+      }
+    });
+
+    onSubmit({
+      ...data,
+      access_code,
+      channel_pricing: Object.keys(pricingObj).length > 0 ? pricingObj : null,
+    });
+  };
+
+  // Called when RHF fields fail — still validate pricing so errors show together
+  const onFormError = () => validatePricing();
 
   return (
     <Paper sx={{ p: 3, borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-      <form onSubmit={handleSubmit(onFormSubmit)} noValidate>
+      <form onSubmit={handleSubmit(onFormSubmit, onFormError)} noValidate>
         <Grid container spacing={3}>
+
+          {/* ── Customer Information ── */}
           <Grid item xs={12}>
-            <Typography variant="h6" sx={{ mb: 2, color: palette.primary.main, fontWeight: 600 }}>
+            <Typography variant="h6" sx={{ mb: 1, color: palette.primary.main, fontWeight: 600 }}>
               Customer Information
             </Typography>
           </Grid>
 
           {/* Company Name */}
           <Grid item xs={12} md={6}>
-            <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
-              Company Name *
-            </Typography>
+            <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>Company Name *</Typography>
             <TextField
-              fullWidth
-              variant="outlined"
-              placeholder="Enter company name"
+              fullWidth variant="outlined" placeholder="Enter company name"
               {...register('company_name', { required: 'Company name is required' })}
-              error={!!errors.company_name}
-              helperText={errors.company_name?.message}
+              error={!!errors.company_name} helperText={errors.company_name?.message}
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
             />
           </Grid>
 
           {/* Customer Number */}
           <Grid item xs={12} md={6}>
-            <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
-              Customer Number *
-            </Typography>
+            <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>Customer Number *</Typography>
             <TextField
-              fullWidth
-              variant="outlined"
-              placeholder="Enter customer number"
+              fullWidth variant="outlined" placeholder="Enter customer number"
               {...register('customer_number', { required: 'Customer number is required' })}
-              error={!!errors.customer_number}
-              helperText={errors.customer_number?.message}
+              error={!!errors.customer_number} helperText={errors.customer_number?.message}
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
             />
           </Grid>
 
           {/* Contact Name */}
           <Grid item xs={12} md={6}>
-            <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
-              Contact Person Name *
-            </Typography>
+            <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>Contact Person Name *</Typography>
             <TextField
-              fullWidth
-              variant="outlined"
-              placeholder="Enter contact person name"
+              fullWidth variant="outlined" placeholder="Enter contact person name"
               {...register('contact_name', { required: 'Contact name is required' })}
-              error={!!errors.contact_name}
-              helperText={errors.contact_name?.message}
+              error={!!errors.contact_name} helperText={errors.contact_name?.message}
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
             />
           </Grid>
 
           {/* Email */}
           <Grid item xs={12} md={6}>
-            <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
-              Email *
-            </Typography>
+            <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>Email *</Typography>
             <TextField
-              fullWidth
-              type="email"
-              variant="outlined"
-              placeholder="Enter email address"
+              fullWidth type="email" variant="outlined" placeholder="Enter email address"
               {...register('email', {
                 required: 'Email is required',
-                pattern: {
-                  value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-                  message: 'Please enter a valid email address (e.g., user@example.com)',
-                },
+                pattern: { value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, message: 'Enter a valid email' },
               })}
-              error={!!errors.email}
-              helperText={errors.email?.message}
+              error={!!errors.email} helperText={errors.email?.message}
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
             />
           </Grid>
 
           {/* Phone */}
           <Grid item xs={12} md={6}>
-            <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
-              Phone Number *
-            </Typography>
+            <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>Phone Number *</Typography>
             <TextField
-              fullWidth
-              type="text"
-              variant="outlined"
-              placeholder="000-000-0000"
+              fullWidth type="text" variant="outlined" placeholder="000-000-0000"
               onInput={(e) => {
                 const x = e.target.value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,3})(\d{0,4})/);
                 e.target.value = !x[2] ? x[1] : `${x[1]}-${x[2]}${x[3] ? `-${x[3]}` : ''}`;
               }}
               {...register('phone', {
                 required: 'Phone number is required',
-                pattern: {
-                  value: /^[0-9-]*$/,
-                  message: 'Only numbers and hyphens allowed',
-                },
                 validate: {
-                  format: (value) => {
-
-                    const numbersOnly = value.replace(/-/g, '');
-                    if (!/^\d+$/.test(numbersOnly)) {
-                      return 'Phone number must contain only numbers';
-                    }
-                    // Check format: 000-000-0000
-                    if (!/^\d{3}-?\d{3}-?\d{4}$/.test(value)) {
-                      return 'Please use format: 000-000-0000';
-                    }
-                    return true;
-                  },
+                  format: (v) => /^\d{3}-\d{3}-\d{4}$/.test(v) || 'Please use format: 000-000-0000',
                 },
               })}
-              error={!!errors.phone}
-              helperText={errors.phone?.message || 'Format: 000-000-0000'}
+              error={!!errors.phone} helperText={errors.phone?.message || 'Format: 000-000-0000'}
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
             />
           </Grid>
 
-          {/* Actions */}
+          {/* ── Pricing Section ── */}
+          <Grid item xs={12}>
+            <Divider sx={{ my: 1 }} />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, mb: 0.5 }}>
+              <AttachMoney sx={{ color: palette.success.main, fontSize: 22 }} />
+              <Typography variant="h6" sx={{ color: palette.success.dark, fontWeight: 600 }}>
+                Channel Pricing (Price Per Foot)
+              </Typography>
+            </Box>
+
+          </Grid>
+
+          {/* Dynamic price fields — one per channel length */}
+          {CHANNEL_PRICING_OPTIONS.map(({ key, label }) => (
+            <Grid item xs={12} sm={4} key={key}>
+              <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                {label} *
+              </Typography>
+              <TextField
+                fullWidth
+                type="number"
+                variant="outlined"
+                placeholder="0.00"
+                value={channelPricing[key] ?? ''}
+                onChange={(e) => handlePriceChange(key, e.target.value)}
+                inputProps={{ min: 0.01, step: '0.01' }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Typography variant="body2" color="text.secondary">$/ft</Typography>
+                    </InputAdornment>
+                  ),
+                }}
+                error={!!pricingErrors[key]}
+                helperText={pricingErrors[key] ? 'Price is required and must be greater than 0' : ''}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+              />
+            </Grid>
+          ))}
+
+          {/* ── Actions ── */}
           <Grid item xs={12}>
             <Box sx={{ display: 'flex', gap: 2, mt: 3, justifyContent: 'flex-end' }}>
               <Button
-                variant="outlined"
-                startIcon={<Cancel />}
-                onClick={onCancel}
-                disabled={loading}
+                variant="outlined" startIcon={<Cancel />}
+                onClick={onCancel} disabled={loading}
                 sx={{ borderRadius: '8px' }}
               >
                 Cancel
               </Button>
               <Button
-                type="submit"
-                variant="contained"
-                disabled={loading}
-                startIcon={
-                  loading
-                    ? <CircularProgress size={18} color="inherit" />
-                    : <Save />
-                }
-                sx={{ borderRadius: '8px', minWidth: 150 }}
+                type="submit" variant="contained" disabled={loading}
+                startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <Save />}
+                sx={{ borderRadius: '8px', minWidth: 160 }}
               >
-                {loading ? (isEdit ? 'Updating...' : 'Creating...') : (isEdit ? 'Update Customer' : 'Create Customer')}
+                {loading
+                  ? (isEdit ? 'Updating...' : 'Creating...')
+                  : (isEdit ? 'Update Customer' : 'Create Customer')}
               </Button>
             </Box>
           </Grid>
+
         </Grid>
       </form>
     </Paper>

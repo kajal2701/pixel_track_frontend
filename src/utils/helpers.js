@@ -14,8 +14,21 @@ export const STATUS_CHIP_COLOR = (status) =>
   Cancelled: 'error',
 }[status] || 'default');
 
+// Status chip color mapping for invoice statuses
+export const getInvoiceStatusColor = (status) => {
+  switch (status) {
+    case 'Paid': return 'success';
+    case 'Sent': return 'info';
+    case 'Payment Submitted': return 'primary';
+    case 'Draft': return 'warning';
+    case 'Cancelled': return 'error';
+    default: return 'default';
+  }
+};
+
 // Format date string to DD-MM-YYYY HH:MM format
 export const formatDate = (dateStr) => {
+  if (!dateStr) return '—';
   const d = new Date(dateStr);
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -25,6 +38,15 @@ export const formatDate = (dateStr) => {
   return `${dd}-${mm}-${yy} ${hh}:${min}`;
 };
 
+
+export const PIXEL_TRACK = {
+  name: 'Pixel Track',
+  address: '4783 CAWSEY Terrace SW,',
+  city: 'Edmonton,',
+  province: 'AB T6W 5M7',
+  email: 'info@pixeltracks.ca',
+  phone: '+1 (780) 938-4509',
+};
 
 export const generateColorOptions = (products) => {
   const rows = (products || [])
@@ -49,6 +71,15 @@ export const CHANNEL_LENGTH_OPTIONS = [
   { value: '8', label: '8 Holes — 5.33 ft' },
 ];
 
+// Used in customer pricing form — key matches JSON column key in DB
+// e.g. channel_pricing: { "10h": 2.50, "9h": 2.75, "8h": 3.00 }
+export const CHANNEL_PRICING_OPTIONS = [
+  { key: '10h', label: '10 Holes — 6.67 ft', feet: 6.67 },
+  { key: '9h', label: '9 Holes — 6.00 ft', feet: 6.00 },
+  { key: '8h', label: '8 Holes — 5.33 ft', feet: 5.33 },
+];
+
+
 export const INVENTORY_TYPE_OPTIONS = [
   { value: 'Full Roll', label: 'Full Roll' },
   { value: 'Slitted', label: 'Slitted' },
@@ -66,6 +97,16 @@ export const STATUS_OPTIONS = [
 ];
 
 // ── Validation & Input Helpers ───────────────────────────────
+
+// Formats raw phone digits to 000-000-0000
+// e.g. "9925674192" → "992-567-4192"
+export const formatPhoneNumber = (raw) => {
+  if (!raw) return '';
+  const digits = String(raw).replace(/\D/g, '');
+  const match = digits.match(/(\d{0,3})(\d{0,3})(\d{0,4})/);
+  if (!match) return raw;
+  return !match[2] ? match[1] : `${match[1]}-${match[2]}${match[3] ? `-${match[3]}` : ''}`;
+};
 
 // Limits decimal input to 2 places at the onChange level
 export const handleDecimalChange = (onChange) => (e) => {

@@ -30,29 +30,31 @@ const Error = Loadable(lazy(() => import('../views/authentication/Error')));
 
 // ── NEW: Admin pages ───────────────────────────────────────────────────────
 
-const Dashboard     = Loadable(lazy(() => import('../views/admin/dashboard/Dashboard')));
-const Orders        = Loadable(lazy(() => import('../views/admin/orders/Orders')));
+const Dashboard = Loadable(lazy(() => import('../views/admin/dashboard/Dashboard')));
+const Orders = Loadable(lazy(() => import('../views/admin/orders/Orders')));
+const EditInvoice = Loadable(lazy(() => import('../views/admin/invoices/invoicelist/invoicelisting/EditInvoice/EditInvoice')));
 const InventoryList = Loadable(lazy(() => import('../views/admin/inventory/InventoryList')));
-const InventoryNew  = Loadable(lazy(() => import('../views/admin/inventory/InventoryNew')));
-const InventoryEdit  = Loadable(lazy(() => import('../views/admin/inventory/InventoryEdit')));
+const InventoryNew = Loadable(lazy(() => import('../views/admin/inventory/InventoryNew')));
+const InventoryEdit = Loadable(lazy(() => import('../views/admin/inventory/InventoryEdit')));
 const ProductionList = Loadable(lazy(() => import('../views/admin/production/ProductionList')));
-const ProductionNew  = Loadable(lazy(() => import('../views/admin/production/ProductionNew')));
+const ProductionNew = Loadable(lazy(() => import('../views/admin/production/ProductionNew')));
 const ProductionEdit = Loadable(lazy(() => import('../views/admin/production/ProductionEdit')));
-const CustomerList  = Loadable(lazy(() => import('../views/admin/customers/CustomerList')));
-const CustomerNew   = Loadable(lazy(() => import('../views/admin/customers/CustomerNew')));
-const CustomerEdit  = Loadable(lazy(() => import('../views/admin/customers/CustomerEdit')));
-const Invoices      = Loadable(lazy(() => import('../views/admin/invoices/Invoices')));
-const Reports       = Loadable(lazy(() => import('../views/admin/reports/Reports')));
-const ProductList   = Loadable(lazy(() => import('../views/admin/products/ProductList')));
-const ProductNew    = Loadable(lazy(() => import('../views/admin/products/ProductNew')));
-const ProductEdit   = Loadable(lazy(() => import('../views/admin/products/ProductEdit')));
-const UserList      = Loadable(lazy(() => import('../views/admin/users/UserList')));
-const UserNew       = Loadable(lazy(() => import('../views/admin/users/UserNew')));
-const UserEdit      = Loadable(lazy(() => import('../views/admin/users/UserEdit')));
+const CustomerList = Loadable(lazy(() => import('../views/admin/customers/CustomerList')));
+const CustomerNew = Loadable(lazy(() => import('../views/admin/customers/CustomerNew')));
+const CustomerEdit = Loadable(lazy(() => import('../views/admin/customers/CustomerEdit')));
+const Invoices = Loadable(lazy(() => import('../views/admin/invoices/invoicelist/Invoices')));
+const ViewInvoice = Loadable(lazy(() => import('../views/admin/invoices/invoicelist/invoicelisting/ViewInvoice')));
+const Reports = Loadable(lazy(() => import('../views/admin/reports/Reports')));
+const ProductList = Loadable(lazy(() => import('../views/admin/products/ProductList')));
+const ProductNew = Loadable(lazy(() => import('../views/admin/products/ProductNew')));
+const ProductEdit = Loadable(lazy(() => import('../views/admin/products/ProductEdit')));
+const UserList = Loadable(lazy(() => import('../views/admin/users/UserList')));
+const UserNew = Loadable(lazy(() => import('../views/admin/users/UserNew')));
+const UserEdit = Loadable(lazy(() => import('../views/admin/users/UserEdit')));
 
 // ── NEW: Customer order portal pages ──────────────────────────────────────
-const PlaceOrder    = Loadable(lazy(() => import('../views/customer/order/PlaceOrder')));
-const OrderHistory  = Loadable(lazy(() => import('../views/customer/order/OrderHistory')));
+const PlaceOrder = Loadable(lazy(() => import('../views/customer/order/PlaceOrder')));
+const OrderHistory = Loadable(lazy(() => import('../views/customer/order/OrderHistory')));
 
 
 const Router = [
@@ -61,11 +63,12 @@ const Router = [
     path: '/',
     element: <BlankLayout />,
     children: [
-      { path: '/',              element: <LoginAdminOnly /> },
-      { path: '/admin-login',   element: <LoginAdminOnly /> },
-      { path: '/login',         element: <LoginCustomerOrderPortal /> },
-      { path: '/auth/404',      element: <Error /> },
-      { path: '*',              element: <Navigate to="/auth/404" /> },
+      { path: '/', element: <LoginAdminOnly /> },
+      { path: '/admin-login', element: <LoginAdminOnly /> },
+      { path: '/login', element: <LoginCustomerOrderPortal /> },
+      { path: '/auth/404', element: <Error /> },
+      { path: '/view-invoice/:id', element: <ViewInvoice /> },
+      { path: '*', element: <Navigate to="/auth/404" /> },
     ],
   },
 
@@ -76,34 +79,35 @@ const Router = [
     children: [
 
       // ── NEW: Admin routes ──────────────────────────────────────────────
-      { path: '/admin/dashboard',      element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><Dashboard /></ProtectedRoute> },
-      { path: '/admin/orders',         element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><Orders /></ProtectedRoute> },
-      { path: '/admin/inventory',      element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><InventoryList /></ProtectedRoute> },
-      { path: '/admin/inventory/new',  element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><InventoryNew /></ProtectedRoute> },
+      { path: '/admin/dashboard', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><Dashboard /></ProtectedRoute> },
+      { path: '/admin/orders', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><Orders /></ProtectedRoute> },
+      { path: '/admin/invoices/edit/:id', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><EditInvoice /></ProtectedRoute> },
+      { path: '/admin/inventory', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><InventoryList /></ProtectedRoute> },
+      { path: '/admin/inventory/new', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><InventoryNew /></ProtectedRoute> },
       { path: '/admin/inventory/edit/:id', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><InventoryEdit /></ProtectedRoute> },
-      { path: '/admin/production',        element: <ProtectedRoute allowedUserType="admin"><ProductionList /></ProtectedRoute> },
-      { path: '/admin/production/new',    element: <ProtectedRoute allowedUserType="admin"><ProductionNew /></ProtectedRoute> },
+      { path: '/admin/production', element: <ProtectedRoute allowedUserType="admin"><ProductionList /></ProtectedRoute> },
+      { path: '/admin/production/new', element: <ProtectedRoute allowedUserType="admin"><ProductionNew /></ProtectedRoute> },
       { path: '/admin/production/edit/:id', element: <ProtectedRoute allowedUserType="admin"><ProductionEdit /></ProtectedRoute> },
-      { path: '/admin/customers',      element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><CustomerList /></ProtectedRoute> },
-      { path: '/admin/customers/new',  element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><CustomerNew /></ProtectedRoute> },
+      { path: '/admin/customers', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><CustomerList /></ProtectedRoute> },
+      { path: '/admin/customers/new', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><CustomerNew /></ProtectedRoute> },
       { path: '/admin/customers/edit/:id', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><CustomerEdit /></ProtectedRoute> },
-      { path: '/admin/products',       element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><ProductList /></ProtectedRoute> },
-      { path: '/admin/products/new',   element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><ProductNew /></ProtectedRoute> },
+      { path: '/admin/products', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><ProductList /></ProtectedRoute> },
+      { path: '/admin/products/new', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><ProductNew /></ProtectedRoute> },
       { path: '/admin/products/edit/:id', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><ProductEdit /></ProtectedRoute> },
-      { path: '/admin/invoices',       element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><Invoices /></ProtectedRoute> },
-      { path: '/admin/reports',        element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><Reports /></ProtectedRoute> },
-      { path: '/admin/users',          element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin']}><UserList /></ProtectedRoute> },
-      { path: '/admin/users/new',      element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin']}><UserNew /></ProtectedRoute> },
+      { path: '/admin/invoices', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><Invoices /></ProtectedRoute> },
+      { path: '/admin/reports', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin', 'admin']}><Reports /></ProtectedRoute> },
+      { path: '/admin/users', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin']}><UserList /></ProtectedRoute> },
+      { path: '/admin/users/new', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin']}><UserNew /></ProtectedRoute> },
       { path: '/admin/users/edit/:id', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['superadmin']}><UserEdit /></ProtectedRoute> },
 
       // ── NEW: Customer order portal routes ──────────────────────────────
-      { path: '/order/new',            element: <ProtectedRoute allowedUserType="customer"><PlaceOrder /></ProtectedRoute> },
-      { path: '/order/history',        element: <ProtectedRoute allowedUserType="customer"><OrderHistory /></ProtectedRoute> },
+      { path: '/order/new', element: <ProtectedRoute allowedUserType="customer"><PlaceOrder /></ProtectedRoute> },
+      { path: '/order/history', element: <ProtectedRoute allowedUserType="customer"><OrderHistory /></ProtectedRoute> },
 
       // ── EXISTING: kept exactly as before ──────────────────────────────
-      { path: '/user-profile',      element: <UserProfile /> },
+      { path: '/user-profile', element: <UserProfile /> },
       { path: '/pages/account-settings', element: <AccountSetting /> },
-   
+
 
       { path: '*', element: <Navigate to="/auth/404" /> },
     ],

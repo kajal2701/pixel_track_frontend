@@ -6,7 +6,6 @@ import {
   TableCell, TablePagination, TableRow, TableFooter,
   IconButton, Paper, TableContainer, Avatar, Stack, CircularProgress,
 } from '@mui/material';
-import Spinner from '../../views/spinner/Spinner';
 import FirstPageIcon from '@mui/icons-material/FirstPage';
 import KeyboardArrowLeft from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight';
@@ -50,9 +49,9 @@ TablePaginationActions.propTypes = {
   rowsPerPage: PropTypes.number.isRequired,
 };
 
-const renderCell = (col, row) => {
+const renderCell = (col, row, globalIdx) => {
   // Custom render function — highest priority
-  if (col.render) return col.render(row);
+  if (col.render) return col.render(row, globalIdx);
 
   const value = row[col.field];
 
@@ -92,15 +91,34 @@ const renderCell = (col, row) => {
   );
 };
 
-const DataTable = ({ rows = [], columns = [], defaultRows = 5, loading = false, emptyMessage = "No records found" }) => {
+const DataTable = ({ rows = [], columns = [], defaultRows = 5, loading = false, emptyMessage = "No records found", showSrNo = true }) => {
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(defaultRows);
   const [sortConfig, setSortConfig] = React.useState({ key: null, direction: 'asc' });
 
+  const finalColumns = React.useMemo(() => {
+    if (showSrNo) {
+      return [
+        {
+          field: 'sr_no',
+          label: 'S.No.',
+          width: '70px',
+          render: (row, globalIdx) => (
+            <Typography variant="h6" fontWeight="400">
+              {globalIdx}
+            </Typography>
+          )
+        },
+        ...columns
+      ];
+    }
+    return columns;
+  }, [columns, showSrNo]);
+
   // Handle sorting
   const handleSort = (field) => {
-    // Don't sort actions column
-    if (field === 'actions') return;
+    // Don't sort actions or sr_no column
+    if (field === 'actions' || field === 'sr_no') return;
 
     let direction = 'asc';
     if (sortConfig.key === field && sortConfig.direction === 'asc') {
@@ -143,7 +161,7 @@ const DataTable = ({ rows = [], columns = [], defaultRows = 5, loading = false, 
     : sortedRows;
 
   // Calculate total minWidth from columns
-  const totalMinWidth = columns.reduce((sum, col) => {
+  const totalMinWidth = finalColumns.reduce((sum, col) => {
     if (col.minWidth) {
       const width = typeof col.minWidth === 'string'
         ? parseInt(col.minWidth)
@@ -171,14 +189,14 @@ const DataTable = ({ rows = [], columns = [], defaultRows = 5, loading = false, 
           >
             <TableHead>
               <TableRow>
-                {columns.map((col) => (
+                {finalColumns.map((col) => (
                   <TableCell
                     key={col.field}
                     sx={{
                       width: col.width || col.minWidth,
                       minWidth: col.minWidth,
-                      cursor: col.field !== 'actions' ? 'pointer' : 'default',
-                      '&:hover': col.field !== 'actions' ? {
+                      cursor: (col.field !== 'actions' && col.field !== 'sr_no') ? 'pointer' : 'default',
+                      '&:hover': (col.field !== 'actions' && col.field !== 'sr_no') ? {
                         backgroundColor: 'action.hover',
                       } : {},
                     }}
@@ -186,7 +204,7 @@ const DataTable = ({ rows = [], columns = [], defaultRows = 5, loading = false, 
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Typography variant="h6">{col.label}</Typography>
-                      {col.field !== 'actions' && (
+                      {col.field !== 'actions' && col.field !== 'sr_no' && (
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                           {sortConfig.key === col.field ? (
                             sortConfig.direction === 'asc' ? (
@@ -207,7 +225,7 @@ const DataTable = ({ rows = [], columns = [], defaultRows = 5, loading = false, 
             <TableBody>
               {rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={columns.length} align="center" sx={{ py: 6 }}>
+                  <TableCell colSpan={finalColumns.length} align="center" sx={{ py: 6 }}>
                     <Typography variant="h6" color="text.secondary" fontWeight="normal">
                       {emptyMessage}
                     </Typography>
@@ -215,23 +233,26 @@ const DataTable = ({ rows = [], columns = [], defaultRows = 5, loading = false, 
                 </TableRow>
               ) : (
                 <>
-                  {visibleRows.map((row, rowIdx) => (
-                    <TableRow key={row.id ?? rowIdx} hover>
-                      {columns.map((col) => (
-                        <TableCell key={col.field} sx={{
-                          width: col.width || col.minWidth,
-                          minWidth: col.minWidth,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                        }}>
-                          {renderCell(col, row)}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
+                  {visibleRows.map((row, rowIdx) => {
+                    const globalIdx = (rowsPerPage > 0 ? page * rowsPerPage : 0) + rowIdx + 1;
+                    return (
+                      <TableRow key={row.id ?? rowIdx} hover>
+                        {finalColumns.map((col) => (
+                          <TableCell key={col.field} sx={{
+                            width: col.width || col.minWidth,
+                            minWidth: col.minWidth,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}>
+                            {renderCell(col, row, globalIdx)}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    );
+                  })}
                   {emptyRows > 0 && (
                     <TableRow style={{ height: 53 * emptyRows }}>
-                      <TableCell colSpan={columns.length} />
+                      <TableCell colSpan={finalColumns.length} />
                     </TableRow>
                   )}
                 </>
@@ -242,7 +263,7 @@ const DataTable = ({ rows = [], columns = [], defaultRows = 5, loading = false, 
                 <TableRow>
                   <TablePagination
                     rowsPerPageOptions={[5, 10, 25, { label: 'All', value: -1 }]}
-                    colSpan={columns.length}
+                    colSpan={finalColumns.length}
                     count={rows.length}
                     rowsPerPage={rowsPerPage}
                     page={page}
@@ -285,6 +306,7 @@ DataTable.propTypes = {
   defaultRows: PropTypes.number,
   loading: PropTypes.bool,
   emptyMessage: PropTypes.node,
+  showSrNo: PropTypes.bool,
 };
 
 export default DataTable;

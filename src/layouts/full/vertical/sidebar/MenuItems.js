@@ -165,6 +165,12 @@ const buildAdminMenuItems = () => {
           href: '/admin/production/new',
         },
       ],
+    },
+    {
+      id: uniqueId(),
+      title: 'Invoices',
+      icon: IconCurrencyDollar,
+      href: '/admin/invoices',
     }
   );
 

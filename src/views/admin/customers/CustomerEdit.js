@@ -14,29 +14,23 @@ const CustomerEdit = () => {
   const [fetchLoading, setFetchLoading] = useState(true);
   const [customer, setCustomer] = useState(null);
 
-  // ── Fetch customer data ──
-  useEffect(() => {
-    fetchCustomer();
-  }, [id]);
+  useEffect(() => { fetchCustomer(); }, [id]);
 
   const fetchCustomer = async () => {
     setFetchLoading(true);
     try {
-      const response = await customerService.getCustomerById(id);
-      setCustomer(response.data);
+      // channel_pricing comes along with the customer object automatically
+      const res = await customerService.getCustomerById(id);
+      setCustomer(res.data);
     } catch (err) {
-      if (err.message?.includes('not found')) {
-        toast.error('Customer not found');
-      } else {
-        toast.error(err.message || 'Failed to fetch customer');
-      }
+      toast.error(err.message?.includes('not found') ? 'Customer not found' : (err.message || 'Failed to fetch customer'));
       navigate('/admin/customers');
     } finally {
       setFetchLoading(false);
     }
   };
 
-  // ── Submit → PUT /api/customers/:id ──
+  // onSubmit receives full customer object including channel_pricing
   const onSubmit = async (data) => {
     setLoading(true);
     try {
@@ -54,9 +48,7 @@ const CustomerEdit = () => {
     }
   };
 
-  const handleCancel = () => {
-    navigate('/admin/customers');
-  };
+  const handleCancel = () => navigate('/admin/customers');
 
   if (fetchLoading) {
     return (
@@ -71,14 +63,10 @@ const CustomerEdit = () => {
   return (
     <PageContainer title="Edit Customer" description="Update customer information">
       <Box>
-        {/* ── Header ── */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
           <Button
-            variant="outlined"
-            startIcon={<ArrowBack />}
-            onClick={handleCancel}
-            sx={{ mr: 2, borderRadius: '8px' }}
-            disabled={loading}
+            variant="outlined" startIcon={<ArrowBack />}
+            onClick={handleCancel} sx={{ mr: 2, borderRadius: '8px' }} disabled={loading}
           >
             Back to Customers
           </Button>
@@ -87,7 +75,7 @@ const CustomerEdit = () => {
           </Typography>
         </Box>
 
-        {/* ── Form ── */}
+        {/* customer.channel_pricing is auto-loaded and passed to form */}
         <CustomerForm
           customer={customer}
           onSubmit={onSubmit}

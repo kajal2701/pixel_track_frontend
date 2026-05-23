@@ -103,6 +103,11 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
               } else if (s.label === 'Slitted' && row.slitted_size && row.slitted_qty) {
                 const totalFeet = (parseFloat(row.slitted_size) * parseFloat(row.slitted_qty)).toFixed(1);
                 displayValue = `${totalFeet} ft`;
+              } else if (s.label === 'Ready Channel') {
+                const readyFeet = (row.ready_variants || []).reduce((acc, v) => acc + (parseFloat(v.length || 0) * parseInt(v.pieces || 0)), 0);
+                if (readyFeet > 0) {
+                  displayValue = `${s.qty} pcs : ${readyFeet.toFixed(1)} ft`;
+                }
               }
 
               return (
@@ -231,7 +236,7 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
                                   }}
                                 >
                                   <Typography variant="body2" color="text.secondary">
-                                    {`${variant.length ?? '—'} ft | ${variant.pieces} pcs | Hole ${variant.hole_distance}`}
+                                    {`${variant.length ?? '—'} ft | ${variant.pieces} pcs | Hole ${variant.hole_distance} | ${(parseFloat(variant.length || 0) * parseInt(variant.pieces || 0)).toFixed(1)} ft`}
                                   </Typography>
                                   <Stack direction="row" spacing={0.5}>
                                     <IconButton
