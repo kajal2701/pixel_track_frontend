@@ -88,6 +88,7 @@ export const INVENTORY_TYPE_OPTIONS = [
 
 export const ROLE_OPTIONS = [
   { value: '', label: 'Select Role', disabled: true },
+  { value: 'admin', label: 'Admin' },
   { value: 'production tech', label: 'Production Tech' },
 ];
 
@@ -237,11 +238,24 @@ export const ORDER_TABLE_DATA = [
 
 // ── Production Calculation Helper ──────────────────────────────────
 
-export const calculateProductionDetails = (size, qty) => {
+export const calculateProductionDetails = (size, qty, type = 'Full Roll', product = null) => {
   if (!size || !qty) return '—';
 
-  const totalFeet = parseFloat(size) * parseFloat(qty);
-  if (totalFeet <= 0) return '—';
+  const s = parseFloat(size);
+  const q = parseFloat(qty);
+
+  if (s <= 0 || q <= 0) return '—';
+
+  let slittedLength = s;
+  let slitsPerRoll = 1;
+
+  if (type === 'Full Roll') {
+    slittedLength = product?.slitted_roll_length ? parseFloat(product.slitted_roll_length) : s;
+    slitsPerRoll = product?.slits_per_roll ? parseInt(product.slits_per_roll) : 6;
+  } else if (type === 'Slitted') {
+    slittedLength = s;
+    slitsPerRoll = 1;
+  }
 
   const holes = [
     { label: '10H (6.67ft)', value: 6.67 },
@@ -249,9 +263,11 @@ export const calculateProductionDetails = (size, qty) => {
     { label: '8H (5.33ft)', value: 5.33 }
   ];
 
-  return holes.map(h =>
-    `${h.label}: ${Math.floor(totalFeet / h.value)} pcs`
-  ).join(' | ');
+  return holes.map(h => {
+    const channelsPerSlitted = Math.floor(slittedLength / h.value);
+    const totalPieces = channelsPerSlitted * slitsPerRoll * q;
+    return `${h.label}: ${Math.floor(totalPieces)} pcs`;
+  }).join(' | ');
 };
 
 // ── Business Days Calculation ──────────────────────────────────
@@ -326,7 +342,7 @@ export const LOCATION_OPTIONS = [
 // ── Role Chip Color ──────────────────────────────────────────────
 export const getRoleChipColor = (role) => {
   switch (role) {
-    case 'superadmin': return 'primary';
+    case 'admin': return 'primary';
     case 'production tech': return 'info';
     default: return 'default';
   }
@@ -363,3 +379,45 @@ export const TypeChipWithOrderColor = ({ item, orderColor }) => (
   />
 );
 
+// ── Invoice URL Obfuscation Helpers ──────────────────────────────
+export const encodeInvoiceId = (id) => {
+  if (!id) return '';
+  const numId = parseInt(id, 10);
+
+  // 1. Generate a salt to change the very beginning of the string
+  const salt = (numId * 87654321).toString(36);
+
+  // 2. Base padding string (shortened to make the final Base64 string smaller)
+  const padding = "PxTrk_SecureInv";
+
+  // 3. XOR the padding using the ID so the entire middle string changes completely
+  let xorPadding = "";
+  for (let i = 0; i < padding.length; i++) {
+    const charCode = padding.charCodeAt(i) ^ ((numId * (i + 1)) % 256);
+    xorPadding += charCode.toString(16).padStart(2, '0');
+  }
+
+  // 4. Assemble the raw token: salt + scrambled padding + real ID
+  const rawToken = `${salt}_${xorPadding}_${id}`;
+
+  // 5. Base64 encode the whole thing
+  return btoa(rawToken);
+};
+
+export const decodeInvoiceToken = (token) => {
+  if (!token) return null;
+  try {
+    const decoded = atob(token);
+    // Split by underscore and grab the last part (which is the real ID)
+    const parts = decoded.split('_');
+    if (parts.length >= 3) {
+      const actualId = parts[parts.length - 1];
+      if (!isNaN(actualId)) {
+        return actualId;
+      }
+    }
+  } catch (e) {
+    // Return null if invalid base64 or pattern doesn't match
+  }
+  return null;
+};

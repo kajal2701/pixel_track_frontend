@@ -10,6 +10,7 @@ import PageContainer from '../../../../components/container/PageContainer';
 import ParentCard from '../../../../components/shared/ParentCard';
 import invoiceService from '../../../../services/invoiceService';
 import orderService from '../../../../services/orderService';
+import { encodeInvoiceId } from '../../../../utils/helpers';
 
 import InvoiceFilters from './invoicelisting/InvoiceFilters';
 import InvoiceStats from './invoicelisting/InvoiceStats';
@@ -175,7 +176,8 @@ const Invoices = () => {
   };
 
   const handleViewInvoice = (invoice) => {
-    navigate(`/view-invoice/${invoice.id}`);
+    const encodedToken = encodeInvoiceId(invoice.id);
+    navigate(`/view-invoice/${encodedToken}`);
   };
 
   const handleSendInvoice = async (invoiceId) => {

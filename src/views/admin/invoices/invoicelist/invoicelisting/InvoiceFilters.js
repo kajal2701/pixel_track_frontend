@@ -64,7 +64,6 @@ const InvoiceFilters = ({
             <MenuItem value="Draft">Draft</MenuItem>
             <MenuItem value="Sent">Sent</MenuItem>
             <MenuItem value="Paid">Paid</MenuItem>
-            <MenuItem value="Cancelled">Cancelled</MenuItem>
           </Select>
         </FormControl>
       )}

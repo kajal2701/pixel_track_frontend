@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, Typography, CircularProgress, Box, IconButton,
-  Stack, Divider, Alert, TextField,
+  Stack, Divider, Alert, TextField, Select, MenuItem, FormControl
 } from '@mui/material';
 import {
   Check, Delete, CheckCircle, Close, Inventory2, Edit,
@@ -64,6 +64,8 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, loading }) => {
   const [inventoryResult, setInventoryResult] = useState(null);
   const [inventoryLoading, setInventoryLoading] = useState(false);
   const [modificationNotes, setModificationNotes] = useState('');
+  const [pickupLocation, setPickupLocation] = useState('');
+  const [pickupDate, setPickupDate] = useState('');
 
   // Fetch inventory and run check when CONFIRM dialog opens
   useEffect(() => {
@@ -81,9 +83,24 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, loading }) => {
       };
       fetchAndCheck();
       setModificationNotes(order.modification_notes || '');
+      setPickupLocation(order.pickup_location || '');
+
+      let dateString = '';
+      if (order.pickup_date) {
+        try {
+          const d = new Date(order.pickup_date);
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          const dd = String(d.getDate()).padStart(2, '0');
+          dateString = `${yyyy}-${mm}-${dd}`;
+        } catch (e) { }
+      }
+      setPickupDate(dateString);
     } else {
       setInventoryResult(null);
       setModificationNotes('');
+      setPickupLocation('');
+      setPickupDate('');
     }
   }, [open, type, order]);
 
@@ -162,20 +179,57 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, loading }) => {
             <Stack direction="row" spacing={1} alignItems="center" mb={1.5}>
               <Edit sx={{ color: 'warning.main', fontSize: 20 }} />
               <Typography variant="subtitle2" fontWeight={700}>
-                Request Modification
-              </Typography>
+                Request Modification              </Typography>
             </Stack>
 
-            <TextField
-              fullWidth
-              multiline
-              rows={3}
-              placeholder="e.g., Customer wants to change pickup location, reduce quantity to 50 pieces..."
-              value={modificationNotes}
-              onChange={(e) => setModificationNotes(e.target.value)}
-              size="small"
-              sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-            />
+            <Stack spacing={2}>
+              {order.delivery_method === 'pickup' && (
+                <FormControl fullWidth size="small">
+                  <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 500 }}>Pickup Location</Typography>
+                  <Select
+                    value={pickupLocation}
+                    onChange={(e) => setPickupLocation(e.target.value)}
+                    sx={{ '& .MuiOutlinedInput-notchedOutline': { borderRadius: '8px' } }}
+                  >
+                    <MenuItem value="4783 CAWSEY Terrace SW, Edmonton AB T6W 5M7">
+                      4783 CAWSEY Terrace SW, Edmonton AB T6W 5M7
+                    </MenuItem>
+                    <MenuItem value="2322 chokecherry close sw Edmonton, AB T6X2M7">
+                      2322 chokecherry close sw Edmonton, AB T6X2M7
+                    </MenuItem>
+                  </Select>
+                </FormControl>
+              )}
+
+              <FormControl fullWidth size="small">
+                <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 500 }}>
+                  {order.delivery_method === 'pickup' ? 'Pickup Date' : 'Delivery Date'}
+                </Typography>
+                <TextField
+                  type="date"
+                  fullWidth
+                  size="small"
+                  value={pickupDate}
+                  onChange={(e) => setPickupDate(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                />
+              </FormControl>
+
+              <FormControl fullWidth size="small">
+                <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 500 }}>Modification Notes</Typography>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={2}
+                  placeholder="e.g., Admin wants to change pickup location..."
+                  value={modificationNotes}
+                  onChange={(e) => setModificationNotes(e.target.value)}
+                  size="small"
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                />
+              </FormControl>
+            </Stack>
           </Box>
         )}
       </DialogContent>
@@ -191,10 +245,17 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, loading }) => {
         </Button>
         {isConfirm && (
           <Button
-            onClick={() => onConfirm(type, order, { action: 'request-modification', modificationNotes: modificationNotes.trim() })}
+            onClick={() => onConfirm(type, order, {
+              action: 'request-modification',
+              payload: {
+                modification_notes: modificationNotes.trim(),
+                pickup_location: pickupLocation,
+                pickup_date: pickupDate,
+              }
+            })}
             variant="contained"
             color="primary"
-            disabled={loading || !modificationNotes.trim()}
+            disabled={loading}
             sx={{ borderRadius: '8px', minWidth: 180 }}
           >
             {loading

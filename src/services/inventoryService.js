@@ -52,6 +52,15 @@ const inventoryService = {
       throw error.response?.data || { message: 'Network error occurred' };
     }
   },
+
+  getInventoryHoldsByColor: async (color, channel_length) => {
+    try {
+      const response = await apiClient.get('/inventory/holds', { params: { color, channel_length } });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Network error occurred' };
+    }
+  },
 };
 
 export default inventoryService;

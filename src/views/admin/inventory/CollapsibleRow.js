@@ -27,7 +27,7 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
       details: [
         { label: 'Quantity', value: row.fullRoll_qty },
         { label: 'Size', value: row.fullRoll_size || '—' },
-        { label: 'Possible Production', value: calculateProductionDetails(row.fullRoll_size, row.fullRoll_qty) },
+        { label: 'Possible Production', value: calculateProductionDetails(row.fullRoll_size, row.fullRoll_qty, 'Full Roll') },
         { label: 'Location', value: row.fullRoll_location || 'Warehouse' },
       ],
     },
@@ -40,7 +40,7 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
       details: [
         { label: 'Quantity', value: row.slitted_qty },
         { label: 'Size', value: row.slitted_size || '—' },
-        { label: 'Possible Production', value: calculateProductionDetails(row.slitted_size, row.slitted_qty) },
+        { label: 'Possible Production', value: calculateProductionDetails(row.slitted_size, row.slitted_qty, 'Slitted') },
         { label: 'Location', value: row.slitted_location || 'Warehouse' },
       ],
     },

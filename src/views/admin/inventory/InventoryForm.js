@@ -406,7 +406,10 @@ const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }
                     const q = parseFloat(watchQuantity) || 0;
 
                     if (s > 0 && q > 0) {
-                      const calculation = calculateProductionDetails(s, q);
+                      const match = allProducts.find(
+                        (p) => p.manufacturer === selectedSupplier && p.color === selectedColorName
+                      );
+                      const calculation = calculateProductionDetails(s, q, selectedType, match);
                       const lengths = [
                         { label: '10H (6.67ft)', color: 'primary' },
                         { label: '9H (6ft)', color: 'success' },

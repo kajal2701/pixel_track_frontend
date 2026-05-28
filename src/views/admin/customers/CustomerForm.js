@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Box, Typography, Button, TextField,
   Paper, Grid, CircularProgress, Divider,
-  InputAdornment,
+  InputAdornment, MenuItem,
 } from '@mui/material';
 import { Save, Cancel, AttachMoney } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
@@ -30,6 +30,7 @@ const CustomerForm = ({ customer, onSubmit, loading, isEdit = false, onCancel })
       contact_name: '',
       email: '',
       phone: '',
+      status: 'active',
     },
   });
 
@@ -43,6 +44,7 @@ const CustomerForm = ({ customer, onSubmit, loading, isEdit = false, onCancel })
         contact_name: customer.contact_name || '',
         email: customer.email || '',
         phone: formatPhoneNumber(customer.phone),
+        status: customer.status || 'active',
       });
       // channel_pricing comes as object from API e.g. { "10h": 2.50, "9h": 2.75 }
       if (customer.channel_pricing) {
@@ -59,7 +61,7 @@ const CustomerForm = ({ customer, onSubmit, loading, isEdit = false, onCancel })
         setChannelPricing({});
       }
     } else if (!isEdit) {
-      reset({ company_name: '', customer_number: '', contact_name: '', email: '', phone: '' });
+      reset({ company_name: '', customer_number: '', contact_name: '', email: '', phone: '', status: 'active' });
       setChannelPricing({});
     }
   }, [customer, isEdit, reset]);
@@ -187,6 +189,22 @@ const CustomerForm = ({ customer, onSubmit, loading, isEdit = false, onCancel })
               error={!!errors.phone} helperText={errors.phone?.message || 'Format: 000-000-0000'}
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
             />
+          </Grid>
+
+          {/* Status */}
+          <Grid item xs={12} md={6}>
+            <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>Status *</Typography>
+            <TextField
+              select
+              fullWidth variant="outlined"
+              {...register('status', { required: 'Status is required' })}
+              defaultValue="active"
+              error={!!errors.status} helperText={errors.status?.message}
+              sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+            >
+              <MenuItem value="active">Active</MenuItem>
+              <MenuItem value="inactive">Inactive</MenuItem>
+            </TextField>
           </Grid>
 
           {/* ── Pricing Section ── */}

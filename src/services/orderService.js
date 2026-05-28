@@ -115,9 +115,9 @@ const orderService = {
     }
   },
 
-  requestModification: async (id, modification_notes) => {
+  requestModification: async (id, payload) => {
     try {
-      const response = await apiClient.patch(`/orders/${id}/modification`, { modification_notes });
+      const response = await apiClient.patch(`/orders/${id}/modification`, payload);
       return response.data;
     } catch (error) {
       throw error.response?.data || { message: 'Network error occurred' };

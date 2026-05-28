@@ -10,6 +10,7 @@ import {
   IconAperture,
   IconShoppingCart,
   IconUsers,
+  IconDashboard,
 } from '@tabler/icons';
 
 import { uniqueId } from 'lodash';
@@ -21,7 +22,7 @@ const getUserType = () => localStorage.getItem('userType');
 const buildAdminMenuItems = () => {
   const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
   const role = adminData.role;
-  const isSuperAdmin = role === 'superadmin';
+  const isAdmin = role === 'admin';
   const isProductionTech = role === 'production tech';
 
   // Production Tech gets a restricted menu
@@ -54,14 +55,20 @@ const buildAdminMenuItems = () => {
   const items = [
     {
       id: uniqueId(),
+      title: 'Dashboard',
+      icon: IconDashboard,
+      href: '/admin/dashboard',
+    },
+    {
+      id: uniqueId(),
       title: 'Orders',
       icon: IconBorderAll,
       href: '/admin/orders',
     },
   ];
 
-  // Users menu — only visible for superadmin
-  if (isSuperAdmin) {
+  // Users menu — only visible for admin
+  if (isAdmin) {
     items.push({
       id: uniqueId(),
       title: 'Users',

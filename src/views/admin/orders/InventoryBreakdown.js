@@ -1,16 +1,25 @@
 import React from 'react';
 import {
-  Box, Typography, Stack, Chip, Alert, LinearProgress,
+  Box, Typography, Stack, Chip, Alert, LinearProgress, IconButton, Tooltip
 } from '@mui/material';
-import { CheckCircleOutline, Warning, ErrorOutline } from '@mui/icons-material';
+import { CheckCircleOutline, Warning, ErrorOutline, Visibility } from '@mui/icons-material';
+import OrderHoldsDialog from './OrderHoldsDialog';
 
 const InventoryBreakdown = ({ result }) => {
   const {
-    orderQty, readyUsed, readyAvailable,
-    slittedUsed, slittedTotalFeet, slittedPossiblePieces,
-    fullRollUsed, fullRollTotalFeet, fullRollPossiblePieces,
-    totalSatisfied, shortage, isFullySatisfied,
+    orderQty, readyUsed, readyAvailable, readyHeld,
+    slittedUsed, slittedTotalFeet, slittedPossiblePieces, slittedHeldPieces,
+    fullRollUsed, fullRollTotalFeet, fullRollPossiblePieces, fullRollHeldPieces,
+    totalSatisfied, shortage, isFullySatisfied, parsedColor,
   } = result;
+
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [dialogStage, setDialogStage] = React.useState(null);
+
+  const handleOpenDialog = (stageLabel) => {
+    setDialogStage(stageLabel);
+    setDialogOpen(true);
+  };
 
   const progress = orderQty > 0 ? Math.min((totalSatisfied / orderQty) * 100, 100) : 0;
 
@@ -19,6 +28,7 @@ const InventoryBreakdown = ({ result }) => {
       label: 'Ready Channel',
       used: readyUsed,
       detail: `${readyAvailable} pcs in stock`,
+      heldByOthers: readyHeld || 0,
       icon: <CheckCircleOutline fontSize="small" />,
       chipColor: readyUsed > 0 ? 'success' : 'default',
       show: true,
@@ -27,6 +37,7 @@ const InventoryBreakdown = ({ result }) => {
       label: 'Slitted',
       used: slittedUsed,
       detail: `${slittedPossiblePieces} pcs producible (${slittedTotalFeet} ft material)`,
+      heldByOthers: slittedHeldPieces || 0,
       icon: <Warning fontSize="small" />,
       chipColor: slittedUsed > 0 ? 'warning' : 'default',
       show: true,
@@ -35,6 +46,7 @@ const InventoryBreakdown = ({ result }) => {
       label: 'Full Roll',
       used: fullRollUsed,
       detail: `${fullRollPossiblePieces} pcs producible (${fullRollTotalFeet} ft material)`,
+      heldByOthers: fullRollHeldPieces || 0,
       icon: <Warning fontSize="small" />,
       chipColor: fullRollUsed > 0 ? 'warning' : 'default',
       show: true,
@@ -98,6 +110,18 @@ const InventoryBreakdown = ({ result }) => {
             <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block', ml: 3.5 }}>
               Available: {s.detail}
             </Typography>
+            {s.heldByOthers > 0 && (
+              <Stack direction="row" alignItems="center" spacing={0.5} sx={{ ml: 3.5, mt: 0.25 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Held by other orders: <strong>{s.heldByOthers} pcs</strong>
+                </Typography>
+                <Tooltip title="View Hold Details">
+                  <IconButton size="small" onClick={() => handleOpenDialog(s.label)} sx={{ p: 0.5 }}>
+                    <Visibility fontSize="inherit" color="action" />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
+            )}
           </Box>
         ))}
       </Stack>
@@ -120,6 +144,14 @@ const InventoryBreakdown = ({ result }) => {
           <strong>{shortage} pieces</strong> insufficient in inventory.
         </Alert>
       )}
+
+      <OrderHoldsDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        color={result.originalColor}
+        channelLength={result.channelLength}
+        stageLabel={dialogStage}
+      />
     </Box>
   );
 };

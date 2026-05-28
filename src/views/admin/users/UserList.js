@@ -121,7 +121,7 @@ const UserList = () => {
         >
           <Edit fontSize="small" />
         </IconButton>
-        {user.id !== currentAdminId && user.status === 'active' && (
+        {user.status === 'active' && (
           <IconButton
             size="small"
             sx={{ color: palette.error.main }}

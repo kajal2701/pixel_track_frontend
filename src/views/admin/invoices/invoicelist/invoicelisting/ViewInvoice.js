@@ -9,10 +9,10 @@ import toast from 'react-hot-toast';
 import invoiceService from 'src/services/invoiceService';
 import Logo from 'src/assets/images/logos/PiXEL-Tracks-Lights_Logo-White.webp';
 import PaymentDialog from './PaymentDialog';
-import { formatDate, PIXEL_TRACK } from 'src/utils/helpers';
+import { formatDate, PIXEL_TRACK, encodeInvoiceId, decodeInvoiceToken } from 'src/utils/helpers';
 
 const ViewInvoice = () => {
-  const { id } = useParams();
+  const { id: token } = useParams();
   const navigate = useNavigate();
 
   const [invoice, setInvoice] = useState(null);
@@ -36,13 +36,26 @@ const ViewInvoice = () => {
   };
 
   useEffect(() => {
-    fetchInvoiceDetails();
-  }, [id]);
+    // If the URL has a plain number (e.g. from an old email link), auto-redirect
+    if (token && !isNaN(token) && !token.includes('PxTrk')) {
+      const encodedToken = encodeInvoiceId(token);
+      navigate(`/view-invoice/${encodedToken}`, { replace: true });
+      return;
+    }
 
-  const fetchInvoiceDetails = async () => {
+    // Decode the token to get the actual ID
+    const actualId = decodeInvoiceToken(token);
+    if (actualId) {
+      fetchInvoiceDetails(actualId);
+    } else {
+      setLoading(false); // Invalid token
+    }
+  }, [token, navigate]);
+
+  const fetchInvoiceDetails = async (actualId) => {
     setLoading(true);
     try {
-      const res = await invoiceService.getById(id);
+      const res = await invoiceService.getById(actualId);
       setInvoice(res.data);
     } catch (err) {
       toast.error(err.message || 'Failed to load invoice details.');

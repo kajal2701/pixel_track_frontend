@@ -164,7 +164,7 @@ const Orders = () => {
       try {
         await orderService.deleteOrder(order.id);
         toast.success(`Order ${order.order_id} deleted.`);
-        setAllOrders((prev) => prev.filter((o) => o.id !== order.id));
+        await fetchOrders();
         closeStatusDialog();
       } catch (err) {
         toast.error(err.message || 'Failed to delete order.');
@@ -177,12 +177,12 @@ const Orders = () => {
     if (type === 'CONFIRM' && options.action === 'request-modification') {
       setActionLoading(true);
       try {
-        await orderService.requestModification(order.id, options.modificationNotes);
-        toast.success(`Modification requested for order ${order.order_id}`);
+        await orderService.requestModification(order.id, options.payload);
+        toast.success(`Modification applied`);
         await fetchOrders();
         closeStatusDialog();
       } catch (err) {
-        toast.error(err.message || 'Failed to request modification.');
+        toast.error('Failed to request modification.');
       } finally {
         setActionLoading(false);
       }
@@ -207,21 +207,10 @@ const Orders = () => {
     }
 
     if (type === 'CONFIRM' && options.action === 'request-production') {
-      setActionLoading(true);
-      try {
-        // First confirm the order so it holds any Ready Channel parts
-        await orderService.confirmOrder(order.id);
-        toast.success(`Order ${order.order_id} → Confirmed`);
-        await fetchOrders();
-        const updatedOrder = { ...order, order_status: 'Confirmed' };
-        closeStatusDialog();
-        // Then open production dialog
-        openProductionDialog(updatedOrder, options.inventoryResult);
-      } catch (err) {
-        toast.error(err.message || 'Failed to confirm order.');
-      } finally {
-        setActionLoading(false);
-      }
+      // Only open production dialog — no confirm API call here
+      // Confirm will be called after production is created successfully
+      closeStatusDialog();
+      openProductionDialog(order, options.inventoryResult);
       return;
     }
 
@@ -306,7 +295,11 @@ const Orders = () => {
       await productionService.createProductionRequest(payload);
       toast.success('Production request created.');
 
-      // Order is already confirmed, just change to Awaiting production
+      // Now confirm the order (holds Ready Channel inventory)
+      await orderService.confirmOrder(order.id);
+      toast.success(`Order ${order.order_id} → Confirmed`);
+
+      // Then move to Awaiting production
       const awaitingProductionStatus = 'Awaiting production';
       await orderService.updateStatus(order.id, awaitingProductionStatus);
       await fetchOrders();

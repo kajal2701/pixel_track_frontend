@@ -18,7 +18,6 @@ const ProductForm = ({ product, onSubmit, loading, isEdit = false, onCancel }) =
       manufacturer: '',
       color: '',
       color_code: '',
-      stock: '',
       full_roll_length: '98',
       slits_per_roll: '6',
       slitted_roll_length: '98',
@@ -31,7 +30,6 @@ const ProductForm = ({ product, onSubmit, loading, isEdit = false, onCancel }) =
         manufacturer: product.manufacturer || '',
         color: product.color || '',
         color_code: product.color_code || '',
-        stock: product.stock ?? '',
         full_roll_length: product.full_roll_length ?? '98',
         slits_per_roll: product.slits_per_roll ?? '6',
         slitted_roll_length: product.slitted_roll_length ?? '98',
@@ -44,7 +42,6 @@ const ProductForm = ({ product, onSubmit, loading, isEdit = false, onCancel }) =
         manufacturer: '',
         color: '',
         color_code: '',
-        stock: '',
         full_roll_length: '98',
         slits_per_roll: '6',
         slitted_roll_length: '98',
@@ -59,7 +56,7 @@ const ProductForm = ({ product, onSubmit, loading, isEdit = false, onCancel }) =
       color: data.color?.trim(),
       color_code: data.color_code?.trim() || null,
       price: null,
-      stock: data.stock === '' ? 0 : Number(data.stock),
+      stock: null,
       full_roll_length: data.full_roll_length === '' ? 98 : Number(data.full_roll_length),
       slits_per_roll: data.slits_per_roll === '' ? 6 : Number(data.slits_per_roll),
       slitted_roll_length: data.slitted_roll_length === '' ? 98 : Number(data.slitted_roll_length),
@@ -132,30 +129,6 @@ const ProductForm = ({ product, onSubmit, loading, isEdit = false, onCancel }) =
             />
           </Grid>
 
-          <Grid item xs={12} md={6}>
-            <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
-              Stock
-            </Typography>
-            <TextField
-              fullWidth
-              type="number"
-              inputProps={{ min: 0, step: '1' }}
-              variant="outlined"
-              placeholder="0"
-              {...register('stock', {
-                validate: (v) => {
-                  if (v === '' || v == null) return true;
-                  const n = Number(v);
-                  if (!Number.isFinite(n) || n < 0) return 'Stock must be 0 or higher';
-                  if (!Number.isInteger(n)) return 'Stock must be a whole number';
-                  return true;
-                },
-              })}
-              error={!!errors.stock}
-              helperText={errors.stock?.message}
-              sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-            />
-          </Grid>
 
           {/* ── Section: Supplier Roll Configuration ── */}
           <SectionHeading title="Roll Configuration" />

@@ -26,7 +26,6 @@ const columns = [
   { field: 'manufacturer', label: 'Manufacturer', bold: true, width: '220px', minWidth: '220px' },
   { field: 'color', label: 'Color', width: '140px', minWidth: '140px' },
   { field: 'color_code', label: 'Color Code', width: '140px', minWidth: '140px' },
-  { field: 'stock', label: 'Stock', width: '100px', minWidth: '100px' },
   {
     field: 'full_roll_length',
     label: 'Roll Length',
@@ -110,7 +109,6 @@ const ProductList = () => {
         p.manufacturer,
         p.color,
         p.color_code,
-        String(p.stock ?? ''),
       ].some((v) =>
         String(v ?? '')
           .toLowerCase()
