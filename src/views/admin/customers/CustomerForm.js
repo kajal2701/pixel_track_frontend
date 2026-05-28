@@ -20,6 +20,7 @@ const CustomerForm = ({ customer, onSubmit, loading, isEdit = false, onCancel })
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
     reset,
   } = useForm({
@@ -34,7 +35,7 @@ const CustomerForm = ({ customer, onSubmit, loading, isEdit = false, onCancel })
     },
   });
 
-
+  const statusValue = watch("status")
   // Pre-fill form when editing
   useEffect(() => {
     if (customer && isEdit) {
@@ -198,7 +199,7 @@ const CustomerForm = ({ customer, onSubmit, loading, isEdit = false, onCancel })
               select
               fullWidth variant="outlined"
               {...register('status', { required: 'Status is required' })}
-              defaultValue="active"
+              value={statusValue}
               error={!!errors.status} helperText={errors.status?.message}
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
             >

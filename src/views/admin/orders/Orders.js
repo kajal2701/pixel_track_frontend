@@ -409,7 +409,7 @@ const Orders = () => {
           </>
         )}
 
-        {!['Ready for Pickup/Delivery', 'Completed'].includes(order.order_status) && (
+        {order.order_status !== 'Ready for Pickup/Delivery' && (
           <IconButton size="small" sx={{ color: palette.error.main }} onClick={() => openStatusDialog('DELETE', order)} title="Delete">
             <Delete fontSize="small" />
           </IconButton>
@@ -493,11 +493,7 @@ const Orders = () => {
 
             // Build dynamic columns per status
             const tableColumns = [...columns];
-            if (status === 'Completed') {
-              // No actions for completed orders — remove Actions column
-              const actionsIdx = tableColumns.findIndex(c => c.field === 'actions');
-              if (actionsIdx > -1) tableColumns.splice(actionsIdx, 1);
-            } else if (status === 'Ready') {
+            if (status === 'Ready') {
               // Insert Location column before Notes
               const notesIdx = tableColumns.findIndex(c => c.field === 'notes');
               tableColumns.splice(notesIdx > -1 ? notesIdx : tableColumns.length, 0, {

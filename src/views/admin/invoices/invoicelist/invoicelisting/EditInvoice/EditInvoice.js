@@ -14,6 +14,7 @@ import AddressHeader from './AddressHeader';
 import LineItemsTable from './LineItemsTable';
 import NotesAndTotals from './NotesAndTotals';
 import ConfirmDialogs from './ConfirmDialogs';
+import { formatDate } from 'src/utils/helpers';
 
 
 const EditInvoice = () => {
@@ -313,7 +314,7 @@ const EditInvoice = () => {
                 </Typography>
                 {invoice.payment_confirmed_at && (
                   <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-                    — {new Date(invoice.payment_confirmed_at).toLocaleDateString()}
+                    — {formatDate(invoice.payment_confirmed_at)}
                   </Typography>
                 )}
               </Stack>

@@ -10,6 +10,7 @@ import {
 import orderService from 'src/services/orderService';
 import OrderDetailsCard from './OrderDetailsCard';
 import InventoryBreakdown from './InventoryBreakdown';
+import { formatDateToYYYYMMDD } from 'src/utils/helpers';
 
 // Config per dialog type
 const DIALOG_CONFIG = {
@@ -84,18 +85,8 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, loading }) => {
       fetchAndCheck();
       setModificationNotes(order.modification_notes || '');
       setPickupLocation(order.pickup_location || '');
+      setPickupDate(formatDateToYYYYMMDD(order.pickup_date));
 
-      let dateString = '';
-      if (order.pickup_date) {
-        try {
-          const d = new Date(order.pickup_date);
-          const yyyy = d.getFullYear();
-          const mm = String(d.getMonth() + 1).padStart(2, '0');
-          const dd = String(d.getDate()).padStart(2, '0');
-          dateString = `${yyyy}-${mm}-${dd}`;
-        } catch (e) { }
-      }
-      setPickupDate(dateString);
     } else {
       setInventoryResult(null);
       setModificationNotes('');

@@ -2,6 +2,26 @@ import { Box, Container, Typography, Button } from '@mui/material';
 import { Link } from 'react-router-dom';
 import ErrorImg from 'src/assets/images/backgrounds/errorimg.svg';
 
+const getHomeRoute = () => {
+  const userType = localStorage.getItem('userType');
+
+  if (userType === 'admin') {
+    try {
+      const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+      if (adminData.role === 'production tech') {
+        return '/admin/production';
+      }
+      return '/admin/dashboard';
+    } catch (e) {
+      return '/admin/dashboard';
+    }
+  } else if (userType === 'customer') {
+    return '/order/history';
+  }
+
+  return '/';
+};
+
 const Error = () => (
   <Box
     display="flex"
@@ -22,7 +42,7 @@ const Error = () => (
         color="primary"
         variant="contained"
         component={Link}
-        to="/dashboards/modern"
+        to={getHomeRoute()}
         disableElevation
       >
         Go Back to Home

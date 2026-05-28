@@ -7,7 +7,8 @@ import {
 } from '@mui/material';
 import { LocalShipping, Store, LocationOn, Close, Inventory, InfoOutlined } from '@mui/icons-material';
 import { useTheme, alpha } from '@mui/material/styles';
-import { LOCATION_OPTIONS } from 'src/utils/helpers';
+import { LOCATION_OPTIONS, formatDate } from 'src/utils/helpers';
+
 import orderService from 'src/services/orderService';
 
 const DispatchDialog = ({ open, order, onClose, onConfirm, loading }) => {
@@ -145,7 +146,7 @@ const DispatchDialog = ({ open, order, onClose, onConfirm, loading }) => {
               />
               {order.pickup_date && (
                 <Typography variant="caption" color="text.secondary">
-                  {order.delivery_method === 'pickup' ? 'Pickup' : 'Delivery'} Date: <strong>{new Date(order.pickup_date).toLocaleDateString()}</strong>
+                  {order.delivery_method === 'pickup' ? 'Pickup' : 'Delivery'} Date: <strong>{formatDate(order.pickup_date)}</strong>
                 </Typography>
               )}
             </Stack>

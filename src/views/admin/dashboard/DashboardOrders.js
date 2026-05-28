@@ -307,7 +307,7 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
             </IconButton>
           </>
         )}
-        {!['Ready for Pickup/Delivery', 'Completed'].includes(order.order_status) && (
+        {order.order_status !== 'Ready for Pickup/Delivery' && (
           <IconButton size="small" sx={{ color: palette.error.main }} onClick={() => openStatusDialog('DELETE', order)} title="Delete">
             <Delete fontSize="small" />
           </IconButton>

@@ -1,5 +1,7 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
+import { formatDate } from 'src/utils/helpers';
+
 
 const OrderDetailsCard = ({ order }) => {
   if (!order) return null;
@@ -44,7 +46,7 @@ const OrderDetailsCard = ({ order }) => {
           Address: <strong>{order.delivery_method === 'pickup' ? (order.pickup_location || '—') : (order.delivery_address || '—')}</strong>
         </Typography>
         <Typography variant="caption" sx={{ color: '#e65100', fontWeight: 700 }}>
-          {order.delivery_method === 'pickup' ? 'Pickup' : 'Delivery'} Date: <strong>{order.pickup_date ? new Date(order.pickup_date).toLocaleDateString('en-GB') : '—'}</strong>
+          {order.delivery_method === 'pickup' ? 'Pickup' : 'Delivery'} Date: <strong>{order.pickup_date ? formatDate(order.pickup_date) : '—'}</strong>
         </Typography>
       </Box>
     </Box>

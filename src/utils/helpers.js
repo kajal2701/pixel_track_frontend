@@ -33,9 +33,22 @@ export const formatDate = (dateStr) => {
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const yy = String(d.getFullYear());
-  const hh = String(d.getHours()).padStart(2, '0');
-  const min = String(d.getMinutes()).padStart(2, '0');
-  return `${dd}-${mm}-${yy} ${hh}:${min}`;
+  return `${dd}-${mm}-${yy}`;
+};
+
+// Format date string to YYYY-MM-DD format (for HTML date inputs)
+export const formatDateToYYYYMMDD = (dateStr) => {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '';
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  } catch (e) {
+    return '';
+  }
 };
 
 
