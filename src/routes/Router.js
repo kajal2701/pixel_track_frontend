@@ -79,7 +79,7 @@ const Router = [
     children: [
 
       // ── NEW: Admin routes ──────────────────────────────────────────────
-      { path: '/admin/dashboard', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['admin']}><Dashboard /></ProtectedRoute> },
+      { path: '/admin/dashboard', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['admin', 'sales', 'operations']}><Dashboard /></ProtectedRoute> },
       { path: '/admin/orders', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['admin']}><Orders /></ProtectedRoute> },
       { path: '/admin/invoices/edit/:id', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['admin']}><EditInvoice /></ProtectedRoute> },
       { path: '/admin/inventory', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['admin']}><InventoryList /></ProtectedRoute> },
@@ -88,9 +88,9 @@ const Router = [
       { path: '/admin/production', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['admin', 'production tech']}><ProductionList /></ProtectedRoute> },
       { path: '/admin/production/new', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['admin', 'production tech']}><ProductionNew /></ProtectedRoute> },
       { path: '/admin/production/edit/:id', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['admin', 'production tech']}><ProductionEdit /></ProtectedRoute> },
-      { path: '/admin/customers', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['admin']}><CustomerList /></ProtectedRoute> },
-      { path: '/admin/customers/new', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['admin']}><CustomerNew /></ProtectedRoute> },
-      { path: '/admin/customers/edit/:id', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['admin']}><CustomerEdit /></ProtectedRoute> },
+      { path: '/admin/customers', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['admin', 'sales', 'operations']}><CustomerList /></ProtectedRoute> },
+      { path: '/admin/customers/new', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['admin', 'sales', 'operations']}><CustomerNew /></ProtectedRoute> },
+      { path: '/admin/customers/edit/:id', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['admin', 'sales', 'operations']}><CustomerEdit /></ProtectedRoute> },
       { path: '/admin/products', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['admin']}><ProductList /></ProtectedRoute> },
       { path: '/admin/products/new', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['admin']}><ProductNew /></ProtectedRoute> },
       { path: '/admin/products/edit/:id', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['admin']}><ProductEdit /></ProtectedRoute> },

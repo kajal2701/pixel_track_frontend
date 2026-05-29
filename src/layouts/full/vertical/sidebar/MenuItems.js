@@ -51,6 +51,38 @@ const buildAdminMenuItems = () => {
     ];
   }
 
+  // Sales and Operations get a restricted menu
+  if (role === 'sales' || role === 'operations') {
+    return [
+      {
+        id: uniqueId(),
+        title: 'Dashboard',
+        icon: IconDashboard,
+        href: '/admin/dashboard',
+      },
+      {
+        id: uniqueId(),
+        title: 'Customers',
+        icon: IconUserCircle,
+        href: '/admin/customers',
+        children: [
+          {
+            id: uniqueId(),
+            title: 'Customer List',
+            icon: IconPoint,
+            href: '/admin/customers',
+          },
+          {
+            id: uniqueId(),
+            title: 'Add Customer',
+            icon: IconPoint,
+            href: '/admin/customers/new',
+          },
+        ],
+      },
+    ];
+  }
+
   // Standard Admin / Superadmin gets the full menu
   const items = [
     {

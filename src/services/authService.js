@@ -12,11 +12,11 @@ const apiClient = axios.create({
 });
 
 export const authService = {
-  login: async (customer_number, access_code) => {
+  login: async (customer_number, password) => {
     try {
       const response = await apiClient.post('/auth/login', {
         customer_number,
-        access_code,
+        password,
       });
       return response.data;
     } catch (error) {

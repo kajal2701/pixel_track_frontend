@@ -103,6 +103,8 @@ export const ROLE_OPTIONS = [
   { value: '', label: 'Select Role', disabled: true },
   { value: 'admin', label: 'Admin' },
   { value: 'production tech', label: 'Production Tech' },
+  { value: 'sales', label: 'Sales' },
+  { value: 'operations', label: 'Operations' },
 ];
 
 export const STATUS_OPTIONS = [
@@ -357,6 +359,8 @@ export const getRoleChipColor = (role) => {
   switch (role) {
     case 'admin': return 'primary';
     case 'production tech': return 'info';
+    case 'sales': return 'success';
+    case 'operations': return 'secondary';
     default: return 'default';
   }
 };

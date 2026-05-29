@@ -37,7 +37,7 @@ const LoginCustomerOrderPortal = () => {
     mode: 'onBlur', // Validate on blur
     defaultValues: {
       customer_number: '',
-      access_code: '',
+      password: '',
     },
   });
 
@@ -53,7 +53,7 @@ const LoginCustomerOrderPortal = () => {
 
       const response = await authService.login(
         data.customer_number,
-        data.access_code
+        data.password
       );
 
       // Check customer data structure (customer data doesn't have role field)
@@ -232,7 +232,7 @@ const LoginCustomerOrderPortal = () => {
                   />
                 </Box>
 
-                {/* Access Code */}
+                {/* Password */}
                 <Box sx={{ mb: 3.5 }}>
                   <Typography
                     variant="caption"
@@ -246,35 +246,21 @@ const LoginCustomerOrderPortal = () => {
                       letterSpacing: '0.5px',
                     }}
                   >
-                    Access Code
-                    <Typography
-                      component="span"
-                      sx={{
-                        fontWeight: 400,
-                        color: palette.text.secondary,
-                        ml: 0.8,
-                        fontSize: '0.75rem',
-                        textTransform: 'none',
-                        letterSpacing: 0,
-                      }}
-                    >
-                      (last 4 digits of phone)
-                    </Typography>
+                    Password
                   </Typography>
                   <TextField
                     fullWidth
-                    placeholder="e.g. 1234"
+                    placeholder="Enter your password"
                     type={showCode ? 'text' : 'password'}
                     variant="outlined"
                     size="small"
-                    error={!!errors.access_code}
-                    helperText={errors.access_code?.message}
-                    inputProps={{ maxLength: 4 }}
-                    {...register('access_code', {
-                      required: 'Access code is required',
-                      pattern: {
-                        value: /^\d{4}$/,
-                        message: 'Access code must be exactly 4 digits',
+                    error={!!errors.password}
+                    helperText={errors.password?.message}
+                    {...register('password', {
+                      required: 'Password is required',
+                      minLength: {
+                        value: 6,
+                        message: 'Password must be at least 6 characters',
                       },
                     })}
                     InputProps={{

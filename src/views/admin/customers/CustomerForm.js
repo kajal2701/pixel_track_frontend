@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import {
   Box, Typography, Button, TextField,
   Paper, Grid, CircularProgress, Divider,
-  InputAdornment, MenuItem,
+  InputAdornment, MenuItem, IconButton,
 } from '@mui/material';
-import { Save, Cancel, AttachMoney } from '@mui/icons-material';
+import { Save, Cancel, AttachMoney, Visibility, VisibilityOff } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { useForm } from 'react-hook-form';
 import { CHANNEL_PRICING_OPTIONS, formatPhoneNumber } from 'src/utils/helpers';
@@ -16,6 +16,7 @@ const CustomerForm = ({ customer, onSubmit, loading, isEdit = false, onCancel })
   // channel_pricing state: { "10h": "2.50", "9h": "2.75", "8h": "3.00" }
   const [channelPricing, setChannelPricing] = useState({});
   const [pricingErrors, setPricingErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -32,6 +33,7 @@ const CustomerForm = ({ customer, onSubmit, loading, isEdit = false, onCancel })
       email: '',
       phone: '',
       status: 'active',
+      password: '',
     },
   });
 
@@ -39,6 +41,13 @@ const CustomerForm = ({ customer, onSubmit, loading, isEdit = false, onCancel })
   // Pre-fill form when editing
   useEffect(() => {
     if (customer && isEdit) {
+      // Decode Base64 password for display
+      let decodedPassword = '';
+      if (customer.password) {
+        try {
+          decodedPassword = atob(customer.password);
+        } catch { decodedPassword = ''; }
+      }
       reset({
         company_name: customer.company_name || '',
         customer_number: customer.customer_number || '',
@@ -46,6 +55,7 @@ const CustomerForm = ({ customer, onSubmit, loading, isEdit = false, onCancel })
         email: customer.email || '',
         phone: formatPhoneNumber(customer.phone),
         status: customer.status || 'active',
+        password: decodedPassword,
       });
       // channel_pricing comes as object from API e.g. { "10h": 2.50, "9h": 2.75 }
       if (customer.channel_pricing) {
@@ -62,7 +72,7 @@ const CustomerForm = ({ customer, onSubmit, loading, isEdit = false, onCancel })
         setChannelPricing({});
       }
     } else if (!isEdit) {
-      reset({ company_name: '', customer_number: '', contact_name: '', email: '', phone: '', status: 'active' });
+      reset({ company_name: '', customer_number: '', contact_name: '', email: '', phone: '', status: 'active', password: '' });
       setChannelPricing({});
     }
   }, [customer, isEdit, reset]);
@@ -90,8 +100,6 @@ const CustomerForm = ({ customer, onSubmit, loading, isEdit = false, onCancel })
   };
 
   const onFormSubmit = (data) => {
-    const access_code = data.phone ? data.phone.replace(/-/g, '').slice(-4) : '';
-
     if (!validatePricing()) return; // Block submit if pricing invalid
 
     // Build channel_pricing object
@@ -103,11 +111,17 @@ const CustomerForm = ({ customer, onSubmit, loading, isEdit = false, onCancel })
       }
     });
 
-    onSubmit({
+    const payload = {
       ...data,
-      access_code,
       channel_pricing: Object.keys(pricingObj).length > 0 ? pricingObj : null,
-    });
+    };
+
+    // Only include password if provided (for edit, empty means no change)
+    if (!data.password) {
+      delete payload.password;
+    }
+
+    onSubmit(payload);
   };
 
   // Called when RHF fields fail — still validate pricing so errors show together
@@ -206,6 +220,43 @@ const CustomerForm = ({ customer, onSubmit, loading, isEdit = false, onCancel })
               <MenuItem value="active">Active</MenuItem>
               <MenuItem value="inactive">Inactive</MenuItem>
             </TextField>
+          </Grid>
+
+          {/* Password */}
+          <Grid item xs={12} md={6}>
+            <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+              Password {!isEdit && '*'}
+            </Typography>
+            <TextField
+              fullWidth
+              type={showPassword ? 'text' : 'password'}
+              variant="outlined"
+              placeholder={isEdit ? 'Leave blank to keep current' : 'Enter password (min 6 characters)'}
+              {...register('password', {
+                ...(!isEdit && { required: 'Password is required' }),
+                validate: (v) => {
+                  if (!v || v === '') return true; // Allow empty on edit
+                  if (v.length < 6) return 'Password must be at least 6 characters';
+                  return true;
+                },
+              })}
+              error={!!errors.password}
+              helperText={errors.password?.message || (isEdit ? 'Leave blank to keep current password' : 'Minimum 6 characters')}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      size="small"
+                      onClick={() => setShowPassword((v) => !v)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+            />
           </Grid>
 
           {/* ── Pricing Section ── */}
