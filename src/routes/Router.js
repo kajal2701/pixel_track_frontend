@@ -25,6 +25,7 @@ const AccountSetting = Loadable(
 // ── Authentication ─────────────────────────────────────────────────────────
 const LoginAdminOnly = Loadable(lazy(() => import('../views/authentication/auth2/LoginAdminOnly')));
 const LoginCustomerOrderPortal = Loadable(lazy(() => import('../views/authentication/auth2/LoginCustomerOrderPortal')));
+const ForgotPassword = Loadable(lazy(() => import('../views/authentication/auth2/ForgotPassword/ForgotPassword')));
 
 const Error = Loadable(lazy(() => import('../views/authentication/Error')));
 
@@ -66,6 +67,7 @@ const Router = [
       { path: '/', element: <LoginAdminOnly /> },
       { path: '/admin-login', element: <LoginAdminOnly /> },
       { path: '/login', element: <LoginCustomerOrderPortal /> },
+      { path: '/forgot-password', element: <ForgotPassword /> },
       { path: '/auth/404', element: <Error /> },
       { path: '/view-invoice/:id', element: <ViewInvoice /> },
       { path: '*', element: <Navigate to="/auth/404" /> },

@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import PageContainer from 'src/components/container/PageContainer';
@@ -282,6 +282,27 @@ const LoginCustomerOrderPortal = () => {
                     }}
                     sx={inputSx}
                   />
+                </Box>
+
+                {/* Forgot Password Link */}
+                <Box sx={{ textAlign: 'right', mb: 2 }}>
+                  <Typography
+                    component={Link}
+                    to="/forgot-password"
+                    variant="body2"
+                    sx={{
+                      color: palette.primary.main,
+                      textDecoration: 'none',
+                      fontWeight: 600,
+                      fontSize: '0.82rem',
+                      '&:hover': {
+                        textDecoration: 'underline',
+                        color: palette.primary.dark,
+                      },
+                    }}
+                  >
+                    Forgot Password?
+                  </Typography>
                 </Box>
 
                 {/* Login Button */}

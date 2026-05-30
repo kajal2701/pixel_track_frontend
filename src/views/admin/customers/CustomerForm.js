@@ -41,13 +41,6 @@ const CustomerForm = ({ customer, onSubmit, loading, isEdit = false, onCancel })
   // Pre-fill form when editing
   useEffect(() => {
     if (customer && isEdit) {
-      // Decode Base64 password for display
-      let decodedPassword = '';
-      if (customer.password) {
-        try {
-          decodedPassword = atob(customer.password);
-        } catch { decodedPassword = ''; }
-      }
       reset({
         company_name: customer.company_name || '',
         customer_number: customer.customer_number || '',
@@ -55,7 +48,7 @@ const CustomerForm = ({ customer, onSubmit, loading, isEdit = false, onCancel })
         email: customer.email || '',
         phone: formatPhoneNumber(customer.phone),
         status: customer.status || 'active',
-        password: decodedPassword,
+        password: '',  // Never show hashed password; leave blank for "no change"
       });
       // channel_pricing comes as object from API e.g. { "10h": 2.50, "9h": 2.75 }
       if (customer.channel_pricing) {
