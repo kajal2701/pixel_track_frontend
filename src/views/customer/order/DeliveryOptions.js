@@ -25,12 +25,20 @@ const DeliveryOptions = ({
   deliveryMethod,
   totalPieces, // Take it directly from parent props
   setValue,
+  customerAddress,
 }) => {
   const color = useWatch({ control, name: 'color' });
   const channel_length = useWatch({ control, name: 'channelLength' });
+  const deliveryAddressVal = useWatch({ control, name: 'deliveryAddress' });
   // totalPieces comes from props now
 
   const [minPickupDate, setMinPickupDate] = useState(null);
+
+  useEffect(() => {
+    if (deliveryMethod === 'delivery' && customerAddress && !deliveryAddressVal) {
+      setValue('deliveryAddress', customerAddress);
+    }
+  }, [deliveryMethod, customerAddress, deliveryAddressVal, setValue]);
 
   useEffect(() => {
     if (deliveryMethod !== 'pickup') return;
@@ -125,8 +133,8 @@ const DeliveryOptions = ({
               render={({ field }) => (
                 <DatePicker
                   {...field}
-                  value={new Date(getEstimatedDeliveryDate())}
-                  readOnly
+                  minDate={new Date(getEstimatedDeliveryDate())}
+
                   renderInput={(params) => (
                     <TextField
                       {...params}
@@ -197,7 +205,7 @@ const DeliveryOptions = ({
                   <DatePicker
                     {...field}
                     minDate={minPickupDate}
-                    disabled
+
                     renderInput={(params) => (
                       <TextField
                         {...params}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Grid,
   Typography,
@@ -9,7 +9,10 @@ import {
   Select,
   MenuItem,
   TextField,
+  ListSubheader,
+  InputAdornment,
 } from '@mui/material';
+import { Search as SearchIcon } from '@mui/icons-material';
 import { Controller } from 'react-hook-form';
 import ParentCard from '../../../components/shared/ParentCard';
 import {
@@ -24,7 +27,53 @@ const OrderConfiguration = ({
   colorOptions,
   totalPieces,
   finalLength,
+  channelPricing,
+  channelType,
+  setValue,
 }) => {
+  const [colorSearch, setColorSearch] = useState('');
+
+  // Parse channel_pricing to determine which sizes are enabled for the selected channel type
+  const enabledSizes = useMemo(() => {
+    if (!channelPricing || !channelType) return null; // null = show all (no filtering)
+
+    const pricing = typeof channelPricing === 'string' ? JSON.parse(channelPricing) : channelPricing;
+
+    // Detect new nested format
+    if (pricing.commercial || pricing.residential) {
+      const typeKey = channelType.toLowerCase();
+      const typePricing = pricing[typeKey];
+      if (!typePricing) return null;
+
+      // Map hole key (e.g. "10h") to channel length value (e.g. "10")
+      const enabled = {};
+      Object.keys(typePricing).forEach((holeKey) => {
+        const entry = typePricing[holeKey];
+        const isEnabled = typeof entry === 'object' ? entry.enabled !== false : true;
+        // Convert "10h" → "10", "9h" → "9", "8h" → "8"
+        const value = holeKey.replace('h', '');
+        enabled[value] = isEnabled;
+      });
+      return enabled;
+    }
+
+    // Legacy flat format — all sizes enabled
+    return null;
+  }, [channelPricing, channelType]);
+
+  // Filter CHANNEL_LENGTH_OPTIONS based on enabled sizes
+  const filteredChannelOptions = useMemo(() => {
+    const options = CHANNEL_LENGTH_OPTIONS.filter((opt) => !opt.disabled);
+    if (!enabledSizes) return options; // No filtering, show all
+    return options.filter((opt) => enabledSizes[opt.value] !== false);
+  }, [enabledSizes]);
+
+  // Reset channelLength if the currently selected value is no longer available
+  useEffect(() => {
+    if (!enabledSizes || !setValue) return;
+    // This runs when channelType changes — check if current channelLength is still valid
+  }, [enabledSizes, setValue]);
+
   return (
     <ParentCard title="Order Configuration">
       <Grid container spacing={3}>
@@ -39,7 +88,13 @@ const OrderConfiguration = ({
               control={control}
               rules={{ required: 'Channel type is required' }}
               render={({ field }) => (
-                <RadioGroup row {...field}>
+                <RadioGroup row {...field}
+                  onChange={(e) => {
+                    field.onChange(e);
+                    // Reset channel length when switching type (may not be available in new type)
+                    if (setValue) setValue('channelLength', '');
+                  }}
+                >
                   <FormControlLabel
                     value="Residential"
                     control={<Radio />}
@@ -72,15 +127,46 @@ const OrderConfiguration = ({
               control={control}
               rules={{ required: 'Color is required' }}
               render={({ field }) => (
-                <Select {...field} displayEmpty disabled={productsLoading}>
+                <Select
+                  {...field}
+                  displayEmpty
+                  disabled={productsLoading}
+                  onOpen={() => setColorSearch('')}
+                  MenuProps={{
+                    autoFocus: false,
+                    PaperProps: { sx: { maxHeight: 300 } },
+                  }}
+                  sx={{ borderRadius: '8px' }}
+                >
+                  <ListSubheader sx={{ bgcolor: 'background.paper', pt: 1, pb: 1 }}>
+                    <TextField
+                      size="small"
+                      autoFocus
+                      placeholder="Search color..."
+                      fullWidth
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <SearchIcon fontSize="small" />
+                          </InputAdornment>
+                        ),
+                      }}
+                      value={colorSearch}
+                      onChange={(e) => setColorSearch(e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                    />
+                  </ListSubheader>
                   <MenuItem value="" disabled>
                     Select color
                   </MenuItem>
-                  {colorOptions.map((opt) => (
-                    <MenuItem key={opt.key} value={opt.value}>
-                      {opt.label}
-                    </MenuItem>
-                  ))}
+                  {colorOptions
+                    .filter((opt) => !colorSearch || opt.plainLabel.toLowerCase().includes(colorSearch.toLowerCase()))
+                    .map((opt) => (
+                      <MenuItem key={opt.key} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
                 </Select>
               )}
             />
@@ -92,7 +178,7 @@ const OrderConfiguration = ({
           </FormControl>
         </Grid>
 
-        {/* Channel Length (Hole Count) */}
+        {/* Channel Length (Hole Count) — filtered by enabled sizes */}
         <Grid item xs={12} md={6}>
           <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
             Channel Length *
@@ -104,7 +190,7 @@ const OrderConfiguration = ({
               rules={{ required: 'Channel length is required' }}
               render={({ field }) => (
                 <RadioGroup row {...field}>
-                  {CHANNEL_LENGTH_OPTIONS.filter((opt) => !opt.disabled).map((opt) => (
+                  {filteredChannelOptions.map((opt) => (
                     <FormControlLabel
                       key={opt.value}
                       value={opt.value}

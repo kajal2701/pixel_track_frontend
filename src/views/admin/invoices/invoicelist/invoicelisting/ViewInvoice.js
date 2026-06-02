@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box, Typography, CircularProgress, Paper, Table, TableBody, TableCell, TableContainer, TableRow, Button,
-  TableHead, Grid, Stack, Divider
+  TableHead, Grid, Stack, Divider, Chip
 } from '@mui/material';
 import { Phone, Email, LocationOn } from '@mui/icons-material';
 import toast from 'react-hot-toast';
 import invoiceService from 'src/services/invoiceService';
 import Logo from 'src/assets/images/logos/PiXEL-Tracks-Lights_Logo-White.webp';
 import PaymentDialog from './PaymentDialog';
-import { formatDate, PIXEL_TRACK, encodeInvoiceId, decodeInvoiceToken } from 'src/utils/helpers';
+import { formatDate, PIXEL_TRACK, encodeInvoiceId, decodeInvoiceToken, getInvoiceStatusDisplay, } from 'src/utils/helpers';
 
 const ViewInvoice = () => {
   const { id: token } = useParams();
@@ -28,7 +28,7 @@ const ViewInvoice = () => {
       await invoiceService.submitPayment(invoice.id, screenshotFile);
       toast.success('Payment screenshot uploaded successfully!');
       setOpenPaymentDialog(false);
-      fetchInvoiceDetails();
+      fetchInvoiceDetails(invoice.id);
     } catch (err) {
       toast.error(err.message || 'Failed to submit payment.');
       throw err;
@@ -100,6 +100,9 @@ const ViewInvoice = () => {
   const gstPct = parseFloat(invoice.gst_pct || 5);
   const gstAmount = parseFloat(invoice.gst_amount || 0);
   const grandTotal = parseFloat(invoice.total_amount || 0);
+
+
+  const statusDisplay = getInvoiceStatusDisplay(invoice.status);
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6f9', py: { xs: 2, md: 5 }, px: { xs: 1.5, md: 3 } }}>
@@ -306,8 +309,8 @@ const ViewInvoice = () => {
                 <Divider sx={{ my: 1 }} />
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="h6" fontWeight={800}>Total Amount:</Typography>
-                  <Typography variant="h4" fontWeight={800} color="primary.main">
+                  <Typography variant="h6" fontWeight={800}>{statusDisplay.label}</Typography>
+                  <Typography variant="h4" fontWeight={800} color={statusDisplay.color !== 'default' ? `${statusDisplay.color}.main` : 'primary.main'}>
                     ${grandTotal.toFixed(2)}
                   </Typography>
                 </Box>

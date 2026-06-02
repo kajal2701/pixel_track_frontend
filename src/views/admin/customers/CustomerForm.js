@@ -2,19 +2,31 @@ import React, { useEffect, useState } from 'react';
 import {
   Box, Typography, Button, TextField,
   Paper, Grid, CircularProgress, Divider,
-  InputAdornment, MenuItem, IconButton,
+  InputAdornment, MenuItem, IconButton, Switch,
 } from '@mui/material';
-import { Save, Cancel, AttachMoney, Visibility, VisibilityOff } from '@mui/icons-material';
+import { Save, Cancel, AttachMoney, Visibility, VisibilityOff, Storefront, Home } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { useForm } from 'react-hook-form';
-import { CHANNEL_PRICING_OPTIONS, formatPhoneNumber } from 'src/utils/helpers';
+import {
+  CHANNEL_PRICING_OPTIONS,
+  PRICING_CATEGORIES,
+  buildDefaultPricing,
+  parsePricingFromApi,
+  formatPhoneNumber,
+} from 'src/utils/helpers';
+
+// UI-specific config: icon and color for each pricing category
+const CATEGORY_UI = {
+  commercial: { icon: Storefront, color: 'primary' },
+  residential: { icon: Home, color: 'success' },
+};
 
 
 const CustomerForm = ({ customer, onSubmit, loading, isEdit = false, onCancel }) => {
   const { palette } = useTheme();
 
-  // channel_pricing state: { "10h": "2.50", "9h": "2.75", "8h": "3.00" }
-  const [channelPricing, setChannelPricing] = useState({});
+  // channel_pricing state: { commercial: { "10h": { price: "2.50", enabled: true }, ... }, residential: { ... } }
+  const [channelPricing, setChannelPricing] = useState(buildDefaultPricing());
   const [pricingErrors, setPricingErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
 
@@ -34,6 +46,7 @@ const CustomerForm = ({ customer, onSubmit, loading, isEdit = false, onCancel })
       phone: '',
       status: 'active',
       password: '',
+      delivery_address: '',
     },
   });
 
@@ -49,64 +62,91 @@ const CustomerForm = ({ customer, onSubmit, loading, isEdit = false, onCancel })
         phone: formatPhoneNumber(customer.phone),
         status: customer.status || 'active',
         password: '',  // Never show hashed password; leave blank for "no change"
+        delivery_address: customer.delivery_address || '',
       });
-      // channel_pricing comes as object from API e.g. { "10h": 2.50, "9h": 2.75 }
-      if (customer.channel_pricing) {
-        const existing = typeof customer.channel_pricing === 'string'
-          ? JSON.parse(customer.channel_pricing)
-          : customer.channel_pricing;
-        // Convert values to strings for input fields
-        const asStrings = {};
-        Object.keys(existing).forEach((k) => {
-          asStrings[k] = existing[k] != null ? String(existing[k]) : '';
-        });
-        setChannelPricing(asStrings);
-      } else {
-        setChannelPricing({});
-      }
+      setChannelPricing(parsePricingFromApi(customer.channel_pricing));
     } else if (!isEdit) {
-      reset({ company_name: '', customer_number: '', contact_name: '', email: '', phone: '', status: 'active', password: '' });
-      setChannelPricing({});
+      reset({ company_name: '', customer_number: '', contact_name: '', email: '', phone: '', status: 'active', password: '', delivery_address: '' });
+      setChannelPricing(buildDefaultPricing());
     }
   }, [customer, isEdit, reset]);
 
-  // Handle price input change for a key
-  const handlePriceChange = (key, value) => {
-    setChannelPricing((prev) => ({ ...prev, [key]: value }));
+  // Handle price input change for a category + key
+  const handlePriceChange = (category, key, value) => {
+    setChannelPricing((prev) => ({
+      ...prev,
+      [category]: {
+        ...prev[category],
+        [key]: { ...prev[category][key], price: value },
+      },
+    }));
     // Clear error on change
     if (value !== '' && parseFloat(value) > 0) {
-      setPricingErrors((prev) => ({ ...prev, [key]: false }));
+      setPricingErrors((prev) => ({ ...prev, [`${category}_${key}`]: false }));
     }
   };
 
-  // Shared pricing validation — called on both success and error paths
+  // Handle toggle change for a category + key
+  const handleToggleChange = (category, key) => {
+    setChannelPricing((prev) => ({
+      ...prev,
+      [category]: {
+        ...prev[category],
+        [key]: { ...prev[category][key], enabled: !prev[category][key].enabled },
+      },
+    }));
+    // Clear the "at least one" error when toggling on
+    setPricingErrors((prev) => ({ ...prev, [`${category}_min`]: false }));
+  };
+
+  // Pricing validation — at least 1 enabled per category, price required for enabled sizes
   const validatePricing = () => {
-    const errors = {};
-    CHANNEL_PRICING_OPTIONS.forEach(({ key }) => {
-      const val = channelPricing[key];
-      if (!val || val === '' || parseFloat(val) <= 0) {
-        errors[key] = true;
+    const errs = {};
+
+    PRICING_CATEGORIES.forEach(({ key: cat }) => {
+      const catPricing = channelPricing[cat] || {};
+      let enabledCount = 0;
+
+      CHANNEL_PRICING_OPTIONS.forEach(({ key }) => {
+        const entry = catPricing[key] || {};
+        if (entry.enabled) {
+          enabledCount++;
+          // Price required for enabled sizes
+          if (!entry.price || entry.price === '' || parseFloat(entry.price) <= 0) {
+            errs[`${cat}_${key}`] = true;
+          }
+        }
+      });
+
+      // At least one size must be enabled per category
+      if (enabledCount === 0) {
+        errs[`${cat}_min`] = true;
       }
     });
-    setPricingErrors(errors);
-    return Object.keys(errors).length === 0; // true = valid
+
+    setPricingErrors(errs);
+    return Object.keys(errs).length === 0;
   };
 
   const onFormSubmit = (data) => {
     if (!validatePricing()) return; // Block submit if pricing invalid
 
-    // Build channel_pricing object
-    const pricingObj = {};
-    Object.keys(channelPricing).forEach((key) => {
-      const val = channelPricing[key];
-      if (val !== '' && val !== null && !isNaN(parseFloat(val))) {
-        pricingObj[key] = parseFloat(val);
-      }
+    // Build channel_pricing object in new nested format
+    const pricingObj = { commercial: {}, residential: {} };
+
+    PRICING_CATEGORIES.forEach(({ key: cat }) => {
+      CHANNEL_PRICING_OPTIONS.forEach(({ key }) => {
+        const entry = channelPricing[cat]?.[key] || {};
+        pricingObj[cat][key] = {
+          price: entry.price && !isNaN(parseFloat(entry.price)) ? parseFloat(entry.price) : 0,
+          enabled: !!entry.enabled,
+        };
+      });
     });
 
     const payload = {
       ...data,
-      channel_pricing: Object.keys(pricingObj).length > 0 ? pricingObj : null,
+      channel_pricing: pricingObj,
     };
 
     // Only include password if provided (for edit, empty means no change)
@@ -261,36 +301,106 @@ const CustomerForm = ({ customer, onSubmit, loading, isEdit = false, onCancel })
                 Channel Pricing (Price Per Foot)
               </Typography>
             </Box>
-
           </Grid>
 
-          {/* Dynamic price fields — one per channel length */}
-          {CHANNEL_PRICING_OPTIONS.map(({ key, label }) => (
-            <Grid item xs={12} sm={4} key={key}>
-              <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
-                {label} *
-              </Typography>
-              <TextField
-                fullWidth
-                type="number"
-                variant="outlined"
-                placeholder="0.00"
-                value={channelPricing[key] ?? ''}
-                onChange={(e) => handlePriceChange(key, e.target.value)}
-                inputProps={{ min: 0.01, step: '0.01' }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Typography variant="body2" color="text.secondary">$/ft</Typography>
-                    </InputAdornment>
-                  ),
+          {/* ── Commercial & Residential pricing cards ── */}
+          {PRICING_CATEGORIES.map(({ key: cat, label }) => {
+            const { icon: Icon, color } = CATEGORY_UI[cat];
+            return (
+            <Grid item xs={12} md={6} key={cat}>
+              <Box
+                sx={{
+                  border: `1px solid`,
+                  borderColor: pricingErrors[`${cat}_min`] ? 'error.main' : `${color}.light`,
+                  borderRadius: '12px',
+                  p: 2.5,
+                  backgroundColor: pricingErrors[`${cat}_min`] ? 'error.lighter' : `${color}.lighter`,
+                  transition: 'all 0.2s ease',
                 }}
-                error={!!pricingErrors[key]}
-                helperText={pricingErrors[key] ? 'Price is required and must be greater than 0' : ''}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-              />
+              >
+                {/* Category Header */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                  <Icon sx={{ color: `${color}.main`, fontSize: 20 }} />
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600, color: `${color}.dark` }}>
+                    {label} Pricing
+                  </Typography>
+                </Box>
+
+                {/* Size rows */}
+                {CHANNEL_PRICING_OPTIONS.map(({ key, label: sizeLabel }) => {
+                  const entry = channelPricing[cat]?.[key] || { price: '', enabled: true };
+                  const hasError = !!pricingErrors[`${cat}_${key}`];
+
+                  return (
+                    <Box
+                      key={key}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1.5,
+                        mb: 1.5,
+                        opacity: entry.enabled ? 1 : 0.5,
+                        transition: 'opacity 0.2s ease',
+                      }}
+                    >
+                      {/* Toggle */}
+                      <Switch
+                        size="small"
+                        checked={!!entry.enabled}
+                        onChange={() => handleToggleChange(cat, key)}
+                        color={color}
+                      />
+
+                      {/* Size label */}
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: 500,
+                          minWidth: 120,
+                          color: entry.enabled ? 'text.primary' : 'text.disabled',
+                        }}
+                      >
+                        {sizeLabel}
+                      </Typography>
+
+                      {/* Price input */}
+                      <TextField
+                        size="small"
+                        type="number"
+                        variant="outlined"
+                        placeholder="0.00"
+                        value={entry.price}
+                        onChange={(e) => handlePriceChange(cat, key, e.target.value)}
+                        disabled={!entry.enabled}
+                        inputProps={{ min: 0.01, step: '0.01' }}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Typography variant="body2" color="text.secondary">$/ft</Typography>
+                            </InputAdornment>
+                          ),
+                        }}
+                        error={hasError}
+                        helperText={hasError ? 'Price required' : ''}
+                        sx={{
+                          flex: 1,
+                          '& .MuiOutlinedInput-root': { borderRadius: '8px' },
+                        }}
+                      />
+                    </Box>
+                  );
+                })}
+
+                {/* Min-one-enabled error */}
+                {pricingErrors[`${cat}_min`] && (
+                  <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
+                    At least one size must be enabled for {label}
+                  </Typography>
+                )}
+              </Box>
             </Grid>
-          ))}
+          );
+          })}
 
           {/* ── Actions ── */}
           <Grid item xs={12}>

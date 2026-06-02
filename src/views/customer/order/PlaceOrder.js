@@ -31,7 +31,8 @@ const PlaceOrder = () => {
   const [productsLoading, setProductsLoading] = React.useState(true);
   const [products, setProducts] = React.useState([]);
 
-  const customer = JSON.parse(localStorage.getItem('customerData'));
+  const storedCustomer = JSON.parse(localStorage.getItem('customerData'));
+  const [liveCustomer, setLiveCustomer] = React.useState(storedCustomer);
 
   const {
     register,
@@ -48,7 +49,8 @@ const PlaceOrder = () => {
       totalLength: '',
       deliveryMethod: '',
       pickupLocation: '',
-      pickupDate: new Date(),
+      estimatedDeliveryDate: new Date(getEstimatedDeliveryDate()),
+      pickupDate: null,
       deliveryAddress: '',
       notes: '',
     },
@@ -57,22 +59,34 @@ const PlaceOrder = () => {
   const channelLength = watch('channelLength');
   const totalLength = watch('totalLength');
   const deliveryMethod = watch('deliveryMethod');
+  const channelType = watch('channelType');
 
   React.useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchInitialData = async () => {
       setProductsLoading(true);
       try {
-        const response = await productService.getAllProducts();
-        setProducts(response.data || []);
+        // Fetch products and latest customer data in parallel
+        const [productsRes, customerRes] = await Promise.all([
+          productService.getAllProducts(),
+          storedCustomer?.id ? import('src/services/customerService').then(m => m.default.getCustomerById(storedCustomer.id)) : Promise.resolve(null)
+        ]);
+
+        setProducts(productsRes.data || []);
+
+        if (customerRes?.data) {
+          const updatedCustomer = { ...storedCustomer, ...customerRes.data };
+          setLiveCustomer(updatedCustomer);
+          localStorage.setItem('customerData', JSON.stringify(updatedCustomer));
+        }
       } catch (err) {
-        toast.error(err.message || 'Failed to fetch products.');
+        toast.error(err.message || 'Failed to fetch data.');
         setProducts([]);
       } finally {
         setProductsLoading(false);
       }
     };
 
-    fetchProducts();
+    fetchInitialData();
   }, []);
 
   const colorOptions = React.useMemo(() => generateColorOptions(products), [products]);
@@ -83,7 +97,7 @@ const PlaceOrder = () => {
 
   // ── Submit → POST /api/orders ──
   const onSubmit = async (data) => {
-    if (!customer?.id) {
+    if (!liveCustomer?.id) {
       toast.error('Please login to place an order.');
       navigate('/login');
       return;
@@ -96,11 +110,13 @@ const PlaceOrder = () => {
       if (deliveryMethodValue === 'pickup' && data.pickupDate) {
         pickupDateValue = format(new Date(data.pickupDate), 'yyyy-MM-dd');
       } else if (deliveryMethodValue === 'delivery') {
-        pickupDateValue = getEstimatedDeliveryDate();
+        pickupDateValue = data.estimatedDeliveryDate
+          ? format(new Date(data.estimatedDeliveryDate), 'yyyy-MM-dd')
+          : getEstimatedDeliveryDate();
       }
 
       const payload = {
-        customer_id: customer.id,
+        customer_id: liveCustomer.id,
         channel_type: data.channelType,
         color: data.color,
         hole_distance: data.channelLength,  // channelLength now stores hole count (8, 9, 10)
@@ -117,6 +133,13 @@ const PlaceOrder = () => {
         customer_notes: data.notes?.trim() || null,
       };
       await orderService.createOrder(payload);
+
+      // Auto-update stored customer delivery address if they provided a new one
+      if (deliveryMethodValue === 'delivery' && data.deliveryAddress) {
+        const updatedCustomer = { ...liveCustomer, delivery_address: data.deliveryAddress };
+        localStorage.setItem('customerData', JSON.stringify(updatedCustomer));
+      }
+
       toast.success('Order placed successfully!');
       navigate('/order/history');
     } catch (err) {
@@ -138,6 +161,9 @@ const PlaceOrder = () => {
             colorOptions={colorOptions}
             totalPieces={totalPieces}
             finalLength={finalLength}
+            channelPricing={liveCustomer?.channel_pricing}
+            channelType={channelType}
+            setValue={setValue}
           />
 
           <DeliveryOptions
@@ -147,6 +173,7 @@ const PlaceOrder = () => {
             deliveryMethod={deliveryMethod}
             totalPieces={totalPieces}
             setValue={setValue}
+            customerAddress={liveCustomer?.delivery_address}
           />
 
           {/* Buttons */}

@@ -4,7 +4,7 @@ import {
   Box, Typography, Button, Divider, CircularProgress, Stack, Paper,
   Dialog, DialogContent, IconButton,
 } from '@mui/material';
-import { ArrowBack, Save, CheckCircle, Visibility, Close } from '@mui/icons-material';
+import { ArrowBack, Save, CheckCircle, Visibility, Close, Send } from '@mui/icons-material';
 import toast from 'react-hot-toast';
 import PageContainer from 'src/components/container/PageContainer';
 import Breadcrumb from 'src/layouts/full/shared/breadcrumb/Breadcrumb';
@@ -14,6 +14,7 @@ import AddressHeader from './AddressHeader';
 import LineItemsTable from './LineItemsTable';
 import NotesAndTotals from './NotesAndTotals';
 import ConfirmDialogs from './ConfirmDialogs';
+import SendInvoiceDialog from './SendInvoiceDialog';
 import { formatDate } from 'src/utils/helpers';
 
 
@@ -29,6 +30,8 @@ const EditInvoice = () => {
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [screenshotDialog, setScreenshotDialog] = useState(false);
+  const [resendDialog, setResendDialog] = useState(false);
+  const [sendFinalDialog, setSendFinalDialog] = useState(false);
 
   useEffect(() => { fetchData(); }, [id]);
 
@@ -127,9 +130,9 @@ const EditInvoice = () => {
       });
       // Fetch fresh data from the server to ensure all fields are fully up to date
       await fetchData();
-      toast.success('Saved successfully!');
+      toast.success('Updated successfully!');
     } catch (err) {
-      toast.error(err.message || 'Failed to save.');
+      toast.error(err.message || 'Failed to update.');
     } finally {
       setSaving(false);
     }
@@ -234,8 +237,20 @@ const EditInvoice = () => {
               disabled={saving}
               sx={{ borderRadius: '8px', fontWeight: 600, fontSize: '0.9rem' }}
             >
-              {saving ? 'Saving...' : 'Save'}
+              {saving ? 'Updating...' : 'Update Invoice'}
             </Button>
+
+            {/* Resend Invoice button — only when invoice has been sent */}
+            {invoice.status !== 'Draft' && (
+              <Button
+                variant="outlined"
+                startIcon={<Send />}
+                onClick={() => setResendDialog(true)}
+                sx={{ borderRadius: '8px', fontWeight: 600, fontSize: '0.9rem', textTransform: 'none' }}
+              >
+                Resend Invoice
+              </Button>
+            )}
 
 
 
@@ -318,6 +333,22 @@ const EditInvoice = () => {
                   </Typography>
                 )}
               </Stack>
+
+              <Button
+                variant="contained"
+                startIcon={<Send />}
+                onClick={() => setSendFinalDialog(true)}
+                sx={{
+                  mt: 2,
+                  borderRadius: '8px',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  bgcolor: '#198754',
+                  '&:hover': { bgcolor: '#157347' },
+                }}
+              >
+                Send Final Invoice
+              </Button>
             </Box>
           )}
 
@@ -329,6 +360,22 @@ const EditInvoice = () => {
             setConfirmPaymentDialog={setConfirmPaymentDialog}
             handleConfirmPayment={handleConfirmPayment}
             confirming={confirming}
+          />
+
+          <SendInvoiceDialog
+            open={resendDialog}
+            onClose={() => setResendDialog(false)}
+            invoice={invoice}
+            onSuccess={() => fetchData()}
+            variant="resend"
+          />
+
+          <SendInvoiceDialog
+            open={sendFinalDialog}
+            onClose={() => setSendFinalDialog(false)}
+            invoice={invoice}
+            onSuccess={() => fetchData()}
+            variant="final"
           />
 
 

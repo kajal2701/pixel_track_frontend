@@ -85,6 +85,16 @@ const invoiceService = {
     return `${API_BASE_URL}/invoices/${id}/payment/screenshot`;
   },
 
+  // Resend invoice email to customer
+  resend: async (id) => {
+    try {
+      const response = await apiClient.post(`/invoices/${id}/resend`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Network error occurred' };
+    }
+  },
+
 };
 
 export default invoiceService;

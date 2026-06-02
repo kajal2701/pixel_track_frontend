@@ -26,6 +26,17 @@ export const getInvoiceStatusColor = (status) => {
   }
 };
 
+export const getInvoiceStatusDisplay = (status) => {
+  switch (status) {
+    case 'Paid': return { label: 'Amount Paid:', color: 'success' };
+    case 'Payment Submitted': return { label: 'Deposit Amount:', color: 'primary' };
+    case 'Sent': return { label: 'Due Amount:', color: 'warning' };
+    case 'Draft': return { label: 'Total Amount:', color: 'default' };
+    case 'Cancelled': return { label: 'Total Amount:', color: 'error' };
+    default: return { label: 'Total Amount:', color: 'default' };
+  }
+};
+
 // Format date string to DD-MM-YYYY HH:MM format
 export const formatDate = (dateStr) => {
   if (!dateStr) return '—';
@@ -65,16 +76,37 @@ export const generateColorOptions = (products) => {
   const rows = (products || [])
     .filter((p) => p?.color)
     .map((p) => {
-      const colorCode = p.color_code ? ` (${p.color_code})` : '';
-      const manufacturer = p.manufacturer ? ` (${p.manufacturer})` : '';
-      const label = `${p.color}${colorCode}${manufacturer}`;
-      return { key: p.id ?? label, value: label, label };
+      // 1. Used for the UI label and sorting
+      const colorCodeUI = p.color_code ? ` - (${p.color_code})` : '';
+      const manufacturerUI = p.manufacturer ? p.manufacturer : '';
+      const plainLabel = `${p.color}${manufacturerUI ? ` - (${manufacturerUI})` : ''}${colorCodeUI}`;
+
+      // 2. Used for the backend payload (Old Format: "Color (ColorCode) (Manufacturer)")
+      const colorCodeBackend = p.color_code ? ` (${p.color_code})` : '';
+      const manufacturerBackend = p.manufacturer ? ` (${p.manufacturer})` : '';
+      const backendValue = `${p.color}${colorCodeBackend}${manufacturerBackend}`;
+
+      const label = (
+        <span>
+          {p.color}
+          {manufacturerUI && (
+            <>
+              {' - '}
+              <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>
+                ({manufacturerUI})
+              </span>
+            </>
+          )}
+          {colorCodeUI}
+        </span>
+      );
+
+      return { key: p.id ?? plainLabel, value: backendValue, label, plainLabel };
     });
 
-  rows.sort((a, b) => a.label.localeCompare(b.label));
+  rows.sort((a, b) => a.plainLabel?.localeCompare(b.plainLabel));
   return rows;
 };
-
 // ── Shared Dropdown Options ──────────────────────────────────
 
 export const CHANNEL_LENGTH_OPTIONS = [
@@ -85,12 +117,70 @@ export const CHANNEL_LENGTH_OPTIONS = [
 ];
 
 // Used in customer pricing form — key matches JSON column key in DB
-// e.g. channel_pricing: { "10h": 2.50, "9h": 2.75, "8h": 3.00 }
+// New format: { commercial: { "10h": { price: 2.50, enabled: true } }, residential: { ... } }
 export const CHANNEL_PRICING_OPTIONS = [
   { key: '10h', label: '10 Holes — 6.67 ft', feet: 6.67 },
   { key: '9h', label: '9 Holes — 6.00 ft', feet: 6.00 },
   { key: '8h', label: '8 Holes — 5.33 ft', feet: 5.33 },
 ];
+
+// Pricing categories used in admin CustomerForm
+export const PRICING_CATEGORIES = [
+  { key: 'commercial', label: 'Commercial' },
+  { key: 'residential', label: 'Residential' },
+];
+
+// Build default empty pricing state for one category
+const buildEmptyCategoryPricing = () => {
+  const obj = {};
+  CHANNEL_PRICING_OPTIONS.forEach(({ key }) => {
+    obj[key] = { price: '', enabled: true };
+  });
+  return obj;
+};
+
+// Build full default pricing state
+export const buildDefaultPricing = () => ({
+  commercial: buildEmptyCategoryPricing(),
+  residential: buildEmptyCategoryPricing(),
+});
+
+// Parse API pricing data (handles both new nested and legacy flat formats)
+export const parsePricingFromApi = (raw) => {
+  if (!raw) return buildDefaultPricing();
+  const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+
+  // Detect new nested format
+  if (data.commercial || data.residential) {
+    const result = buildDefaultPricing();
+    ['commercial', 'residential'].forEach((cat) => {
+      if (data[cat]) {
+        CHANNEL_PRICING_OPTIONS.forEach(({ key }) => {
+          if (data[cat][key]) {
+            const entry = data[cat][key];
+            result[cat][key] = {
+              price: String(typeof entry === 'object' ? (entry.price ?? '') : (entry ?? '')),
+              enabled: typeof entry === 'object' ? (entry.enabled !== false) : true,
+            };
+          }
+        });
+      }
+    });
+    return result;
+  }
+
+  // Legacy flat format — copy same prices to both categories, all enabled
+  const result = buildDefaultPricing();
+  Object.keys(data).forEach((k) => {
+    const val = data[k];
+    ['commercial', 'residential'].forEach((cat) => {
+      if (result[cat][k]) {
+        result[cat][k] = { price: String(val != null ? val : ''), enabled: true };
+      }
+    });
+  });
+  return result;
+};
 
 
 export const INVENTORY_TYPE_OPTIONS = [
@@ -184,6 +274,14 @@ export const getPieceLength = (channelLength) => {
   const holes = parseInt(channelLength, 10);
   if (holes > 0) return parseFloat((holes / 1.5).toFixed(2));
   return 0;
+};
+
+// Get human-readable channel length label from value
+export const getChannelLengthLabel = (value) => {
+  if (!value) return '—';
+  const opt = CHANNEL_LENGTH_OPTIONS.find((o) => String(o.value) === String(value));
+  if (opt) return opt.label;
+  return `${value} ft`;
 };
 
 // Calculate total pieces from total length and channel length

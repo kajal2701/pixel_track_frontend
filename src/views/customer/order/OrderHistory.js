@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import PageContainer from '../../../components/container/PageContainer';
 import ParentCard from '../../../components/shared/ParentCard';
 import DataTable from '../../../components/shared/DataTable';
+import OrderDetailModal from './OrderDetailModal';
 import orderService from 'src/services/orderService';
 import { STATUS_CHIP_COLOR, formatDate } from 'src/utils/helpers';
 
@@ -31,6 +32,10 @@ const OrderHistory = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [allOrders, setAllOrders]   = useState([]); // original full data from API
   const [loading, setLoading]       = useState(true);
+
+  // ── Modal state ──
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [modalOpen, setModalOpen]         = useState(false);
 
   const customer = JSON.parse(localStorage.getItem('customerData'));
 
@@ -75,6 +80,17 @@ const OrderHistory = () => {
       order.created_at?.toLowerCase().includes(q)
     );
   });
+
+  // ── Row click handler ──
+  const handleRowClick = (row) => {
+    setSelectedOrder(row);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedOrder(null);
+  };
 
   return (
     <PageContainer title="Order History" description="View and track your orders">
@@ -128,9 +144,17 @@ const OrderHistory = () => {
             columns={columns}
             defaultRows={10}
             loading={loading}
+            onRowClick={handleRowClick}
           />
         </Box>
       </ParentCard>
+
+      {/* ── Order Detail Modal ── */}
+      <OrderDetailModal
+        open={modalOpen}
+        onClose={handleCloseModal}
+        order={selectedOrder}
+      />
 
     </PageContainer>
   );

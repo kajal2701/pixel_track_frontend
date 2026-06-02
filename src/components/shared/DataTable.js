@@ -91,7 +91,7 @@ const renderCell = (col, row, globalIdx) => {
   );
 };
 
-const DataTable = ({ rows = [], columns = [], defaultRows = 5, loading = false, emptyMessage = "No records found", showSrNo = true }) => {
+const DataTable = ({ rows = [], columns = [], defaultRows = 5, loading = false, emptyMessage = "No records found", showSrNo = true, onRowClick }) => {
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(defaultRows);
   const [sortConfig, setSortConfig] = React.useState({ key: null, direction: 'asc' });
@@ -236,7 +236,15 @@ const DataTable = ({ rows = [], columns = [], defaultRows = 5, loading = false, 
                   {visibleRows.map((row, rowIdx) => {
                     const globalIdx = (rowsPerPage > 0 ? page * rowsPerPage : 0) + rowIdx + 1;
                     return (
-                      <TableRow key={row.id ?? rowIdx} hover>
+                      <TableRow
+                        key={row.id ?? rowIdx}
+                        hover
+                        onClick={() => onRowClick && onRowClick(row)}
+                        sx={{
+                          cursor: onRowClick ? 'pointer' : 'default',
+                          '&:hover': onRowClick ? { backgroundColor: 'action.hover' } : {},
+                        }}
+                      >
                         {finalColumns.map((col) => (
                           <TableCell key={col.field} sx={{
                             width: col.width || col.minWidth,
@@ -307,6 +315,7 @@ DataTable.propTypes = {
   loading: PropTypes.bool,
   emptyMessage: PropTypes.node,
   showSrNo: PropTypes.bool,
+  onRowClick: PropTypes.func,
 };
 
 export default DataTable;
