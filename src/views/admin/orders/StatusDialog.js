@@ -67,6 +67,7 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, loading }) => {
   const [modificationNotes, setModificationNotes] = useState('');
   const [pickupLocation, setPickupLocation] = useState('');
   const [pickupDate, setPickupDate] = useState('');
+  const [modStatus, setModStatus] = useState(null);
 
   // Fetch inventory and run check when CONFIRM dialog opens
   useEffect(() => {
@@ -83,15 +84,35 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, loading }) => {
         }
       };
       fetchAndCheck();
-      setModificationNotes(order.modification_notes || '');
-      setPickupLocation(order.pickup_location || '');
-      setPickupDate(formatDateToYYYYMMDD(order.pickup_date));
+      let modNote = order.modification_notes || '';
+      let pLocation = order.pickup_location || '';
+      let pDate = order.pickup_date ? formatDateToYYYYMMDD(order.pickup_date) : '';
+      let mStatus = null;
 
+      try {
+        if (order.modification_notes) {
+          const parsed = JSON.parse(order.modification_notes);
+          if (parsed && parsed.status) {
+            modNote = parsed.note || '';
+            if (parsed.pickup_location) pLocation = parsed.pickup_location;
+            if (parsed.pickup_date) pDate = formatDateToYYYYMMDD(parsed.pickup_date);
+            mStatus = parsed.status; // pending, approved, or cancelled
+          }
+        }
+      } catch (e) {
+        // Not JSON, ignore
+      }
+
+      setModificationNotes(modNote);
+      setPickupLocation(pLocation);
+      setPickupDate(pDate);
+      setModStatus(mStatus);
     } else {
       setInventoryResult(null);
       setModificationNotes('');
       setPickupLocation('');
       setPickupDate('');
+      setModStatus(null);
     }
   }, [open, type, order]);
 
@@ -170,8 +191,25 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, loading }) => {
             <Stack direction="row" spacing={1} alignItems="center" mb={1.5}>
               <Edit sx={{ color: 'warning.main', fontSize: 20 }} />
               <Typography variant="subtitle2" fontWeight={700}>
-                Request Modification              </Typography>
+                Request Modification
+              </Typography>
             </Stack>
+
+            {modStatus === 'pending' && (
+              <Alert severity="info" sx={{ mb: 2, borderRadius: '8px' }}>
+                A modification request is currently <strong>awaiting customer approval.</strong>
+              </Alert>
+            )}
+            {modStatus === 'approved' && (
+              <Alert severity="success" sx={{ mb: 2, borderRadius: '8px' }}>
+                The modification request was <strong>approved</strong> by the customer.
+              </Alert>
+            )}
+            {modStatus === 'cancelled' && (
+              <Alert severity="error" sx={{ mb: 2, borderRadius: '8px' }}>
+                The modification request was <strong>cancelled</strong> by the customer.
+              </Alert>
+            )}
 
             <Stack spacing={2}>
               {order.delivery_method === 'pickup' && (

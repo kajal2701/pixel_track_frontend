@@ -56,6 +56,7 @@ const UserEdit = Loadable(lazy(() => import('../views/admin/users/UserEdit')));
 // ── NEW: Customer order portal pages ──────────────────────────────────────
 const PlaceOrder = Loadable(lazy(() => import('../views/customer/order/PlaceOrder')));
 const OrderHistory = Loadable(lazy(() => import('../views/customer/order/OrderHistory')));
+const ModificationResolve = Loadable(lazy(() => import('../views/customer/order/ModificationResolve')));
 
 
 const Router = [
@@ -70,6 +71,7 @@ const Router = [
       { path: '/forgot-password', element: <ForgotPassword /> },
       { path: '/auth/404', element: <Error /> },
       { path: '/view-invoice/:id', element: <ViewInvoice /> },
+      { path: '/modification-resolve', element: <ModificationResolve /> },
       { path: '*', element: <Navigate to="/auth/404" /> },
     ],
   },

@@ -56,6 +56,8 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
     },
   ];
 
+  const isCompletelyOutOfStock = (row.fullRoll_qty || 0) <= 0 && (row.slitted_qty || 0) <= 0 && (row.ready_pieces || 0) <= 0;
+
   return (
     <>
       {/* ── Main Row ── */}
@@ -63,7 +65,11 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
         hover
         sx={{
           cursor: 'pointer',
+          backgroundColor: isCompletelyOutOfStock ? 'rgba(211, 47, 47, 0.08)' : undefined,
           '& > td': { borderBottom: open ? 'none' : undefined },
+          '&:hover': {
+            backgroundColor: isCompletelyOutOfStock ? 'rgba(211, 47, 47, 0.12) !important' : undefined,
+          }
         }}
         onClick={() => setOpen(!open)}
       >
