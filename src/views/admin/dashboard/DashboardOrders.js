@@ -16,6 +16,7 @@ import NotesDialog from '../orders/NotesDialog';
 import NotesCell from '../orders/NotesCell';
 import ProductionRequestDialog from '../orders/ProductionRequestDialog';
 import DispatchDialog from '../orders/DispatchDialog';
+import OrderDetailModal from '../../customer/order/OrderDetailModal';
 
 const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
   const { palette } = useTheme();
@@ -32,6 +33,7 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
   const [notesDialog, setNotesDialog] = useState({ open: false, order: null });
   const [productionDialog, setProductionDialog] = useState({ open: false, order: null, inventoryResult: null });
   const [dispatchDialog, setDispatchDialog] = useState({ open: false, order: null });
+  const [detailModal, setDetailModal] = useState({ open: false, order: null });
 
   // Filtered Orders for the Table
   const filteredOrders = allOrders.filter(order => {
@@ -60,6 +62,9 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
 
   const openDispatchDialog = (order) => setDispatchDialog({ open: true, order });
   const closeDispatchDialog = () => setDispatchDialog({ open: false, order: null });
+
+  const openDetailModal = (order) => setDetailModal({ open: true, order });
+  const closeDetailModal = () => setDetailModal({ open: false, order: null });
 
   const handleSaveNotes = async (order, notes) => {
     setActionLoading(true);
@@ -364,6 +369,11 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
             columns={columns}
             defaultRows={10}
             emptyMessage="No orders found."
+            onRowClick={(row) => {
+              if (row.order_status === 'Completed') {
+                openDetailModal(row);
+              }
+            }}
           />
         )}
       </ParentCard>
@@ -372,6 +382,7 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
       <NotesDialog open={notesDialog.open} order={notesDialog.order} onClose={closeNotesDialog} onSave={handleSaveNotes} loading={actionLoading} />
       <ProductionRequestDialog open={productionDialog.open} order={productionDialog.order} inventoryResult={productionDialog.inventoryResult} onClose={closeProductionDialog} onSubmit={handleProductionRequest} loading={actionLoading} />
       <DispatchDialog open={dispatchDialog.open} order={dispatchDialog.order} onClose={closeDispatchDialog} onConfirm={handleDispatchConfirm} loading={actionLoading} />
+      <OrderDetailModal open={detailModal.open} order={detailModal.order} onClose={closeDetailModal} />
     </>
   );
 };

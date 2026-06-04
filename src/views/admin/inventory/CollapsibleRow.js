@@ -4,16 +4,18 @@ import {
   Collapse, Box, Grid, Paper
 } from '@mui/material';
 import {
-  KeyboardArrowDown, KeyboardArrowUp, Edit, Delete, Visibility
+  KeyboardArrowDown, KeyboardArrowUp, Edit, Delete, Visibility, SwapHoriz
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { getStatusInfo } from './helperFunction';
 import { calculateProductionDetails, getInventoryTypeColor } from 'src/utils/helpers';
 import LocationStockDialog from './LocationStockDialog';
+import TransferStockDialog from './TransferStockDialog';
 
-const CollapsibleRow = ({ row, onEdit, onDelete }) => {
+const CollapsibleRow = ({ row, onEdit, onDelete, userRole, onTransferSuccess }) => {
   const [open, setOpen] = useState(false);
   const [locationDialog, setLocationDialog] = useState({ open: false, variant: null });
+  const [transferDialog, setTransferDialog] = useState({ open: false, variant: null });
   const { palette } = useTheme();
 
   // Build detail sections for the expanded area
@@ -253,6 +255,16 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
                                     >
                                       <Visibility fontSize="small" />
                                     </IconButton>
+                                    {userRole === 'admin' && (
+                                      <IconButton
+                                        size="small"
+                                        sx={{ color: palette.warning.main }}
+                                        onClick={(e) => { e.stopPropagation(); setTransferDialog({ open: true, variant }); }}
+                                        title="Transfer to another location"
+                                      >
+                                        <SwapHoriz fontSize="small" />
+                                      </IconButton>
+                                    )}
                                     <IconButton
                                       size="small"
                                       sx={{ color: palette.info.main }}
@@ -289,6 +301,13 @@ const CollapsibleRow = ({ row, onEdit, onDelete }) => {
         open={locationDialog.open}
         onClose={() => setLocationDialog({ open: false, variant: null })}
         variant={locationDialog.variant}
+      />
+      {/* ── Transfer Stock Dialog ── */}
+      <TransferStockDialog
+        open={transferDialog.open}
+        onClose={() => setTransferDialog({ open: false, variant: null })}
+        variant={transferDialog.variant}
+        onTransferSuccess={onTransferSuccess}
       />
     </>
   );

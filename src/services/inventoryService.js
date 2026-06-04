@@ -61,6 +61,24 @@ const inventoryService = {
       throw error.response?.data || { message: 'Network error occurred' };
     }
   },
+
+  getStockBreakdown: async (id) => {
+    try {
+      const response = await apiClient.get(`/inventory/${id}/stock-breakdown`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Network error occurred' };
+    }
+  },
+
+  transferStock: async (id, payload) => {
+    try {
+      const response = await apiClient.post(`/inventory/${id}/transfer`, payload);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Network error occurred' };
+    }
+  },
 };
 
 export default inventoryService;

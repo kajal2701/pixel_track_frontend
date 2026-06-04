@@ -17,6 +17,7 @@ import NotesDialog from './NotesDialog';
 import NotesCell from './NotesCell';
 import ProductionRequestDialog from './ProductionRequestDialog';
 import DispatchDialog from './DispatchDialog';
+import OrderDetailModal from '../../customer/order/OrderDetailModal';
 import { formatDate, ORDER_TABLE_DATA, getSummaryCardsData } from 'src/utils/helpers';
 
 const columns = [
@@ -64,6 +65,7 @@ const Orders = () => {
     order: null,
     inventoryResult: null,
   });
+  const [detailModal, setDetailModal] = useState({ open: false, order: null });
 
   // ── Fetch once on mount ──────────────────────────────────
   useEffect(() => { fetchOrders(); }, []);
@@ -130,6 +132,9 @@ const Orders = () => {
     setProductionDialog({ open: true, order, inventoryResult });
   const closeProductionDialog = () =>
     setProductionDialog({ open: false, order: null, inventoryResult: null });
+
+  const openDetailModal = (order) => setDetailModal({ open: true, order });
+  const closeDetailModal = () => setDetailModal({ open: false, order: null });
 
   // Dispatch dialog
   const [dispatchDialog, setDispatchDialog] = useState({ open: false, order: null });
@@ -561,6 +566,11 @@ const Orders = () => {
                     columns={tableColumns}
                     defaultRows={5}
                     emptyMessage={`No ${title.toLowerCase()} found.`}
+                    onRowClick={(row) => {
+                      if (status === 'Completed' || row.order_status === 'Completed') {
+                        openDetailModal(row);
+                      }
+                    }}
                   />
                 </Box>
               </Card>
@@ -602,6 +612,12 @@ const Orders = () => {
         onClose={closeDispatchDialog}
         onConfirm={handleDispatchConfirm}
         loading={actionLoading}
+      />
+
+      <OrderDetailModal
+        open={detailModal.open}
+        order={detailModal.order}
+        onClose={closeDetailModal}
       />
 
     </PageContainer>

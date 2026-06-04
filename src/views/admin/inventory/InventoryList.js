@@ -36,6 +36,10 @@ const InventoryList = () => {
   // Delete dialog
   const [deleteDialog, setDeleteDialog] = useState({ open: false, item: null });
 
+  // User role from localStorage for admin-only features
+  const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+  const userRole = adminData.role || '';
+
   // ── Fetch inventory on mount ──
   useEffect(() => { fetchInventory(); }, []);
 
@@ -220,6 +224,8 @@ const InventoryList = () => {
                           row={row}
                           onEdit={handleEdit}
                           onDelete={handleDeleteClick}
+                          userRole={userRole}
+                          onTransferSuccess={fetchInventory}
                         />
                       ))
                     )}

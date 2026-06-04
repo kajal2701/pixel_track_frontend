@@ -38,30 +38,43 @@ export const getInvoiceStatusDisplay = (status) => {
 };
 
 // Format date string to DD-MM-YYYY HH:MM format
+// export const formatDate = (dateStr) => {
+//   if (!dateStr) return '—';
+//   const d = new Date(dateStr);
+//   const dd = String(d.getDate()).padStart(2, '0');
+//   const mm = String(d.getMonth() + 1).padStart(2, '0');
+//   const yy = String(d.getFullYear());
+//   return `${dd}-${mm}-${yy}`;
+// };
+
+
 export const formatDate = (dateStr) => {
   if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  const dd = String(d.getDate()).padStart(2, '0');
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const yy = String(d.getFullYear());
+  const clean = dateStr.split('T')[0]; // "2026-06-04T18:30:00.000Z" → "2026-06-05"
+  const [yy, mm, dd] = clean.split('-');
   return `${dd}-${mm}-${yy}`;
 };
 
 // Format date string to YYYY-MM-DD format (for HTML date inputs)
+// export const formatDateToYYYYMMDD = (dateStr) => {
+//   if (!dateStr) return '';
+//   try {
+//     const d = new Date(dateStr);
+//     if (isNaN(d.getTime())) return '';
+//     const yyyy = d.getFullYear();
+//     const mm = String(d.getMonth() + 1).padStart(2, '0');
+//     const dd = String(d.getDate()).padStart(2, '0');
+//     return `${yyyy}-${mm}-${dd}`;
+//   } catch (e) {
+//     return '';
+//   }
+// };
+
 export const formatDateToYYYYMMDD = (dateStr) => {
   if (!dateStr) return '';
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return '';
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
-  } catch (e) {
-    return '';
-  }
+  const clean = dateStr.split('T')[0];
+  return clean; // already "YYYY-MM-DD"
 };
-
 
 export const PIXEL_TRACK = {
   name: 'Pixel Track',
