@@ -248,9 +248,14 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
 
   const buildRows = (orders) => orders.map((order) => ({
     ...order,
-    notes: <NotesCell order={order} onOpenNotes={openNotesDialog} />,
+    notes: (
+      <Box onClick={(e) => e.stopPropagation()}>
+        <NotesCell order={order} onOpenNotes={openNotesDialog} />
+      </Box>
+    ),
     actions: (
-      <Stack direction="row" gap={0.5} flexWrap="wrap">
+      <Stack direction="row" gap={0.5} flexWrap="wrap"
+        onClick={(e) => e.stopPropagation()}>
         {order.order_status === 'Pending' && (
           <>
             <IconButton size="small" sx={{ color: palette.success.main }} onClick={() => openStatusDialog('CONFIRM', order)} title="Confirm">

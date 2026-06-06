@@ -44,60 +44,59 @@ const ModificationResolve = () => {
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: '#f4f6f8',
+        p: 2,
       }}
     >
-      <Container maxWidth="sm">
-        <Paper elevation={3} sx={{ p: 5, textAlign: 'center', borderRadius: 2 }}>
-          <Box display="flex" justifyContent="center" mb={4}>
-            <img src={LogoImg} alt="PiXEL Tracks & Lights" style={{ height: '64px', objectFit: 'contain' }} />
-          </Box>
+      <Paper elevation={3} sx={{ p: 5, textAlign: 'center', borderRadius: 2, width: '100%', maxWidth: 500 }}>
+        <Box display="flex" justifyContent="center" mb={4}>
+          <img src={LogoImg} alt="PiXEL Tracks & Lights" style={{ height: '64px', objectFit: 'contain' }} />
+        </Box>
 
-          {loading ? (
-            <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
-              <CircularProgress size={48} />
-              <Typography variant="h6" color="text.secondary">
-                Processing your request...
-              </Typography>
-            </Box>
-          ) : success ? (
-            <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
-              <CheckCircle sx={{ fontSize: 64, color: 'success.main' }} />
-              <Typography variant="h5" fontWeight="bold">
-                Success
-              </Typography>
-              <Typography variant="body1" color="text.secondary" mb={3}>
-                {action === 'approve'
-                  ? 'Modification has been approved and applied to your order.'
-                  : 'Modification request has been cancelled.'}
-              </Typography>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={() => navigate('/login')}
-              >
-                Go to Dashboard
-              </Button>
-            </Box>
-          ) : (
-            <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
-              <ErrorOutline sx={{ fontSize: 64, color: 'error.main' }} />
-              <Typography variant="h5" fontWeight="bold">
-                Error
-              </Typography>
-              <Typography variant="body1" color="text.secondary" mb={3}>
-                {errorMsg}
-              </Typography>
-              <Button
-                variant="outlined"
-                color="primary"
-                onClick={() => navigate('/login')}
-              >
-                Back to Home
-              </Button>
-            </Box>
-          )}
-        </Paper>
-      </Container>
+        {loading ? (
+          <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
+            <CircularProgress size={48} />
+            <Typography variant="h6" color="text.secondary">
+              Processing your request...
+            </Typography>
+          </Box>
+        ) : success ? (
+          <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
+            <CheckCircle sx={{ fontSize: 64, color: 'success.main' }} />
+            <Typography variant="h5" fontWeight="bold">
+              Success
+            </Typography>
+            <Typography variant="body1" color="text.secondary" mb={3}>
+              {action === 'approve'
+                ? 'Modification has been approved and applied to your order.'
+                : 'Modification request has been cancelled.'}
+            </Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => navigate('/login')}
+            >
+              Go to Dashboard
+            </Button>
+          </Box>
+        ) : (
+          <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
+            <ErrorOutline sx={{ fontSize: 64, color: 'error.main' }} />
+            <Typography variant="h5" fontWeight="bold">
+              Error
+            </Typography>
+            <Typography variant="body1" color="text.secondary" mb={3}>
+              {errorMsg}
+            </Typography>
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={() => navigate('/login')}
+            >
+              Back to Home
+            </Button>
+          </Box>
+        )}
+      </Paper>
     </Box>
   );
 };

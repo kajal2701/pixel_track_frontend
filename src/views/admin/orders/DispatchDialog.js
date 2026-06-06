@@ -171,6 +171,7 @@ const DispatchDialog = ({ open, order, onClose, onConfirm, loading }) => {
               value={sourceLocation}
               onChange={(e) => setSourceLocation(e.target.value)}
               size="small"
+              disabled={isPickup && destAvailable >= orderQty}
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
             >
               {inventoryLocations.map((loc) => (

@@ -39,6 +39,7 @@ const ProductionList = () => {
   // Current user info for role-based filtering
   const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
   const isProductionTech = adminData.role === 'production tech';
+  const isAdmin = adminData.role === 'admin';
 
   // ── Fetch ────────────────────────────────────────────────────
   const fetchProduction = useCallback(async () => {
@@ -157,14 +158,16 @@ const ProductionList = () => {
               <CheckCircle fontSize="small" />
             </IconButton>
           )}
-          {(item.status === 'Pending' || item.status === 'In Progress') && (
+          {(item.status === 'Pending' || item.status === 'In Progress') && isAdmin && (
             <IconButton size="small" sx={{ color: palette.warning.main }} onClick={() => openStatusDialog(item, 'Cancelled')} title="Cancel">
               <CancelIcon fontSize="small" />
             </IconButton>
           )}
-          <IconButton size="small" sx={{ color: palette.error.main }} onClick={() => handleDeleteProduction(item)} title="Delete">
-            <Delete fontSize="small" />
-          </IconButton>
+          {isAdmin && (
+            <IconButton size="small" sx={{ color: palette.error.main }} onClick={() => handleDeleteProduction(item)} title="Delete">
+              <Delete fontSize="small" />
+            </IconButton>
+          )}
         </Box>
       ),
     };
