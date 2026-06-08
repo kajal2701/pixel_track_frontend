@@ -199,16 +199,16 @@ const InventoryList = () => {
             </Box>
           ) : (
             <Box sx={{ mx: -3, mb: -3 }}>
-              <TableContainer>
-                <Table sx={{ width: '100%', tableLayout: 'fixed' }}>
+              <TableContainer sx={{ overflowX: 'auto' }}>
+                <Table sx={{ minWidth: 650 }}>
                   <TableHead>
                     <TableRow>
                       <TableCell sx={{ width: 48, px: 1 }} />
-                      <TableCell sx={{ width: '15%' }}><Typography variant="h6">Supplier</Typography></TableCell>
-                      <TableCell sx={{ width: '15%' }}><Typography variant="h6">Color Name</Typography></TableCell>
-                      <TableCell sx={{ width: '12%' }}><Typography variant="h6">Color Code</Typography></TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}><Typography variant="h6">Supplier</Typography></TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}><Typography variant="h6">Color Name</Typography></TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}><Typography variant="h6">Color Code</Typography></TableCell>
                       <TableCell><Typography variant="h6">Stock Summary</Typography></TableCell>
-                                          </TableRow>
+                    </TableRow>
                   </TableHead>
                   <TableBody>
                     {visibleRows.length === 0 ? (

@@ -203,16 +203,16 @@ const ViewInvoice = () => {
               borderColor: 'divider',
               borderRadius: '8px',
               mb: 3,
-              overflow: 'hidden'
+              overflowX: 'auto',
             }}
           >
-            <Table>
+            <Table sx={{ minWidth: 550 }}>
               <TableHead>
                 <TableRow sx={{ bgcolor: '#f4f6fa' }}>
                   <TableCell sx={{ fontWeight: 700, py: 1.5 }}>#</TableCell>
                   <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Description</TableCell>
-                  <TableCell sx={{ fontWeight: 700, py: 1.5, textAlign: 'right' }}>Qty / Length</TableCell>
-                  <TableCell sx={{ fontWeight: 700, py: 1.5, textAlign: 'right' }}>Unit Price</TableCell>
+                  <TableCell sx={{ fontWeight: 700, py: 1.5, textAlign: 'right', whiteSpace: 'nowrap' }}>Qty / Length</TableCell>
+                  <TableCell sx={{ fontWeight: 700, py: 1.5, textAlign: 'right', whiteSpace: 'nowrap' }}>Unit Price</TableCell>
                   <TableCell sx={{ fontWeight: 700, py: 1.5, textAlign: 'right' }}>Total</TableCell>
                 </TableRow>
               </TableHead>
@@ -233,13 +233,13 @@ const ViewInvoice = () => {
                           Order: {order.order_id} | Type: {order.channel_type || '—'} | Hole Dist: {order.hole_distance || '—'} | Pieces: {order.total_pieces || '—'}
                         </Typography>
                       </TableCell>
-                      <TableCell sx={{ py: 1.5, textAlign: 'right' }}>
+                      <TableCell sx={{ py: 1.5, textAlign: 'right', whiteSpace: 'nowrap' }}>
                         {order.final_length ? `${parseFloat(order.final_length).toFixed(2)} ft` : '—'}
                       </TableCell>
-                      <TableCell sx={{ py: 1.5, textAlign: 'right' }}>
+                      <TableCell sx={{ py: 1.5, textAlign: 'right', whiteSpace: 'nowrap' }}>
                         {unitPrice ? `$${unitPrice.toFixed(2)} / ft` : '—'}
                       </TableCell>
-                      <TableCell sx={{ py: 1.5, textAlign: 'right', fontWeight: 600 }}>
+                      <TableCell sx={{ py: 1.5, textAlign: 'right', fontWeight: 600, whiteSpace: 'nowrap' }}>
                         ${itemSubtotal.toFixed(2)}
                       </TableCell>
                     </TableRow>
@@ -257,10 +257,10 @@ const ViewInvoice = () => {
                     <TableCell sx={{ py: 1.5, textAlign: 'right' }}>
                       {item.qty || 1}
                     </TableCell>
-                    <TableCell sx={{ py: 1.5, textAlign: 'right' }}>
+                    <TableCell sx={{ py: 1.5, textAlign: 'right', whiteSpace: 'nowrap' }}>
                       ${parseFloat(item.unit_price || 0).toFixed(2)}
                     </TableCell>
-                    <TableCell sx={{ py: 1.5, textAlign: 'right', fontWeight: 600 }}>
+                    <TableCell sx={{ py: 1.5, textAlign: 'right', fontWeight: 600, whiteSpace: 'nowrap' }}>
                       ${(parseFloat(item.qty || 0) * parseFloat(item.unit_price || 0)).toFixed(2)}
                     </TableCell>
                   </TableRow>

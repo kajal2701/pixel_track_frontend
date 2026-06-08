@@ -45,6 +45,9 @@ export const CustomizerSlice = createSlice({
     toggleMobileSidebar: (state) => {
       state.isMobileSidebar = !state.isMobileSidebar;
     },
+    closeMobileSidebar: (state) => {
+      state.isMobileSidebar = false;
+    },
     toggleLayout: (state, action) => {
       state.isLayout = action.payload;
     },
@@ -64,6 +67,7 @@ export const {
   toggleSidebar,
   hoverSidebar,
   toggleMobileSidebar,
+  closeMobileSidebar,
   toggleLayout,
   setBorderRadius,
   toggleHorizontal,

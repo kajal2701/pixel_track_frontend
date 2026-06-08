@@ -48,6 +48,13 @@ const NavItem = ({ item, level, pathDirect, onClick, hideMenu }) => {
     },
   }));
 
+  const handleClick = (e) => {
+    // Always close the mobile sidebar on click, even for same-route navigation
+    if (onClick) {
+      onClick(e);
+    }
+  };
+
   return (
     <List component="li" disablePadding key={item.id}>
       <ListItemStyled
@@ -58,7 +65,7 @@ const NavItem = ({ item, level, pathDirect, onClick, hideMenu }) => {
         disabled={item.disabled}
         selected={isSelected}
         target={item.external ? '_blank' : ''}
-        onClick={onClick}
+        onClick={handleClick}
       >
         <ListItemIcon
           sx={{
@@ -94,11 +101,11 @@ const NavItem = ({ item, level, pathDirect, onClick, hideMenu }) => {
 };
 
 NavItem.propTypes = {
-  item:       PropTypes.object,
-  level:      PropTypes.number,
+  item: PropTypes.object,
+  level: PropTypes.number,
   pathDirect: PropTypes.any,
-  hideMenu:   PropTypes.any,
-  onClick:    PropTypes.func,
+  hideMenu: PropTypes.any,
+  onClick: PropTypes.func,
 };
 
 export default NavItem;

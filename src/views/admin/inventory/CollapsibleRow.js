@@ -83,17 +83,17 @@ const CollapsibleRow = ({ row, onEdit, onDelete, userRole, onTransferSuccess }) 
         </TableCell>
 
         {/* Supplier */}
-        <TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>
           <Typography variant="h6" fontWeight={600}>{row.supplier}</Typography>
         </TableCell>
 
         {/* Color Name */}
-        <TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>
           <Typography variant="h6" fontWeight={600}>{row.color_name}</Typography>
         </TableCell>
 
         {/* Color Code */}
-        <TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>
           <Typography variant="h6" fontWeight={400}>{row.color_code}</Typography>
         </TableCell>
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router';
 import { Box, List, useMediaQuery } from '@mui/material';
 import { useSelector, useDispatch } from 'react-redux';
-import { toggleMobileSidebar } from 'src/store/customizer/CustomizerSlice';
+import { closeMobileSidebar } from 'src/store/customizer/CustomizerSlice';
 import NavItem from './NavItem';
 import NavCollapse from './NavCollapse';
 import NavGroup from './NavGroup/NavGroup';
@@ -60,6 +60,11 @@ const SidebarItems = () => {
                 pathDirect={pathDirect}
                 hideMenu={hideMenu}
                 key={item.id}
+                onClick={() => {
+                  if (!lgUp) {
+                    dispatch(closeMobileSidebar());
+                  }
+                }}
               />
             );
 
@@ -74,7 +79,7 @@ const SidebarItems = () => {
                 key={item.id}
                 onClick={() => {
                   if (!lgUp) {
-                    dispatch(toggleMobileSidebar());
+                    dispatch(closeMobileSidebar());
                   }
                 }}
               />

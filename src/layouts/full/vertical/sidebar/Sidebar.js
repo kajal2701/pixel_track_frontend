@@ -2,7 +2,7 @@ import { useMediaQuery, Box, Drawer, useTheme } from '@mui/material';
 import SidebarItems from './SidebarItems';
 import Logo from '../../shared/logo/Logo';
 import { useSelector, useDispatch } from 'react-redux';
-import { hoverSidebar, toggleMobileSidebar } from 'src/store/customizer/CustomizerSlice';
+import { hoverSidebar, closeMobileSidebar } from 'src/store/customizer/CustomizerSlice';
 import Scrollbar from 'src/components/custom-scroll/Scrollbar';
 import { Profile } from './SidebarProfile/Profile';
 
@@ -67,6 +67,8 @@ const Sidebar = () => {
                   : customizer.activeSidebarBg,
               color: customizer.activeSidebarBg === '#ffffff' ? '' : 'white',
               height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
             }}
           >
             {/* ------------------------------------------- */}
@@ -75,7 +77,7 @@ const Sidebar = () => {
             <Box px={3} py={1}>
               <Logo />
             </Box>
-            <Scrollbar sx={{ height: 'calc(100% - 230px)' }}>
+            <Scrollbar sx={{ flexGrow: 1 }}>
               {/* ------------------------------------------- */}
               {/* Sidebar Items */}
               {/* ------------------------------------------- */}
@@ -92,7 +94,7 @@ const Sidebar = () => {
     <Drawer
       anchor="left"
       open={customizer.isMobileSidebar}
-      onClose={() => dispatch(toggleMobileSidebar())}
+      onClose={() => dispatch(closeMobileSidebar())}
       variant="temporary"
       PaperProps={{
         sx: {
