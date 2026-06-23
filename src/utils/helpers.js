@@ -37,38 +37,12 @@ export const getInvoiceStatusDisplay = (status) => {
   }
 };
 
-// Format date string to DD-MM-YYYY HH:MM format
-// export const formatDate = (dateStr) => {
-//   if (!dateStr) return '—';
-//   const d = new Date(dateStr);
-//   const dd = String(d.getDate()).padStart(2, '0');
-//   const mm = String(d.getMonth() + 1).padStart(2, '0');
-//   const yy = String(d.getFullYear());
-//   return `${dd}-${mm}-${yy}`;
-// };
-
-
 export const formatDate = (dateStr) => {
   if (!dateStr) return '—';
   const clean = dateStr.split('T')[0]; // "2026-06-04T18:30:00.000Z" → "2026-06-05"
   const [yy, mm, dd] = clean.split('-');
   return `${dd}-${mm}-${yy}`;
 };
-
-// Format date string to YYYY-MM-DD format (for HTML date inputs)
-// export const formatDateToYYYYMMDD = (dateStr) => {
-//   if (!dateStr) return '';
-//   try {
-//     const d = new Date(dateStr);
-//     if (isNaN(d.getTime())) return '';
-//     const yyyy = d.getFullYear();
-//     const mm = String(d.getMonth() + 1).padStart(2, '0');
-//     const dd = String(d.getDate()).padStart(2, '0');
-//     return `${yyyy}-${mm}-${dd}`;
-//   } catch (e) {
-//     return '';
-//   }
-// };
 
 export const formatDateToYYYYMMDD = (dateStr) => {
   if (!dateStr) return '';
@@ -124,17 +98,19 @@ export const generateColorOptions = (products) => {
 
 export const CHANNEL_LENGTH_OPTIONS = [
   { value: '', label: 'Select Channel Length', disabled: true },
-  { value: '10', label: '10 Holes — 6.67 ft' },
-  { value: '9', label: '9 Holes — 6.00 ft' },
-  { value: '8', label: '8 Holes — 5.33 ft' },
+  { value: '10', label: '10 Holes - 80" (6.67 ft)' },
+  { value: '9', label: '9 Holes - 72" (6.00 ft)' },
+  { value: '8', label: '8 Holes - 64" (5.33 ft)' },
+  { value: '6', label: '6 Holes - 48" (4.00 ft)' },
 ];
 
 // Used in customer pricing form — key matches JSON column key in DB
 // New format: { commercial: { "10h": { price: 2.50, enabled: true } }, residential: { ... } }
 export const CHANNEL_PRICING_OPTIONS = [
-  { key: '10h', label: '10 Holes — 6.67 ft', feet: 6.67 },
-  { key: '9h', label: '9 Holes — 6.00 ft', feet: 6.00 },
-  { key: '8h', label: '8 Holes — 5.33 ft', feet: 5.33 },
+  { key: '10h', label: '10 Holes - 80" (6.67 ft)', feet: 6.67 },
+  { key: '9h', label: '9 Holes - 72" (6.00 ft)', feet: 6.00 },
+  { key: '8h', label: '8 Holes - 64" (5.33 ft)', feet: 5.33 },
+  { key: '6h', label: '6 Holes - 48" (4.00 ft)', feet: 4.00 },
 ];
 
 // Pricing categories used in admin CustomerForm
@@ -266,16 +242,16 @@ export const mapToChannelLengthLabel = (value) => {
 
   // If it's already a hole count string (e.g. '10', '9', '8')
   const numInt = parseInt(value, 10);
-  if ([8, 9, 10].includes(numInt) && String(numInt) === String(value)) return String(numInt);
+  if ([6, 8, 9, 10].includes(numInt) && String(numInt) === String(value)) return String(numInt);
 
   // If it's a feet value from DB (e.g. 6.67, 6.00, 5.33), convert to hole count
   const numFloat = parseFloat(value);
   if (Math.abs(numFloat - 6.67) < 0.1) return '10';
   if (Math.abs(numFloat - 6.00) < 0.1) return '9';
   if (Math.abs(numFloat - 5.33) < 0.1) return '8';
+  if (Math.abs(numFloat - 4.00) < 0.1) return '6';
 
   // Legacy mappings
-  if (numFloat === 4) return '10'; // 4ft -> 10 holes mapping for legacy data
   if (numFloat === 8) return '8';  // 8ft -> 8 holes mapping for legacy data
 
   return String(value);
@@ -384,9 +360,10 @@ export const calculateProductionDetails = (size, qty, type = 'Full Roll', produc
   }
 
   const holes = [
-    { label: '10H (6.67ft)', value: 6.67 },
-    { label: '9H (6ft)', value: 6 },
-    { label: '8H (5.33ft)', value: 5.33 }
+    { label: '10H - 80" (6.67ft)', value: 6.67 },
+    { label: '9H - 72" (6ft)', value: 6 },
+    { label: '8H - 64" (5.33ft)', value: 5.33 },
+    { label: '6H - 48" (4ft)', value: 4 }
   ];
 
   return holes.map(h => {

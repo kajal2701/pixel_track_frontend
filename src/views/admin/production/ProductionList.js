@@ -117,12 +117,13 @@ const ProductionList = () => {
 
   // ── Rows ─────────────────────────────────────────────────────
   const rows = filteredProduction.map((item) => {
-    // Build channel length display: "6.67 ft (10H)"
+    // Build channel length display: "10H - 80" (6.67 ft)"
     let channelDisplay = '—';
     if (item.channel_length) {
       const ft = parseFloat(item.channel_length);
       const holes = Math.round(ft * 1.5);
-      channelDisplay = `${ft} ft (${holes}H)`;
+      const inches = Math.round(ft * 12);
+      channelDisplay = `${holes}H - ${inches}" (${ft} ft)`;
     }
 
     // Check if auto-created

@@ -230,7 +230,7 @@ const ViewInvoice = () => {
                           Pixel Track Channel — {order.color || '—'}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          Order: {order.order_id} | Type: {order.channel_type || '—'} | Hole Dist: {order.hole_distance || '—'} | Pieces: {order.total_pieces || '—'}
+                          Order: {order.order_id} | Type: {order.channel_type || '—'} | Number of Holes: {order.hole_distance || '—'} | Pieces: {order.total_pieces || '—'}
                         </Typography>
                       </TableCell>
                       <TableCell sx={{ py: 1.5, textAlign: 'right', whiteSpace: 'nowrap' }}>

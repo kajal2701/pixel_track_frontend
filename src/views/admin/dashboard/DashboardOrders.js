@@ -80,10 +80,10 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
     }
   };
 
-  const handleDispatchConfirm = async (order, location, sourceLocation) => {
+  const handleDispatchConfirm = async (order, location, sourceLocation, assignedTechId) => {
     setActionLoading(true);
     try {
-      await orderService.updateStatus(order.id, 'Ready for Pickup/Delivery', location, sourceLocation);
+      await orderService.updateStatus(order.id, 'Ready for Pickup/Delivery', location, sourceLocation, assignedTechId);
       toast.success(`Order dispatched`);
       await fetchOrders();
       closeDispatchDialog();

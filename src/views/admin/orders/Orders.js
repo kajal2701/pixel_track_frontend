@@ -141,10 +141,10 @@ const Orders = () => {
   const openDispatchDialog = (order) => setDispatchDialog({ open: true, order });
   const closeDispatchDialog = () => setDispatchDialog({ open: false, order: null });
 
-  const handleDispatchConfirm = async (order, location, sourceLocation) => {
+  const handleDispatchConfirm = async (order, location, sourceLocations, assignedTechId) => {
     setActionLoading(true);
     try {
-      await orderService.updateStatus(order.id, 'Ready for Pickup/Delivery', location, sourceLocation);
+      await orderService.updateStatus(order.id, 'Ready for Pickup/Delivery', location, sourceLocations, assignedTechId);
       toast.success(`Order ${order.order_id} dispatched for ${order.delivery_method === 'pickup' ? 'pickup' : 'delivery'}`);
       await fetchOrders();
       closeDispatchDialog();

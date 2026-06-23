@@ -60,7 +60,7 @@ const LineItemsTable = ({
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 0.3, fontSize: '0.88rem' }}>
                       Order: <strong>{order.order_id}</strong>&nbsp;|&nbsp;
                       Type: {order.channel_type}&nbsp;|&nbsp;
-                      Hole Dist: {order.hole_distance}&nbsp;|&nbsp;
+                      Number of Holes: {order.hole_distance}&nbsp;|&nbsp;
                       Pieces: {order.total_pieces}
                     </Typography>
                   </TableCell>

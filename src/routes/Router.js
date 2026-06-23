@@ -57,6 +57,7 @@ const UserEdit = Loadable(lazy(() => import('../views/admin/users/UserEdit')));
 const PlaceOrder = Loadable(lazy(() => import('../views/customer/order/PlaceOrder')));
 const OrderHistory = Loadable(lazy(() => import('../views/customer/order/OrderHistory')));
 const ModificationResolve = Loadable(lazy(() => import('../views/customer/order/ModificationResolve')));
+const EditOrder = Loadable(lazy(() => import('../views/customer/order/EditOrder')));
 
 
 const Router = [
@@ -107,6 +108,7 @@ const Router = [
       // ── NEW: Customer order portal routes ──────────────────────────────
       { path: '/order/new', element: <ProtectedRoute allowedUserType="customer"><PlaceOrder /></ProtectedRoute> },
       { path: '/order/history', element: <ProtectedRoute allowedUserType="customer"><OrderHistory /></ProtectedRoute> },
+      { path: '/order/edit/:id', element: <ProtectedRoute allowedUserType="customer"><EditOrder /></ProtectedRoute> },
 
       // ── EXISTING: kept exactly as before ──────────────────────────────
       { path: '/user-profile', element: <UserProfile /> },

@@ -30,7 +30,7 @@ const LocationStockDialog = ({ open, onClose, variant }) => {
         <Stack direction="row" spacing={1} alignItems="center">
           <Inventory color="primary" />
           <Typography variant="subtitle1" fontWeight={700}>
-            Stock — {variant.length} ft ({variant.hole_distance}H)
+            Stock — {variant.hole_distance}H - {Math.round(parseFloat(variant.length || 0) * 12)}" ({variant.length} ft)
           </Typography>
         </Stack>
         <IconButton onClick={onClose} size="small">

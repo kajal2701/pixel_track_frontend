@@ -1,10 +1,11 @@
 import React from 'react';
 import {
   Box, Typography, Dialog, DialogTitle, DialogContent,
-  IconButton, Grid, Chip, Divider,
+  IconButton, Grid, Chip, Divider, Button
 } from '@mui/material';
-import { Close, LocalShipping, Store, CalendarToday } from '@mui/icons-material';
+import { Close, LocalShipping, Store, CalendarToday, Edit } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
+import { useNavigate } from 'react-router-dom';
 import { STATUS_CHIP_COLOR, formatDate, getChannelLengthLabel } from 'src/utils/helpers';
 
 /* ── Detail Row ── */
@@ -26,6 +27,7 @@ const DetailRow = ({ label, value, icon }) => (
 
 const OrderDetailModal = ({ open, onClose, order }) => {
   const { palette } = useTheme();
+  const navigate = useNavigate();
 
   if (!order) return null;
 
@@ -105,9 +107,7 @@ const OrderDetailModal = ({ open, onClose, order }) => {
           <Grid item xs={6}>
             <DetailRow label="Channel Length" value={getChannelLengthLabel(order.channel_length)} />
           </Grid>
-          <Grid item xs={6}>
-            <DetailRow label="Hole Distance" value={order.hole_distance ? `${order.hole_distance} holes` : '—'} />
-          </Grid>
+
           <Grid item xs={6}>
             <DetailRow label="Total Length" value={order.total_length ? `${order.total_length} ft` : '—'} />
           </Grid>
@@ -186,6 +186,23 @@ const OrderDetailModal = ({ open, onClose, order }) => {
             {order.additional_notes && (
               <DetailRow label="Additional Notes" value={order.additional_notes} />
             )}
+          </>
+        )}
+
+        {/* ── Actions ── */}
+        {order.order_status === 'Pending' && (
+          <>
+            <Divider sx={{ my: 2.5 }} />
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+              <Button
+                variant="contained"
+                startIcon={<Edit />}
+                onClick={() => { onClose(); navigate(`/order/edit/${order.id}`); }}
+                sx={{ borderRadius: '8px', px: 4, py: 1.5 }}
+              >
+                Edit Order
+              </Button>
+            </Box>
           </>
         )}
       </DialogContent>

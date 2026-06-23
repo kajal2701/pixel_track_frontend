@@ -244,7 +244,13 @@ const CollapsibleRow = ({ row, onEdit, onDelete, userRole, onTransferSuccess }) 
                                   }}
                                 >
                                   <Typography variant="body2" color="text.secondary">
-                                    {`${variant.length ?? '—'} ft | ${variant.pieces} pcs | Hole ${variant.hole_distance} | ${(parseFloat(variant.length || 0) * parseInt(variant.pieces || 0)).toFixed(1)} ft`}
+                                    {(() => {
+                                      const ft = parseFloat(variant.length || 0);
+                                      const holes = variant.hole_distance || Math.round(ft * 1.5);
+                                      const inches = Math.round(ft * 12);
+                                      const totalFt = (ft * parseInt(variant.pieces || 0)).toFixed(1);
+                                      return `${holes}H - ${inches}" (${ft} ft) | ${variant.pieces} pcs | ${totalFt} ft`;
+                                    })()}
                                   </Typography>
                                   <Stack direction="row" spacing={0.5}>
                                     <IconButton

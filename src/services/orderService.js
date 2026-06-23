@@ -67,11 +67,12 @@ const orderService = {
     }
   },
 
-  updateStatus: async (id, order_status, dispatch_location, source_location) => {
+  updateStatus: async (id, order_status, dispatch_location, source_locations, assigned_tech_id) => {
     try {
       const body = { order_status };
       if (dispatch_location) body.dispatch_location = dispatch_location;
-      if (source_location) body.source_location = source_location;
+      if (source_locations?.length) body.source_locations = source_locations;
+      if (assigned_tech_id) body.assigned_tech_id = assigned_tech_id;
       const response = await apiClient.patch(`/orders/${id}/status`, body);
       return response.data;
     } catch (error) {
@@ -136,6 +137,15 @@ const orderService = {
   deleteOrder: async (id) => {
     try {
       const response = await apiClient.delete(`/orders/${id}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Network error occurred' };
+    }
+  },
+
+  editOrder: async (id, payload) => {
+    try {
+      const response = await apiClient.patch(`/orders/${id}/edit`, payload);
       return response.data;
     } catch (error) {
       throw error.response?.data || { message: 'Network error occurred' };

@@ -127,7 +127,7 @@ const TransferStockDialog = ({ open, onClose, variant, onTransferSuccess }) => {
         </Stack>
         {variant && (
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            {variant.length ?? '—'} ft | Hole {variant.hole_distance} | {variant.pieces} total pcs
+            {variant.hole_distance}H - {Math.round(parseFloat(variant.length ?? 0) * 12)}" ({variant.length ?? '—'} ft) | {variant.pieces} total pcs
           </Typography>
         )}
       </DialogTitle>

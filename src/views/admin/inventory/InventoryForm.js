@@ -411,9 +411,10 @@ const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }
                       );
                       const calculation = calculateProductionDetails(s, q, selectedType, match);
                       const lengths = [
-                        { label: '10H (6.67ft)', color: 'primary' },
-                        { label: '9H (6ft)', color: 'success' },
-                        { label: '8H (5.33ft)', color: 'warning' }
+                        { label: '10H - 80\" (6.67ft)', color: 'primary' },
+                        { label: '9H - 72\" (6ft)', color: 'success' },
+                        { label: '8H - 64\" (5.33ft)', color: 'warning' },
+                        { label: '6H - 48\" (4ft)', color: 'secondary' }
                       ];
 
                       return (
