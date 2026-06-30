@@ -259,6 +259,8 @@ const DispatchDialog = ({ open, order, onClose, onConfirm, loading }) => {
                   const rowError = (parseInt(row.pieces) || 0) > row.available;
                   // If pickup and this row's location IS the destination, we disable it and explain
                   const isDestLoc = isPickup && row.location === destination;
+                  // How many pieces from the destination are already being used (available there)
+                  const destUsedPieces = isDestLoc ? Math.min(destAvailable, orderQty) : 0;
 
                   return (
                     <Box key={row.location} sx={{
@@ -274,21 +276,42 @@ const DispatchDialog = ({ open, order, onClose, onConfirm, loading }) => {
                         {row.available} pcs
                       </Typography>
                       <Box sx={{ flex: 1.5 }}>
-                        <TextField
-                          size="small"
-                          type="number"
-                          placeholder="0"
-                          value={row.pieces}
-                          onChange={(e) => handleRowChange(index, e.target.value)}
-                          disabled={isDestLoc || noTransferNeeded}
-                          error={rowError}
-                          inputProps={{ min: 0, max: row.available }}
-                          sx={{
+                        {isDestLoc ? (
+                          // Destination row: show how many pieces are already available there (read-only)
+                          <Box sx={{
                             width: '80px',
-                            '& .MuiOutlinedInput-root': { borderRadius: '6px' },
-                            '& input': { py: 0.5, px: 1, textAlign: 'center' }
-                          }}
-                        />
+                            py: 0.5, px: 1,
+                            textAlign: 'center',
+                            borderRadius: '6px',
+                            border: '1px solid',
+                            borderColor: destUsedPieces > 0 ? 'info.light' : 'divider',
+                            bgcolor: destUsedPieces > 0 ? 'info.lighter' : 'grey.100',
+                          }}>
+                            <Typography
+                              variant="body2"
+                              fontWeight={700}
+                              color={destUsedPieces > 0 ? 'info.main' : 'text.disabled'}
+                            >
+                              {destUsedPieces}
+                            </Typography>
+                          </Box>
+                        ) : (
+                          <TextField
+                            size="small"
+                            type="number"
+                            placeholder="0"
+                            value={row.pieces}
+                            onChange={(e) => handleRowChange(index, e.target.value)}
+                            disabled={noTransferNeeded}
+                            error={rowError}
+                            inputProps={{ min: 0, max: row.available }}
+                            sx={{
+                              width: '80px',
+                              '& .MuiOutlinedInput-root': { borderRadius: '6px' },
+                              '& input': { py: 0.5, px: 1, textAlign: 'center' }
+                            }}
+                          />
+                        )}
                       </Box>
                     </Box>
                   );
