@@ -128,6 +128,10 @@ const Orders = () => {
   // ── Status dialog handlers ───────────────────────────────
   const openStatusDialog = (type, order) => setStatusDialog({ open: true, type, order });
   const closeStatusDialog = () => setStatusDialog({ open: false, type: null, order: null });
+  const handleOrderUpdated = (updatedOrder) => {
+    setStatusDialog(prev => ({ ...prev, order: updatedOrder }));
+    fetchOrders(); // Refresh background list
+  };
   const openProductionDialog = (order, inventoryResult) =>
     setProductionDialog({ open: true, order, inventoryResult });
   const closeProductionDialog = () =>
@@ -156,6 +160,7 @@ const Orders = () => {
   };
 
   const handleStatusConfirm = async (type, order, options = {}) => {
+
     const statusMap = {
       CONFIRM: 'Confirmed',
       CANCEL: 'Cancelled',
@@ -588,6 +593,7 @@ const Orders = () => {
         order={statusDialog.order}
         onClose={closeStatusDialog}
         onConfirm={handleStatusConfirm}
+        onOrderUpdated={handleOrderUpdated}
         loading={actionLoading}
       />
 

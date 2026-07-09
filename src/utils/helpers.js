@@ -59,10 +59,13 @@ export const PIXEL_TRACK = {
   phone: '+1 (780) 938-4509',
 };
 
-export const generateColorOptions = (products) => {
-  const rows = (products || [])
+export const generateColorOptions = (products, options = { grouped: false }) => {
+  const standalone = [];
+  const groups = {};
+  const flat = [];
+  (products || [])
     .filter((p) => p?.color)
-    .map((p) => {
+    .forEach((p) => {
       // 1. Used for the UI label and sorting
       const colorCodeUI = p.color_code ? ` - (${p.color_code})` : '';
       const manufacturerUI = p.manufacturer ? p.manufacturer : '';
@@ -88,11 +91,72 @@ export const generateColorOptions = (products) => {
         </span>
       );
 
-      return { key: p.id ?? plainLabel, value: backendValue, label, plainLabel };
+      const item = { key: p.id ?? plainLabel, value: backendValue, label, plainLabel };
+      flat.push(item);
+
+      if (options.grouped && p.link_group_id) {
+        if (!groups[p.link_group_id]) {
+          groups[p.link_group_id] = {
+            isGroup: true,
+            id: p.link_group_id,
+            groupName: p.group_name || `Group ${p.link_group_id}`,
+            options: []
+          };
+        }
+        groups[p.link_group_id].options.push(item);
+      } else if (options.grouped) {
+        standalone.push(item);
+      }
     });
 
-  rows.sort((a, b) => a.plainLabel?.localeCompare(b.plainLabel));
-  return rows;
+  if (!options.grouped) {
+    flat.sort((a, b) => a.plainLabel?.localeCompare(b.plainLabel));
+    return flat;
+  }
+
+  // When grouped: true, collapse each group into a single option
+  const collapsedGroups = Object.values(groups).map((g) => {
+    // Sort options inside the group for consistent display
+    g.options.sort((a, b) => a.plainLabel?.localeCompare(b.plainLabel));
+
+    // Combine labels like "Gentek - Pebble (PB01) / Wayne - Clay (CL03)"
+    const combinedPlainLabel = g.options.map(opt => opt.plainLabel).join(' / ');
+
+    // The value will just be the first product's value. 
+    // The backend will find the rest of the group based on this first product.
+    const firstOption = g.options[0];
+
+    const combinedLabel = (
+      <span>
+        {g.options.map((opt, i) => (
+          <React.Fragment key={opt.key}>
+            {i > 0 && <span style={{ margin: '0 8px', color: '#888' }}>/</span>}
+            {opt.label}
+          </React.Fragment>
+        ))}
+      </span>
+    );
+
+    return {
+      key: `group-${g.id}`,
+      value: firstOption.value, // order is placed against the first color, admin fulfills from any
+      label: combinedLabel,
+      plainLabel: combinedPlainLabel,
+      isGroupCollapsed: true,
+    };
+  });
+
+  // Sort standalone items
+  standalone.sort((a, b) => a.plainLabel?.localeCompare(b.plainLabel));
+
+  // Sort collapsed groups by their combined text
+  collapsedGroups.sort((a, b) => a.plainLabel.localeCompare(b.plainLabel));
+
+  // Combine into single flat array for the dropdown
+  const finalOptions = [...collapsedGroups, ...standalone];
+  finalOptions.sort((a, b) => a.plainLabel.localeCompare(b.plainLabel));
+
+  return finalOptions;
 };
 // ── Shared Dropdown Options ──────────────────────────────────
 

@@ -37,16 +37,21 @@ const OrderDetailsCard = ({ order }) => {
           Total Pieces: <strong>{order.total_pieces ?? '—'}</strong>
         </Typography>
         <Typography variant="caption" color="text.secondary">
-          Final Length: <strong>{order.final_length || '—'}</strong>
+          Final Length: <strong>{order.final_length ? `${order.final_length} ft` : '—'}</strong>
         </Typography>
+        <Typography variant="caption" color="text.secondary">
+          Customer Tag: <strong>{order.customer_tag || '—'}</strong>
+        </Typography>
+
         <Typography variant="caption" sx={{ color: '#e65100', fontWeight: 700 }}>
           Delivery: <strong>{order.delivery_method === 'pickup' ? 'Pickup' : order.delivery_method === 'delivery' ? 'Delivery' : '—'}</strong>
         </Typography>
         <Typography variant="caption" sx={{ color: '#e65100', fontWeight: 700 }}>
-          Address: <strong>{order.delivery_method === 'pickup' ? (order.pickup_location || '—') : (order.delivery_address || '—')}</strong>
-        </Typography>
-        <Typography variant="caption" sx={{ color: '#e65100', fontWeight: 700 }}>
           {order.delivery_method === 'pickup' ? 'Pickup' : 'Delivery'} Date: <strong>{order.pickup_date ? formatDate(order.pickup_date) : '—'}</strong>
+        </Typography>
+
+        <Typography variant="caption" sx={{ color: '#e65100', fontWeight: 700 }}>
+          Address: <strong>{order.delivery_method === 'pickup' ? (order.pickup_location || '—') : (order.delivery_address || '—')}</strong>
         </Typography>
       </Box>
     </Box>

@@ -177,13 +177,22 @@ const ProductionForm = ({ production, onSubmit, loading, isEdit = false, onCance
   );
 
   // ── Effective available quantity (adds back currently-held qty when editing same item) ──
+  // We only add back the held qty if the inventory's available_quantity was actually
+  // decremented by the hold (available_quantity < held qty). If available_quantity is
+  // already at the full stock value (hold not yet reflected), we must NOT add it again
+  // or the user would see more stock than really exists.
   const effectiveAvailable = useMemo(() => {
     if (!selectedItem) return 0;
     const base = parseFloat(selectedItem.available_quantity ?? selectedItem.quantity ?? 0);
-    const heldBack = isEdit && String(selectedItem.id) === String(production?.rawMaterial)
-      ? Number(production?.qty || 0)
-      : 0;
-    return base + heldBack;
+    const isSameItem = isEdit && String(selectedItem.id) === String(production?.rawMaterial);
+    const heldBack = isSameItem ? Number(production?.qty || 0) : 0;
+    // Only restore held qty if the hold was already subtracted from available_quantity
+    // (i.e. base is less than heldBack, meaning inventory reflects the deduction).
+    // If base >= heldBack, the hold is not yet reflected — adding back would inflate the count.
+    if (heldBack > 0 && base < heldBack) {
+      return base + heldBack;
+    }
+    return base;
   }, [selectedItem, isEdit, production]);
 
   const getInventoryLabel = (item) => {

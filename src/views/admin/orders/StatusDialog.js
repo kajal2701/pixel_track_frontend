@@ -11,6 +11,7 @@ import orderService from 'src/services/orderService';
 import OrderDetailsCard from './OrderDetailsCard';
 import InventoryBreakdown from './InventoryBreakdown';
 import { formatDateToYYYYMMDD } from 'src/utils/helpers';
+import toast from 'react-hot-toast';
 
 // Config per dialog type
 const DIALOG_CONFIG = {
@@ -59,11 +60,13 @@ const DIALOG_CONFIG = {
 // ═══════════════════════════════════════════════════════════════════
 // StatusDialog
 // ═══════════════════════════════════════════════════════════════════
-const StatusDialog = ({ open, type, order, onClose, onConfirm, loading }) => {
+const StatusDialog = ({ open, type, order, onClose, onConfirm, onOrderUpdated, loading }) => {
+  const [updatingProduct, setUpdatingProduct] = useState(false);
   const config = DIALOG_CONFIG[type];
 
   const [inventoryResult, setInventoryResult] = useState(null);
   const [inventoryLoading, setInventoryLoading] = useState(false);
+  const [selectedColorLabel, setSelectedColorLabel] = useState('');
   const [modificationNotes, setModificationNotes] = useState('');
   const [pickupLocation, setPickupLocation] = useState('');
   const [pickupDate, setPickupDate] = useState('');
@@ -76,7 +79,8 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, loading }) => {
         setInventoryLoading(true);
         try {
           const res = await orderService.checkInventory(order.id);
-          setInventoryResult(res.data || {});
+          setInventoryResult(res || {});
+          setSelectedColorLabel(order.color);
         } catch (err) {
           setInventoryResult({ error: err.message || 'Failed to check inventory availability.' });
         } finally {
@@ -119,9 +123,34 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, loading }) => {
   if (!config) return null;
 
   const isConfirm = type === 'CONFIRM';
-  const hasShortage = isConfirm && inventoryResult && !inventoryResult.error && Number(inventoryResult.shortage || 0) > 0;
-  const needsProduction = isConfirm && inventoryResult && !inventoryResult.error &&
-    (Number(inventoryResult.slittedUsed || 0) > 0 || Number(inventoryResult.fullRollUsed || 0) > 0);
+  const allResults = inventoryResult
+    ? [inventoryResult.data, ...(inventoryResult.linkedResults || [])].filter(Boolean)
+    : [];
+  const activeResult = allResults.find(r =>
+    (r.originalColor === selectedColorLabel) || (r.color_label === selectedColorLabel)
+  ) || inventoryResult?.data;
+
+  const hasShortage = isConfirm && activeResult && !activeResult.error && Number(activeResult.shortage || 0) > 0;
+  const needsProduction = isConfirm && activeResult && !activeResult.error &&
+    (Number(activeResult.slittedUsed || 0) > 0 || Number(activeResult.fullRollUsed || 0) > 0);
+
+  const isColorChanged = isConfirm && selectedColorLabel !== order?.color;
+
+  const handleUpdateProduct = async () => {
+    setUpdatingProduct(true);
+    try {
+      const updatedOrder = await orderService.updateOrderDetails(order.id, { color: selectedColorLabel });
+      toast.success('Product color updated successfully!');
+      if (onOrderUpdated) {
+        onOrderUpdated(updatedOrder.data);
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to update product color.');
+      console.error('Failed to update product color:', err);
+    } finally {
+      setUpdatingProduct(false);
+    }
+  };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth={isConfirm ? 'sm' : 'xs'} fullWidth>
@@ -172,14 +201,51 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, loading }) => {
                   Checking inventory...
                 </Typography>
               </Box>
-            ) : inventoryResult ? (
-              inventoryResult.error && !inventoryResult.orderQty ? (
-                <Alert severity="warning" sx={{ borderRadius: '8px' }}>
-                  {inventoryResult.error}
-                </Alert>
-              ) : (
-                <InventoryBreakdown result={inventoryResult} />
-              )
+            ) : activeResult ? (
+              <>
+                {allResults.length > 1 && (
+                  <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                    <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 500 }}>
+                      Fulfill from Group (Linked Products)
+                    </Typography>
+                    <Stack direction="row" spacing={1}>
+                      <Select
+                        fullWidth
+                        value={selectedColorLabel}
+                        onChange={(e) => {
+                          setSelectedColorLabel(e.target.value);
+                        }}
+                        sx={{ '& .MuiOutlinedInput-notchedOutline': { borderRadius: '8px' } }}
+                      >
+                        {allResults.map((res) => {
+                          const label = res.color_label || res.originalColor;
+                          return (
+                            <MenuItem key={label} value={label}>
+                              {label} — {res.isFullySatisfied ? '✓ Fully in stock' : `${res.shortage} pcs shortage`}
+                            </MenuItem>
+                          );
+                        })}
+                      </Select>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={handleUpdateProduct}
+                        disabled={updatingProduct}
+                        sx={{ borderRadius: '8px', whiteSpace: 'nowrap' }}
+                      >
+                        {updatingProduct ? <CircularProgress size={20} color="inherit" /> : 'Update Product'}
+                      </Button>
+                    </Stack>
+                  </FormControl>
+                )}
+                {activeResult.error && !activeResult.orderQty ? (
+                  <Alert severity="warning" sx={{ borderRadius: '8px' }}>
+                    {activeResult.error}
+                  </Alert>
+                ) : (
+                  <InventoryBreakdown result={activeResult} />
+                )}
+              </>
             ) : null}
           </Box>
         )}
@@ -294,7 +360,10 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, loading }) => {
         )}
         {!hasShortage && !needsProduction && (
           <Button
-            onClick={() => onConfirm(type, order, { inventoryResult, action: 'confirm' })}
+            onClick={() => onConfirm(type, order, {
+              inventoryResult: activeResult,
+              action: 'confirm',
+            })}
             variant="contained"
             color={config.confirmColor}
             disabled={loading}
@@ -305,9 +374,13 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, loading }) => {
               : config.confirmLabel}
           </Button>
         )}
+        {/* Confirm & Request for Production */}
         {needsProduction && !hasShortage && (
           <Button
-            onClick={() => onConfirm(type, order, { inventoryResult, action: 'request-production' })}
+            onClick={() => onConfirm(type, order, {
+              inventoryResult: activeResult,
+              action: 'request-production',
+            })}
             variant="contained"
             color="primary"
             disabled={loading}
@@ -320,7 +393,10 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, loading }) => {
         )}
         {hasShortage && (
           <Button
-            onClick={() => onConfirm(type, order, { inventoryResult, action: 'awaiting-material' })}
+            onClick={() => onConfirm(type, order, {
+              inventoryResult: activeResult,
+              action: 'awaiting-material',
+            })}
             variant="outlined"
             color="warning"
             disabled={loading}

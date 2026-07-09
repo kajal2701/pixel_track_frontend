@@ -18,6 +18,7 @@ import DeleteInventoryDialog from './DeleteInventoryDialog';
 import { SUMMARY_CARDS, groupBySupplierColor } from './helperFunction';
 import PaginationActions from './PaginationActions';
 import CollapsibleRow from './CollapsibleRow';
+import ConvertColorDialog from './ConvertColorDialog';
 
 // ═══════════════════════════════════════════════════════════════════
 // InventoryList — Accordion table grouped by Supplier + Color
@@ -35,6 +36,9 @@ const InventoryList = () => {
 
   // Delete dialog
   const [deleteDialog, setDeleteDialog] = useState({ open: false, item: null });
+
+  // Convert Color dialog
+  const [convertColorDialog, setConvertColorDialog] = useState(false);
 
   // User role from localStorage for admin-only features
   const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
@@ -132,14 +136,26 @@ const InventoryList = () => {
           <Typography variant="h4" sx={{ fontWeight: 700, color: palette.text.primary }}>
             Inventory
           </Typography>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => navigate('/admin/inventory/new')}
-            sx={{ borderRadius: '8px' }}
-          >
-            Add Item
-          </Button>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            {userRole === 'admin' && (
+              <Button
+                variant="outlined"
+                color="secondary"
+                onClick={() => setConvertColorDialog(true)}
+                sx={{ borderRadius: '8px' }}
+              >
+                Convert Color
+              </Button>
+            )}
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => navigate('/admin/inventory/new')}
+              sx={{ borderRadius: '8px' }}
+            >
+              Add Item
+            </Button>
+          </Box>
         </Box>
 
         {/* ── Search Bar ── */}
@@ -261,6 +277,14 @@ const InventoryList = () => {
           onConfirm={handleDeleteConfirm}
           item={deleteDialog.item}
           loading={actionLoading}
+        />
+
+        {/* ── Convert Color Dialog ── */}
+        <ConvertColorDialog
+          open={convertColorDialog}
+          onClose={() => setConvertColorDialog(false)}
+          inventoryList={allInventory}
+          onConvertSuccess={fetchInventory}
         />
       </Box>
     </PageContainer>

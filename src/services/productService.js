@@ -52,6 +52,43 @@ const productService = {
       throw error.response?.data || { message: 'Network error occurred' };
     }
   },
+
+  getLinkGroups: async () => {
+    try {
+      const response = await apiClient.get('/products/link-groups');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Network error occurred' };
+    }
+  },
+
+  createLinkGroup: async (payload) => {
+    try {
+      const response = await apiClient.post('/products/link-groups', payload);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Network error occurred' };
+    }
+  },
+
+  updateLinkGroup: async (id, payload) => {
+    try {
+      const response = await apiClient.put(`/products/link-groups/${id}`, payload);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Network error occurred' };
+    }
+  },
+
+  deleteLinkGroup: async (id) => {
+    try {
+      const response = await apiClient.delete(`/products/link-groups/${id}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Network error occurred' };
+    }
+  },
+
 };
 
 export default productService;

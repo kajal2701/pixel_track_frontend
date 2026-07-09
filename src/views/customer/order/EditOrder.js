@@ -56,6 +56,7 @@ const EditOrder = () => {
       pickupDate: null,
       deliveryAddress: '',
       notes: '',
+      customerTag: '',
     },
   });
 
@@ -115,6 +116,7 @@ const EditOrder = () => {
           pickupDate: pickupDateValue,
           deliveryAddress: order.delivery_address || '',
           notes: order.customer_notes || '',
+          customerTag: order.customer_tag || '',
         });
 
       } catch (err) {
@@ -129,7 +131,7 @@ const EditOrder = () => {
     fetchInitialData();
   }, [id, navigate, reset]);
 
-  const colorOptions = React.useMemo(() => generateColorOptions(products), [products]);
+  const colorOptions = React.useMemo(() => generateColorOptions(products, { grouped: true }), [products]);
 
   // ── Calculations ──
   const totalPieces = calculateTotalPieces(totalLength, channelLength);
@@ -151,6 +153,7 @@ const EditOrder = () => {
       }
 
       const payload = {
+        customer_tag: data.customerTag?.trim() || null,
         channel_type: data.channelType,
         color: data.color,
         hole_distance: data.channelLength,

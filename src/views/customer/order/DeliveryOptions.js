@@ -26,6 +26,7 @@ const DeliveryOptions = ({
   totalPieces, // Take it directly from parent props
   setValue,
   customerAddress,
+  colorOptions,
 }) => {
   const color = useWatch({ control, name: 'color' });
   const channel_length = useWatch({ control, name: 'channelLength' });
@@ -45,6 +46,13 @@ const DeliveryOptions = ({
 
     if (!color || !channel_length || !totalPieces) {
       setMinPickupDate(getMinPickupDate(false)); // Default safely if incomplete data
+      return;
+    }
+
+    const selectedColorOption = colorOptions?.find(opt => opt.value === color);
+    if (selectedColorOption?.isGroupCollapsed) {
+      // For grouped colors, we skip inventory check and assume production is needed
+      setMinPickupDate(getMinPickupDate(false));
       return;
     }
 
@@ -70,7 +78,7 @@ const DeliveryOptions = ({
 
     checkStock();
     return () => { isSubscribed = false; };
-  }, [color, channel_length, totalPieces, deliveryMethod]);
+  }, [color, channel_length, totalPieces, deliveryMethod, colorOptions]);
 
   // Ensure pickupDate value is never earlier than calculated minPickupDate
   useEffect(() => {

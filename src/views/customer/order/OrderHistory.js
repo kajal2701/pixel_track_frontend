@@ -11,7 +11,8 @@ import ParentCard from '../../../components/shared/ParentCard';
 import DataTable from '../../../components/shared/DataTable';
 import OrderDetailModal from './OrderDetailModal';
 import orderService from 'src/services/orderService';
-import { STATUS_CHIP_COLOR, formatDate } from 'src/utils/helpers';
+import productService from 'src/services/productService';
+import { STATUS_CHIP_COLOR, formatDate, generateColorOptions } from 'src/utils/helpers';
 
 const columns = [
   { field: 'created_at',   label: 'Date' },
@@ -31,6 +32,7 @@ const OrderHistory = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [allOrders, setAllOrders]   = useState([]); // original full data from API
+  const [colorOptions, setColorOptions] = useState([]);
   const [loading, setLoading]       = useState(true);
 
   // ── Modal state ──
@@ -53,7 +55,14 @@ const OrderHistory = () => {
       if (!customer?.id) return;
       setLoading(true);
       try {
-        const res = await orderService.getCustomerOrders(customer.id);
+        const [res, productsRes] = await Promise.all([
+          orderService.getCustomerOrders(customer.id),
+          productService.getAllProducts(),
+        ]);
+        
+        const generatedOptions = generateColorOptions(productsRes.data || [], { grouped: true });
+        setColorOptions(generatedOptions);
+
         const formatted = res.data.map((order) => ({
           ...order,
           created_at: formatDate(order.created_at),
@@ -154,6 +163,7 @@ const OrderHistory = () => {
         open={modalOpen}
         onClose={handleCloseModal}
         order={selectedOrder}
+        colorOptions={colorOptions}
       />
 
     </PageContainer>

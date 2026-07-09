@@ -47,6 +47,7 @@ const Invoices = Loadable(lazy(() => import('../views/admin/invoices/invoicelist
 const ViewInvoice = Loadable(lazy(() => import('../views/admin/invoices/invoicelist/invoicelisting/ViewInvoice')));
 const Reports = Loadable(lazy(() => import('../views/admin/reports/Reports')));
 const ProductList = Loadable(lazy(() => import('../views/admin/products/ProductList')));
+const ColorGroups = Loadable(lazy(() => import('../views/admin/products/ColorGroups')));
 const ProductNew = Loadable(lazy(() => import('../views/admin/products/ProductNew')));
 const ProductEdit = Loadable(lazy(() => import('../views/admin/products/ProductEdit')));
 const UserList = Loadable(lazy(() => import('../views/admin/users/UserList')));
@@ -97,6 +98,7 @@ const Router = [
       { path: '/admin/customers/new', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['admin', 'sales', 'operations']}><CustomerNew /></ProtectedRoute> },
       { path: '/admin/customers/edit/:id', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['admin', 'sales', 'operations']}><CustomerEdit /></ProtectedRoute> },
       { path: '/admin/products', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['admin']}><ProductList /></ProtectedRoute> },
+      { path: '/admin/products/groups', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['admin']}><ColorGroups /></ProtectedRoute> },
       { path: '/admin/products/new', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['admin']}><ProductNew /></ProtectedRoute> },
       { path: '/admin/products/edit/:id', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['admin']}><ProductEdit /></ProtectedRoute> },
       { path: '/admin/invoices', element: <ProtectedRoute allowedUserType="admin" allowedRoles={['admin']}><Invoices /></ProtectedRoute> },

@@ -174,14 +174,23 @@ const ProductList = () => {
         <Typography variant="h4" fontWeight={700}>
           Products
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() => navigate('/admin/products/new')}
-          sx={{ borderRadius: '8px' }}
-        >
-          Add Product
-        </Button>
+        <Stack direction="row" gap={2}>
+          <Button
+            variant="outlined"
+            onClick={() => navigate('/admin/products/groups')}
+            sx={{ borderRadius: '8px' }}
+          >
+            Group Colors
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => navigate('/admin/products/new')}
+            sx={{ borderRadius: '8px' }}
+          >
+            Add Product
+          </Button>
+        </Stack>
       </Stack>
 
       <Stack direction={{ xs: 'column', md: 'row' }} gap={2} mb={3}>

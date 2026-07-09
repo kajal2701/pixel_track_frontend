@@ -265,6 +265,21 @@ const OrderConfiguration = ({
             }}
           />
         </Grid>
+
+        {/* Customer Name — entered manually per order */}
+        <Grid item xs={12} md={6}>
+          <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+            Customer Name
+          </Typography>
+          <TextField
+            fullWidth
+            placeholder="Enter customer name"
+            {...register('customerTag')}
+            error={!!errors.customerTag}
+            helperText={errors.customerTag?.message}
+            sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+          />
+        </Grid>
       </Grid>
     </ParentCard>
   );

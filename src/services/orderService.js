@@ -98,6 +98,15 @@ const orderService = {
     }
   },
 
+  updateOrderDetails: async (id, payload) => {
+    try {
+      const response = await apiClient.put(`/orders/${id}`, payload);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Network error occurred' };
+    }
+  },
+
   checkInventory: async (id) => {
     try {
       const response = await apiClient.get(`/orders/${id}/check-inventory`);

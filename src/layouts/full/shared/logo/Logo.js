@@ -11,7 +11,7 @@ const Logo = () => {
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        width: '100%',         
+        width: '100%',
       }}
     >
       {/* Logo — left aligned, fixed height */}
@@ -33,9 +33,10 @@ const Logo = () => {
           src={LogoImg}
           alt="PiXEL Tracks & Lights"
           style={{
-         height: customizer.isCollapse ? '48px' : '64px',
-            width: 'auto',
+            height: customizer.isCollapse ? '48px' : '64px',
+            width: '100%',
             objectFit: 'contain',
+            objectPosition: 'left center',
             display: 'block',
             transition: 'height 0.25s ease',
           }}

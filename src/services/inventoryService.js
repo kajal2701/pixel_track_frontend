@@ -79,6 +79,15 @@ const inventoryService = {
       throw error.response?.data || { message: 'Network error occurred' };
     }
   },
+
+  convertColor: async (payload) => {
+    try {
+      const response = await apiClient.post('/inventory/convert-color', payload);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Network error occurred' };
+    }
+  },
 };
 
 export default inventoryService;

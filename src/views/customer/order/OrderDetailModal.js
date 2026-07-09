@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Box, Typography, Dialog, DialogTitle, DialogContent,
   IconButton, Grid, Chip, Divider, Button
@@ -25,9 +25,15 @@ const DetailRow = ({ label, value, icon }) => (
   </Box>
 );
 
-const OrderDetailModal = ({ open, onClose, order }) => {
+const OrderDetailModal = ({ open, onClose, order, colorOptions }) => {
   const { palette } = useTheme();
   const navigate = useNavigate();
+
+  const displayColor = useMemo(() => {
+    if (!order || !colorOptions) return order?.color;
+    const found = colorOptions.find(opt => opt.value === order.color);
+    return found ? found.plainLabel : order.color;
+  }, [order?.color, colorOptions]);
 
   if (!order) return null;
 
@@ -102,7 +108,7 @@ const OrderDetailModal = ({ open, onClose, order }) => {
             <DetailRow label="Channel Type" value={order.channel_type} />
           </Grid>
           <Grid item xs={6}>
-            <DetailRow label="Color" value={order.color} />
+            <DetailRow label="Color" value={displayColor} />
           </Grid>
           <Grid item xs={6}>
             <DetailRow label="Channel Length" value={getChannelLengthLabel(order.channel_length)} />
@@ -116,6 +122,9 @@ const OrderDetailModal = ({ open, onClose, order }) => {
           </Grid>
           <Grid item xs={6}>
             <DetailRow label="Final Length" value={order.final_length ? `${order.final_length} ft` : '—'} />
+          </Grid>
+          <Grid item xs={6}>
+            <DetailRow label="Customer Name" value={order.customer_tag} />
           </Grid>
           <Grid item xs={6}>
             <DetailRow

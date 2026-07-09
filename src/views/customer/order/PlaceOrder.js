@@ -53,6 +53,7 @@ const PlaceOrder = () => {
       pickupDate: null,
       deliveryAddress: '',
       notes: '',
+      customerTag: '',
     },
   });
 
@@ -89,7 +90,7 @@ const PlaceOrder = () => {
     fetchInitialData();
   }, []);
 
-  const colorOptions = React.useMemo(() => generateColorOptions(products), [products]);
+  const colorOptions = React.useMemo(() => generateColorOptions(products, { grouped: true }), [products]);
 
   // ── Calculations ──
   const totalPieces = calculateTotalPieces(totalLength, channelLength);
@@ -117,6 +118,7 @@ const PlaceOrder = () => {
 
       const payload = {
         customer_id: liveCustomer.id,
+        customer_tag: data.customerTag?.trim() || null,
         channel_type: data.channelType,
         color: data.color,
         hole_distance: data.channelLength,  // channelLength now stores hole count (8, 9, 10)
@@ -174,6 +176,7 @@ const PlaceOrder = () => {
             totalPieces={totalPieces}
             setValue={setValue}
             customerAddress={liveCustomer?.delivery_address}
+            colorOptions={colorOptions}
           />
 
           {/* Buttons */}
