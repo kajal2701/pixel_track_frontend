@@ -145,6 +145,16 @@ const InventoryBreakdown = ({ result }) => {
         </Alert>
       )}
 
+      {result.skipStep1Production && isFullySatisfied && (
+        <Alert
+          severity="info"
+          icon={<CheckCircleOutline fontSize="small" />}
+          sx={{ mt: 1, borderRadius: '8px' }}
+        >
+          Current active production satisfies this order.
+        </Alert>
+      )}
+
       <OrderHoldsDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}

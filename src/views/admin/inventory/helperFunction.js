@@ -98,7 +98,7 @@ export const groupBySupplierColor = (items) => {
       const q = parseFloat(item.quantity) || 0;
       group.fullRoll_qty += q;
       if (item.size) {
-        group.fullRoll_size = `${item.size} ft`;
+        group.fullRoll_size = `${Number(parseFloat(item.size).toFixed(2))} ft`;
       }
       group.fullRoll_state = item.state || group.fullRoll_state;
       group.fullRoll_feet += parseFloat(item.possible_feet) || 0;
@@ -109,7 +109,7 @@ export const groupBySupplierColor = (items) => {
       const q = parseFloat(item.quantity) || 0;
       group.slitted_qty += q;
       if (item.size) {
-        group.slitted_size = `${item.size} ft`;
+        group.slitted_size = `${Number(parseFloat(item.size).toFixed(2))} ft`;
       }
       group.slitted_state = item.state || group.slitted_state;
       group.slitted_feet += parseFloat(item.possible_feet) || 0;

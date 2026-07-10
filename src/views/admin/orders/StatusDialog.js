@@ -132,7 +132,7 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, onOrderUpdated, l
 
   const hasShortage = isConfirm && activeResult && !activeResult.error && Number(activeResult.shortage || 0) > 0;
   const needsProduction = isConfirm && activeResult && !activeResult.error &&
-    (Number(activeResult.slittedUsed || 0) > 0 || Number(activeResult.fullRollUsed || 0) > 0);
+    (Number(activeResult.slittedUsed || 0) > 0 || (Number(activeResult.fullRollUsed || 0) > 0 && !activeResult.skipStep1Production));
 
   const isColorChanged = isConfirm && selectedColorLabel !== order?.color;
 
