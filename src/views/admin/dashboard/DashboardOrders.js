@@ -225,6 +225,7 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
   // Table Columns
   const columns = [
     { field: 'order_id', label: 'Order #', bold: true, width: '120px' },
+    { field: 'customer_tag', label: 'Customer Tag', bold: true, width: '130px' },
     { field: 'created_at', label: 'Date', width: '120px' },
     { field: 'contact_name', label: 'Customer', bold: true, width: '130px' },
     { field: 'final_length', label: 'Length', bold: true, width: '100px' },
@@ -248,6 +249,7 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
 
   const buildRows = (orders) => orders.map((order) => ({
     ...order,
+    customer_tag: order.customer_tag || '—',
     notes: (
       <Box onClick={(e) => e.stopPropagation()}>
         <NotesCell order={order} onOpenNotes={openNotesDialog} />

@@ -71,6 +71,7 @@ const ProductionList = () => {
     const term = searchTerm.toLowerCase();
     const matchesSearch =
       (item.order_id || '').toLowerCase().includes(term) ||
+      (item.customer_tag || '').toLowerCase().includes(term) ||
       (item.assignee_name || '').toLowerCase().includes(term) ||
       (item.production_type || '').toLowerCase().includes(term) ||
       (item.target_state || '').toLowerCase().includes(term) ||
@@ -85,6 +86,7 @@ const ProductionList = () => {
   const columns = [
     { field: 'id', label: 'ID', bold: true, width: '5%' },
     { field: 'typeChip', label: 'Type', width: '12%' },
+    { field: 'customer_tag', label: 'Customer Tag', width: '12%' },
     {
       field: 'target_state', label: 'Target', width: '10%', render: (row) => (
         <Stack direction="row" alignItems="center" gap={0.5}>
@@ -134,6 +136,7 @@ const ProductionList = () => {
 
     return {
       ...item,
+      customer_tag: item.customer_tag || '—',
       typeChip: <TypeChipWithOrderColor item={item} orderColor={orderColor} />,
       rawMaterialDisplay: item.raw_material_color
         ? `${item.raw_material_type || ''} — ${item.raw_material_color} (${item.raw_material_color_code || ''})`
