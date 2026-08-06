@@ -574,7 +574,7 @@ const Orders = () => {
                     defaultRows={5}
                     emptyMessage={`No ${title.toLowerCase()} found.`}
                     onRowClick={(row) => {
-                      if (status === 'Completed' || row.order_status === 'Completed') {
+                      if (status === 'Completed' || row.order_status === 'Completed' || status === 'Awaiting production' || row.order_status === 'Awaiting production') {
                         openDetailModal(row);
                       }
                     }}

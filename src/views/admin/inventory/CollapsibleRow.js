@@ -28,7 +28,18 @@ const CollapsibleRow = ({ row, onEdit, onDelete, userRole, onTransferSuccess }) 
       itemId: row.fullRoll_id,
       details: [
         { label: 'Quantity', value: row.fullRoll_qty },
-        { label: 'Size', value: row.fullRoll_size || '—' },
+        {
+          label: 'Size', value: (() => {
+            if (!row.fullRoll_size) return '—';
+            const sizeNum = parseFloat(row.fullRoll_size);
+            const slitCount = parseInt(6) || 0;
+            if (slitCount > 0) {
+              const total = (sizeNum * slitCount).toFixed(0);
+              return `${total} ft`;
+            }
+            return row.fullRoll_size;
+          })()
+        },
         { label: 'Possible Production', value: calculateProductionDetails(row.fullRoll_size, row.fullRoll_qty, 'Full Roll') },
         { label: 'Location', value: row.fullRoll_location || 'Warehouse' },
       ],
@@ -106,7 +117,7 @@ const CollapsibleRow = ({ row, onEdit, onDelete, userRole, onTransferSuccess }) 
 
               // Show total feet for Full Roll and Slitted
               if (s.label === 'Full Roll' && row.fullRoll_size && row.fullRoll_qty) {
-                const totalFeet = (parseFloat(row.fullRoll_size) * parseFloat(row.fullRoll_qty)).toFixed(1);
+                const totalFeet = (parseFloat(row.fullRoll_size) * 6 * parseFloat(row.fullRoll_qty)).toFixed(1);
                 displayValue = `${totalFeet} ft`;
               } else if (s.label === 'Slitted' && row.slitted_size && row.slitted_qty) {
                 const totalFeet = (parseFloat(row.slitted_size) * parseFloat(row.slitted_qty)).toFixed(1);
@@ -118,18 +129,23 @@ const CollapsibleRow = ({ row, onEdit, onDelete, userRole, onTransferSuccess }) 
                 }
               }
 
+              // Red highlight for Full Roll chip when qty is 0
+              const isFullRollEmpty = s.label === 'Full Roll' && (s.qty || 0) <= 0;
+
               return (
                 <Chip
                   key={s.label}
                   label={`${s.label}: ${displayValue}`}
-                  variant={s.qty > 0 ? 'filled' : 'outlined'}
+                  variant={s.qty > 0 ? 'filled' : isFullRollEmpty ? 'filled' : 'outlined'}
                   size="small"
                   sx={{
                     borderRadius: '8px',
                     fontWeight: 500,
-                    ...(s.qty > 0
-                      ? { backgroundColor: getInventoryTypeColor(s.label), color: '#fff' }
-                      : { borderColor: getInventoryTypeColor(s.label), color: getInventoryTypeColor(s.label) }),
+                    ...(isFullRollEmpty
+                      ? { backgroundColor: '#d32f2f', color: '#fff' }
+                      : s.qty > 0
+                        ? { backgroundColor: getInventoryTypeColor(s.label), color: '#fff' }
+                        : { borderColor: getInventoryTypeColor(s.label), color: getInventoryTypeColor(s.label) }),
                   }}
                 />
               );

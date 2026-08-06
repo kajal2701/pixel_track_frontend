@@ -377,7 +377,7 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
             defaultRows={10}
             emptyMessage="No orders found."
             onRowClick={(row) => {
-              if (row.order_status === 'Completed') {
+              if (row.order_status === 'Completed' || row.order_status === 'Awaiting production') {
                 openDetailModal(row);
               }
             }}

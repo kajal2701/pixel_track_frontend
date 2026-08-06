@@ -59,6 +59,11 @@ const CompletedOrdersTable = ({
       width: '12%',
     },
     {
+      field: 'customer_tag',
+      label: 'Customer Tag',
+      width: '12%',
+    },
+    {
       field: 'company_name',
       label: 'Company Name',
       width: '15%',
@@ -86,7 +91,7 @@ const CompletedOrdersTable = ({
     },
     {
       field: 'completion_date',
-      label: 'Date',
+      label: 'Order Complete Date',
       width: '12%',
     },
     {
@@ -109,6 +114,7 @@ const CompletedOrdersTable = ({
         />
       ),
       order_id: order.order_id,
+      customer_tag: order.customer_tag || '-',
       company_name: order.company_name || 'N/A',
       color: order.color || '—',
       channel_type: order.channel_type || '—',
