@@ -17,6 +17,7 @@ import NotesDialog from './NotesDialog';
 import NotesCell from './NotesCell';
 import ProductionRequestDialog from './ProductionRequestDialog';
 import DispatchDialog from './DispatchDialog';
+import BulkCompleteDialog from './BulkCompleteDialog';
 import OrderDetailModal from '../../customer/order/OrderDetailModal';
 import { formatDate, ORDER_TABLE_DATA, getSummaryCardsData } from 'src/utils/helpers';
 
@@ -44,6 +45,8 @@ const Orders = () => {
   const [allOrders, setAllOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [selectedReadyOrderIds, setSelectedReadyOrderIds] = useState([]);
+  const [bulkConfirmDialog, setBulkConfirmDialog] = useState(false);
   const [searchTerms, setSearchTerms] = useState({
     Pending: '',
     Confirmed: '',
@@ -154,6 +157,40 @@ const Orders = () => {
       closeDispatchDialog();
     } catch (err) {
       toast.error(err.message || 'Failed to dispatch order.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // ── Multi-select Ready for Pickup/Delivery orders ──────
+  const handleSelectReadyRow = (id, isSelected) => {
+    if (isSelected) {
+      setSelectedReadyOrderIds((prev) => [...prev, id]);
+    } else {
+      setSelectedReadyOrderIds((prev) => prev.filter((item) => item !== id));
+    }
+  };
+
+  const handleSelectAllReadyRows = (isSelected, rowIds) => {
+    if (isSelected) {
+      setSelectedReadyOrderIds((prev) => Array.from(new Set([...prev, ...rowIds])));
+    } else {
+      setSelectedReadyOrderIds((prev) => prev.filter((id) => !rowIds.includes(id)));
+    }
+  };
+
+  const handleBulkMarkCompleted = async () => {
+    if (selectedReadyOrderIds.length === 0) return;
+    setActionLoading(true);
+    try {
+      const selectedOrders = allOrders.filter((o) => selectedReadyOrderIds.includes(o.id));
+      await Promise.all(selectedOrders.map((o) => orderService.updateStatus(o.id, 'Completed')));
+      toast.success(`${selectedOrders.length} order(s) marked as Completed.`);
+      setSelectedReadyOrderIds([]);
+      setBulkConfirmDialog(false);
+      await fetchOrders();
+    } catch (err) {
+      toast.error(err.message || 'Failed to complete selected orders.');
     } finally {
       setActionLoading(false);
     }
@@ -540,14 +577,34 @@ const Orders = () => {
                 <Box sx={{
                   bgcolor: alpha(themeColor, 0.05),
                   p: 2.5,
-                  borderBottom: `2px solid ${themeColor}`
+                  borderBottom: `2px solid ${themeColor}`,
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  justifyContent: 'space-between',
+                  alignItems: { xs: 'flex-start', sm: 'center' },
+                  gap: 2,
                 }}>
-                  <Typography variant="h5" fontWeight={600} color={themeColor}>
-                    {title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" mt={0.5}>
-                    {subtitle}
-                  </Typography>
+                  <Box>
+                    <Typography variant="h5" fontWeight={600} color={themeColor}>
+                      {title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" mt={0.5}>
+                      {subtitle}
+                    </Typography>
+                  </Box>
+
+                  {status === 'Ready for Pickup/Delivery' && selectedReadyOrderIds.length > 0 && (
+                    <Button
+                      variant="contained"
+                      color="success"
+                      startIcon={<CheckCircle />}
+                      onClick={() => setBulkConfirmDialog(true)}
+                      disabled={actionLoading}
+                      sx={{ borderRadius: '8px', fontWeight: 600 }}
+                    >
+                      Mark Selected as Completed ({selectedReadyOrderIds.length})
+                    </Button>
+                  )}
                 </Box>
 
                 <Box p={3}>
@@ -573,6 +630,11 @@ const Orders = () => {
                     columns={tableColumns}
                     defaultRows={5}
                     emptyMessage={`No ${title.toLowerCase()} found.`}
+                    selectable={status === 'Ready for Pickup/Delivery'}
+                    selectedIds={selectedReadyOrderIds}
+                    onSelectRow={handleSelectReadyRow}
+                    onSelectAll={handleSelectAllReadyRows}
+                    getRowId={(row) => row.id}
                     onRowClick={(row) => {
                       if (status === 'Completed' || row.order_status === 'Completed' || status === 'Awaiting production' || row.order_status === 'Awaiting production') {
                         openDetailModal(row);
@@ -587,6 +649,13 @@ const Orders = () => {
       )}
 
       {/* ── Dialogs ── */}
+      <BulkCompleteDialog
+        open={bulkConfirmDialog}
+        count={selectedReadyOrderIds.length}
+        onClose={() => setBulkConfirmDialog(false)}
+        onConfirm={handleBulkMarkCompleted}
+        loading={actionLoading}
+      />
       <StatusDialog
         open={statusDialog.open}
         type={statusDialog.type}

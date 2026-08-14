@@ -15,8 +15,9 @@ import productService from 'src/services/productService';
 import { STATUS_CHIP_COLOR, formatDate, generateColorOptions } from 'src/utils/helpers';
 
 const columns = [
-  { field: 'created_at',   label: 'Date' },
-  { field: 'order_id',     label: 'Order ID', bold: true },
+  { field: 'created_at', label: 'Date' },
+  { field: 'order_id', label: 'Order ID', bold: true },
+  { field: 'customer_tag', label: 'Customer Tag' },
   {
     field: 'order_status',
     label: 'Status',
@@ -31,13 +32,13 @@ const OrderHistory = () => {
   const navigate = useNavigate();
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [allOrders, setAllOrders]   = useState([]); // original full data from API
+  const [allOrders, setAllOrders] = useState([]); // original full data from API
   const [colorOptions, setColorOptions] = useState([]);
-  const [loading, setLoading]       = useState(true);
+  const [loading, setLoading] = useState(true);
 
   // ── Modal state ──
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [modalOpen, setModalOpen]         = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const customer = JSON.parse(localStorage.getItem('customerData'));
 
@@ -59,13 +60,14 @@ const OrderHistory = () => {
           orderService.getCustomerOrders(customer.id),
           productService.getAllProducts(),
         ]);
-        
+
         const generatedOptions = generateColorOptions(productsRes.data || [], { grouped: true });
         setColorOptions(generatedOptions);
 
         const formatted = res.data.map((order) => ({
           ...order,
           created_at: formatDate(order.created_at),
+          customer_tag: order.customer_tag || '—',
         }));
         setAllOrders(formatted); // store full data
       } catch (err) {
@@ -86,7 +88,8 @@ const OrderHistory = () => {
       order.order_status?.toLowerCase().includes(q) ||
       order.color?.toLowerCase().includes(q) ||
       order.channel_type?.toLowerCase().includes(q) ||
-      order.created_at?.toLowerCase().includes(q)
+      order.created_at?.toLowerCase().includes(q) ||
+      order.customer_tag?.toLowerCase().includes(q)
     );
   });
 

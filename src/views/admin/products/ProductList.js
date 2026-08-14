@@ -228,18 +228,13 @@ const ProductList = () => {
       </Stack>
 
       <ParentCard title="All Products">
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <DataTable
-            rows={rows}
-            columns={columns}
-            defaultRows={10}
-            emptyMessage="No products found"
-          />
-        )}
+        <DataTable
+          rows={rows}
+          columns={columns}
+          defaultRows={10}
+          loading={loading}
+          emptyMessage="No products found"
+        />
       </ParentCard>
 
       <DeleteProductDialog

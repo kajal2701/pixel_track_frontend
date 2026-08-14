@@ -62,6 +62,7 @@ const DIALOG_CONFIG = {
 // ═══════════════════════════════════════════════════════════════════
 const StatusDialog = ({ open, type, order, onClose, onConfirm, onOrderUpdated, loading }) => {
   const [updatingProduct, setUpdatingProduct] = useState(false);
+  const [productUpdated, setProductUpdated] = useState(false);
   const config = DIALOG_CONFIG[type];
 
   const [inventoryResult, setInventoryResult] = useState(null);
@@ -81,6 +82,7 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, onOrderUpdated, l
           const res = await orderService.checkInventory(order.id);
           setInventoryResult(res || {});
           setSelectedColorLabel(order.color);
+          setProductUpdated(false);
         } catch (err) {
           setInventoryResult({ error: err.message || 'Failed to check inventory availability.' });
         } finally {
@@ -135,12 +137,15 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, onOrderUpdated, l
     (Number(activeResult.slittedUsed || 0) > 0 || (Number(activeResult.fullRollUsed || 0) > 0 && !activeResult.skipStep1Production));
 
   const isColorChanged = isConfirm && selectedColorLabel !== order?.color;
+  const hasGroupColors = allResults.length > 1;
+  const needsProductUpdate = hasGroupColors && !productUpdated;
 
   const handleUpdateProduct = async () => {
     setUpdatingProduct(true);
     try {
       const updatedOrder = await orderService.updateOrderDetails(order.id, { color: selectedColorLabel });
       toast.success('Product color updated successfully!');
+      setProductUpdated(true);
       if (onOrderUpdated) {
         onOrderUpdated(updatedOrder.data);
       }
@@ -214,6 +219,7 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, onOrderUpdated, l
                         value={selectedColorLabel}
                         onChange={(e) => {
                           setSelectedColorLabel(e.target.value);
+                          setProductUpdated(false);
                         }}
                         sx={{ '& .MuiOutlinedInput-notchedOutline': { borderRadius: '8px' } }}
                       >
@@ -237,6 +243,11 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, onOrderUpdated, l
                       </Button>
                     </Stack>
                   </FormControl>
+                )}
+                {needsProductUpdate && (
+                  <Alert severity="warning" sx={{ borderRadius: '8px', mb: 2 }}>
+                    Please click <strong>"Update Product"</strong> before proceeding.
+                  </Alert>
                 )}
                 {activeResult.error && !activeResult.orderQty ? (
                   <Alert severity="warning" sx={{ borderRadius: '8px' }}>
@@ -366,7 +377,7 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, onOrderUpdated, l
             })}
             variant="contained"
             color={config.confirmColor}
-            disabled={loading}
+            disabled={loading || needsProductUpdate}
             sx={{ borderRadius: '8px', minWidth: 110 }}
           >
             {loading
@@ -383,7 +394,7 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, onOrderUpdated, l
             })}
             variant="contained"
             color="primary"
-            disabled={loading}
+            disabled={loading || needsProductUpdate}
             sx={{ borderRadius: '8px', minWidth: 200 }}
           >
             {loading
@@ -399,7 +410,7 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, onOrderUpdated, l
             })}
             variant="outlined"
             color="warning"
-            disabled={loading}
+            disabled={loading || needsProductUpdate}
             sx={{ borderRadius: '8px', minWidth: 150 }}
           >
             {loading

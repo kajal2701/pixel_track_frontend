@@ -304,13 +304,13 @@ const ProductionList = () => {
 
       {/* Table */}
       <ParentCard title="Production Records">
-        {loading ? (
-          <Box display="flex" justifyContent="center" py={6}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <DataTable rows={rows} columns={columns} defaultRows={10} emptyMessage="No production records found." />
-        )}
+        <DataTable
+          rows={rows}
+          columns={columns}
+          defaultRows={10}
+          loading={loading}
+          emptyMessage="No production records found."
+        />
       </ParentCard>
 
       {/* Delete Dialog */}

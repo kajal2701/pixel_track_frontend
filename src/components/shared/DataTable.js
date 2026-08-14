@@ -5,6 +5,7 @@ import {
   Typography, TableHead, Chip, Box, Table, TableBody,
   TableCell, TablePagination, TableRow, TableFooter,
   IconButton, Paper, TableContainer, Avatar, Stack, CircularProgress,
+  Checkbox,
 } from '@mui/material';
 import FirstPageIcon from '@mui/icons-material/FirstPage';
 import KeyboardArrowLeft from '@mui/icons-material/KeyboardArrowLeft';
@@ -91,14 +92,29 @@ const renderCell = (col, row, globalIdx) => {
   );
 };
 
-const DataTable = ({ rows = [], columns = [], defaultRows = 5, loading = false, emptyMessage = "No records found", showSrNo = true, onRowClick }) => {
+const DataTable = ({
+  rows = [],
+  columns = [],
+  defaultRows = 5,
+  loading = false,
+  emptyMessage = "No records found",
+  showSrNo = true,
+  onRowClick,
+  selectable = false,
+  selectedIds = [],
+  onSelectRow,
+  onSelectAll,
+  getRowId = (row) => row.id,
+}) => {
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(defaultRows);
   const [sortConfig, setSortConfig] = React.useState({ key: null, direction: 'asc' });
 
   const finalColumns = React.useMemo(() => {
+    let cols = [...columns];
+
     if (showSrNo) {
-      return [
+      cols = [
         {
           field: 'sr_no',
           label: 'S.No.',
@@ -109,16 +125,63 @@ const DataTable = ({ rows = [], columns = [], defaultRows = 5, loading = false, 
             </Typography>
           )
         },
-        ...columns
+        ...cols
       ];
     }
-    return columns;
-  }, [columns, showSrNo]);
+
+    if (selectable) {
+      cols = [
+        {
+          field: 'select_checkbox',
+          label: '',
+          width: '50px',
+          minWidth: '50px',
+          renderHeader: () => {
+            const allRowIds = rows.map(getRowId);
+            const isAllSelected = allRowIds.length > 0 && allRowIds.every(id => selectedIds.includes(id));
+            const isSomeSelected = selectedIds.length > 0 && !isAllSelected;
+
+            return (
+              <Checkbox
+                size="small"
+                checked={isAllSelected}
+                indeterminate={isSomeSelected}
+                onChange={(e) => {
+                  if (onSelectAll) {
+                    onSelectAll(e.target.checked, allRowIds);
+                  }
+                }}
+              />
+            );
+          },
+          render: (row) => {
+            const id = getRowId(row);
+            const isSelected = selectedIds.includes(id);
+            return (
+              <Checkbox
+                size="small"
+                checked={isSelected}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => {
+                  if (onSelectRow) {
+                    onSelectRow(id, e.target.checked);
+                  }
+                }}
+              />
+            );
+          }
+        },
+        ...cols
+      ];
+    }
+
+    return cols;
+  }, [columns, showSrNo, selectable, selectedIds, rows, getRowId, onSelectAll, onSelectRow]);
 
   // Handle sorting
   const handleSort = (field) => {
-    // Don't sort actions or sr_no column
-    if (field === 'actions' || field === 'sr_no') return;
+    // Don't sort actions, sr_no, or select_checkbox column
+    if (field === 'actions' || field === 'sr_no' || field === 'select_checkbox') return;
 
     let direction = 'asc';
     if (sortConfig.key === field && sortConfig.direction === 'asc') {
@@ -154,6 +217,16 @@ const DataTable = ({ rows = [], columns = [], defaultRows = 5, loading = false, 
     }
     return sortableRows;
   }, [rows, sortConfig]);
+
+  // Ensure page remains in valid bounds when rows count changes
+  React.useEffect(() => {
+    if (rowsPerPage > 0 && sortedRows.length > 0) {
+      const maxPage = Math.max(0, Math.ceil(sortedRows.length / rowsPerPage) - 1);
+      if (page > maxPage) {
+        setPage(maxPage);
+      }
+    }
+  }, [sortedRows.length, rowsPerPage, page]);
 
   const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - sortedRows.length) : 0;
   const visibleRows = rowsPerPage > 0
@@ -195,29 +268,31 @@ const DataTable = ({ rows = [], columns = [], defaultRows = 5, loading = false, 
                     sx={{
                       width: col.width || col.minWidth,
                       minWidth: col.minWidth,
-                      cursor: (col.field !== 'actions' && col.field !== 'sr_no') ? 'pointer' : 'default',
-                      '&:hover': (col.field !== 'actions' && col.field !== 'sr_no') ? {
+                      cursor: (col.field !== 'actions' && col.field !== 'sr_no' && col.field !== 'select_checkbox') ? 'pointer' : 'default',
+                      '&:hover': (col.field !== 'actions' && col.field !== 'sr_no' && col.field !== 'select_checkbox') ? {
                         backgroundColor: 'action.hover',
                       } : {},
                     }}
                     onClick={() => handleSort(col.field)}
                   >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="h6">{col.label}</Typography>
-                      {col.field !== 'actions' && col.field !== 'sr_no' && (
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          {sortConfig.key === col.field ? (
-                            sortConfig.direction === 'asc' ? (
-                              <ArrowUpwardIcon sx={{ fontSize: 16, color: 'primary.main' }} />
+                    {col.renderHeader ? col.renderHeader() : (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="h6">{col.label}</Typography>
+                        {col.field !== 'actions' && col.field !== 'sr_no' && col.field !== 'select_checkbox' && (
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            {sortConfig.key === col.field ? (
+                              sortConfig.direction === 'asc' ? (
+                                <ArrowUpwardIcon sx={{ fontSize: 16, color: 'primary.main' }} />
+                              ) : (
+                                <ArrowDownwardIcon sx={{ fontSize: 16, color: 'primary.main' }} />
+                              )
                             ) : (
-                              <ArrowDownwardIcon sx={{ fontSize: 16, color: 'primary.main' }} />
-                            )
-                          ) : (
-                            <SortIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                          )}
-                        </Box>
-                      )}
-                    </Box>
+                              <SortIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                            )}
+                          </Box>
+                        )}
+                      </Box>
+                    )}
                   </TableCell>
                 ))}
               </TableRow>
@@ -316,6 +391,11 @@ DataTable.propTypes = {
   emptyMessage: PropTypes.node,
   showSrNo: PropTypes.bool,
   onRowClick: PropTypes.func,
+  selectable: PropTypes.bool,
+  selectedIds: PropTypes.array,
+  onSelectRow: PropTypes.func,
+  onSelectAll: PropTypes.func,
+  getRowId: PropTypes.func,
 };
 
 export default DataTable;

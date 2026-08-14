@@ -179,13 +179,7 @@ const UserList = () => {
 
       {/* ── Table ── */}
       <ParentCard title="All Users">
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <DataTable rows={rows} columns={columns} defaultRows={10} />
-        )}
+        <DataTable rows={rows} columns={columns} defaultRows={10} loading={loading} />
       </ParentCard>
 
       {/* ── Delete Dialog ── */}

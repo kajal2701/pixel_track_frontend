@@ -4,6 +4,13 @@ import { Save, Cancel } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { useForm } from 'react-hook-form';
 
+const validateNoBrackets = (v) => {
+  if (v && /[()]/.test(v)) {
+    return 'Brackets ( ) are not permitted. Please use an underscore (_) or hyphen (-) instead.';
+  }
+  return true;
+};
+
 const ProductForm = ({ product, onSubmit, loading, isEdit = false, onCancel }) => {
   const { palette } = useTheme();
 
@@ -92,7 +99,10 @@ const ProductForm = ({ product, onSubmit, loading, isEdit = false, onCancel }) =
               fullWidth
               variant="outlined"
               placeholder="Enter manufacturer / supplier name"
-              {...register('manufacturer', { required: 'Manufacturer is required' })}
+              {...register('manufacturer', {
+                required: 'Manufacturer is required',
+                validate: validateNoBrackets,
+              })}
               error={!!errors.manufacturer}
               helperText={errors.manufacturer?.message}
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
@@ -107,7 +117,10 @@ const ProductForm = ({ product, onSubmit, loading, isEdit = false, onCancel }) =
               fullWidth
               variant="outlined"
               placeholder="Enter color"
-              {...register('color', { required: 'Color is required' })}
+              {...register('color', {
+                required: 'Color is required',
+                validate: validateNoBrackets,
+              })}
               error={!!errors.color}
               helperText={errors.color?.message}
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
@@ -122,7 +135,10 @@ const ProductForm = ({ product, onSubmit, loading, isEdit = false, onCancel }) =
               fullWidth
               variant="outlined"
               placeholder="Enter color code"
-              {...register('color_code', { required: 'Color code is required' })}
+              {...register('color_code', {
+                required: 'Color code is required',
+                validate: validateNoBrackets,
+              })}
               error={!!errors.color_code}
               helperText={errors.color_code?.message}
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
