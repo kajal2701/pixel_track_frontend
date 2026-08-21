@@ -6,7 +6,7 @@ import {
 import { Close, LocalShipping, Store, CalendarToday, Edit } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
-import { STATUS_CHIP_COLOR, formatDate, getChannelLengthLabel } from 'src/utils/helpers';
+import { STATUS_CHIP_COLOR, formatDate } from 'src/utils/helpers';
 
 /* ── Detail Row ── */
 const DetailRow = ({ label, value, icon }) => (
@@ -111,7 +111,7 @@ const OrderDetailModal = ({ open, onClose, order, colorOptions }) => {
             <DetailRow label="Color" value={displayColor} />
           </Grid>
           <Grid item xs={6}>
-            <DetailRow label="Channel Length" value={getChannelLengthLabel(order.channel_length)} />
+            <DetailRow label="Channel Length" value={order.channel_length ? `${order.hole_distance || Math.round(order.channel_length * 1.5)}H - ${Math.round(order.channel_length * 12)}" (${order.channel_length} ft)` : '—'} />
           </Grid>
 
           <Grid item xs={6}>

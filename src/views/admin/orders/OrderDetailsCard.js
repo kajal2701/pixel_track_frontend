@@ -37,7 +37,7 @@ const OrderDetailsCard = ({ order }) => {
           Total Pieces: <strong>{order.total_pieces ?? '—'}</strong>
         </Typography>
         <Typography variant="caption" color="text.secondary">
-          Final Length: <strong>{order.final_length ? `${order.final_length} ft` : '—'}</strong>
+          Final Length: <strong>{order.final_length ? `${order.final_length}` : '—'}</strong>
         </Typography>
         <Typography variant="caption" color="text.secondary">
           Customer Tag: <strong>{order.customer_tag || '—'}</strong>
