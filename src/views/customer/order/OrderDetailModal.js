@@ -129,7 +129,7 @@ const OrderDetailModal = ({ open, onClose, order, colorOptions }) => {
           <Grid item xs={6}>
             <DetailRow
               label="Order Date"
-              value={order.created_at}
+              value={formatDate(order.created_at)}
               icon={<CalendarToday sx={{ fontSize: 18 }} />}
             />
           </Grid>

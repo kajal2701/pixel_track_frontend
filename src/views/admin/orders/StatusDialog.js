@@ -60,7 +60,7 @@ const DIALOG_CONFIG = {
 // ═══════════════════════════════════════════════════════════════════
 // StatusDialog
 // ═══════════════════════════════════════════════════════════════════
-const StatusDialog = ({ open, type, order, onClose, onConfirm, onOrderUpdated, loading }) => {
+const StatusDialog = ({ open, type, order, onClose, onConfirm, onOverrideModification, onOrderUpdated, loading }) => {
   const [updatingProduct, setUpdatingProduct] = useState(false);
   const [productUpdated, setProductUpdated] = useState(false);
   const config = DIALOG_CONFIG[type];
@@ -273,7 +273,22 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, onOrderUpdated, l
             </Stack>
 
             {modStatus === 'pending' && (
-              <Alert severity="info" sx={{ mb: 2, borderRadius: '8px' }}>
+              <Alert
+                severity="info"
+                sx={{ mb: 2, borderRadius: '8px' }}
+                action={
+                  <Button
+                    size="small"
+                    variant="contained"
+                    color="warning"
+                    disabled={loading}
+                    onClick={() => onOverrideModification(order)}
+                    sx={{ borderRadius: '6px', whiteSpace: 'nowrap', fontSize: '0.75rem' }}
+                  >
+                    Override Approval
+                  </Button>
+                }
+              >
                 A modification request is currently <strong>awaiting customer approval.</strong>
               </Alert>
             )}

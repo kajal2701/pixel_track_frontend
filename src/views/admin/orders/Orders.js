@@ -23,7 +23,20 @@ import { formatDate, ORDER_TABLE_DATA, getSummaryCardsData } from 'src/utils/hel
 
 const columns = [
   { field: 'order_id', label: 'Order #', bold: true, width: '150px', minWidth: '150px' },
-  { field: 'created_at', label: 'Date', width: '130px', minWidth: '130px' },
+  {
+    field: 'created_at',
+    label: 'Date',
+    width: '160px',
+    minWidth: '160px',
+    render: (row) => <Typography variant="h6" fontWeight="400">{row.formatted_created_at}</Typography>
+  },
+  {
+    field: 'pickup_date',
+    label: 'Pick Up Date',
+    width: '160px',
+    minWidth: '160px',
+    render: (row) => <Typography variant="h6" fontWeight="400">{row.formatted_pickup_date}</Typography>
+  },
   { field: 'contact_name', label: 'Customer', bold: true, width: '150px', minWidth: '150px' },
   { field: 'company_name', label: 'Company', muted: true, width: '170px', minWidth: '170px' },
   { field: 'color', label: 'Color', type: 'chip', chipColor: () => 'primary', width: '120px', minWidth: '120px' },
@@ -79,7 +92,8 @@ const Orders = () => {
       const res = await orderService.getAllOrders();
       const formatted = res.data.map((o) => ({
         ...o,
-        created_at: formatDate(o.created_at),
+        formatted_created_at: formatDate(o.created_at),
+        formatted_pickup_date: o.pickup_date ? formatDate(o.pickup_date) : '—',
         final_length: `${o.final_length} ft`,
       }));
       setAllOrders(formatted);
@@ -106,7 +120,8 @@ const Orders = () => {
         order.company_name,
         order.color,
         order.order_status,
-        order.created_at,
+        order.formatted_created_at,
+        order.formatted_pickup_date,
         order.final_length,
         order.additional_notes,
         order.customer_notes,
@@ -236,6 +251,7 @@ const Orders = () => {
       return;
     }
 
+
     if (type === 'CONFIRM' && options.action === 'awaiting-material') {
       setActionLoading(true);
       try {
@@ -303,6 +319,22 @@ const Orders = () => {
   };
 
   // ── Notes dialog handlers ────────────────────────────────
+  const onOverrideModification = async (order) => {
+    setActionLoading(true);
+    try {
+      const response = await orderService.overrideModification(order.id);
+      toast.success('Approval overridden successfully.');
+      await fetchOrders();
+      if (response && response.data) {
+        handleOrderUpdated(response.data);
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to override approval.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const openNotesDialog = (order) => setNotesDialog({ open: true, order });
   const closeNotesDialog = () => setNotesDialog({ open: false, order: null });
 
@@ -662,6 +694,7 @@ const Orders = () => {
         order={statusDialog.order}
         onClose={closeStatusDialog}
         onConfirm={handleStatusConfirm}
+        onOverrideModification={onOverrideModification}
         onOrderUpdated={handleOrderUpdated}
         loading={actionLoading}
       />

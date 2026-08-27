@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Box, TextField, InputAdornment, IconButton, Stack, CircularProgress, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import { Box, TextField, InputAdornment, IconButton, Stack, CircularProgress, Select, MenuItem, FormControl, InputLabel, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { Search, Add, Check, Close, Delete, LocalShipping, CheckCircle } from '@mui/icons-material';
 
@@ -47,6 +47,8 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
       order.company_name,
       order.order_status,
       order.final_length,
+      order.formatted_created_at,
+      order.formatted_pickup_date,
     ].some((f) => f?.toString().toLowerCase().includes(term));
   });
 
@@ -224,11 +226,24 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
 
   // Table Columns
   const columns = [
-    { field: 'order_id', label: 'Order #', bold: true, width: '120px' },
+    { field: 'order_id', label: 'Order #', bold: true, width: '160px', minWidth: '160px' },
     { field: 'customer_tag', label: 'Customer Tag', bold: true, width: '130px' },
-    { field: 'created_at', label: 'Date', width: '120px' },
+    {
+      field: 'pickup_date',
+      label: 'Pick Up Date',
+      width: '180px',
+      minWidth: '180px',
+      render: (row) => <Typography variant="h6" fontWeight="400">{row.formatted_pickup_date}</Typography>
+    },
     { field: 'contact_name', label: 'Customer', bold: true, width: '130px' },
     { field: 'final_length', label: 'Length', bold: true, width: '100px' },
+    {
+      field: 'created_at',
+      label: 'Created Date',
+      width: '140px',
+      minWidth: '140px',
+      render: (row) => <Typography variant="h6" fontWeight="400">{row.formatted_created_at}</Typography>
+    },
     {
       field: 'order_status',
       label: 'Status',
@@ -385,7 +400,29 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
         )}
       </ParentCard>
 
-      <StatusDialog open={statusDialog.open} type={statusDialog.type} order={statusDialog.order} onClose={closeStatusDialog} onConfirm={handleStatusConfirm} loading={actionLoading} />
+      <StatusDialog
+        open={statusDialog.open}
+        type={statusDialog.type}
+        order={statusDialog.order}
+        onClose={closeStatusDialog}
+        onConfirm={handleStatusConfirm}
+        onOverrideModification={async (order) => {
+          setActionLoading(true);
+          try {
+            const response = await orderService.overrideModification(order.id);
+            toast.success('Approval overridden successfully.');
+            await fetchOrders();
+            if (response && response.data) {
+              setStatusDialog(prev => ({ ...prev, order: response.data }));
+            }
+          } catch (err) {
+            toast.error(err.message || 'Failed to override approval.');
+          } finally {
+            setActionLoading(false);
+          }
+        }}
+        loading={actionLoading}
+      />
       <NotesDialog open={notesDialog.open} order={notesDialog.order} onClose={closeNotesDialog} onSave={handleSaveNotes} loading={actionLoading} />
       <ProductionRequestDialog open={productionDialog.open} order={productionDialog.order} inventoryResult={productionDialog.inventoryResult} onClose={closeProductionDialog} onSubmit={handleProductionRequest} loading={actionLoading} />
       <DispatchDialog open={dispatchDialog.open} order={dispatchDialog.order} onClose={closeDispatchDialog} onConfirm={handleDispatchConfirm} loading={actionLoading} />

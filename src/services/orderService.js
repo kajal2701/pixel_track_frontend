@@ -143,6 +143,15 @@ const orderService = {
     }
   },
 
+  overrideModification: async (id) => {
+    try {
+      const response = await apiClient.post(`/orders/${id}/modification/override`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Network error occurred' };
+    }
+  },
+
   deleteOrder: async (id) => {
     try {
       const response = await apiClient.delete(`/orders/${id}`);

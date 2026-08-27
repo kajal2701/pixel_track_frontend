@@ -15,7 +15,16 @@ import productService from 'src/services/productService';
 import { STATUS_CHIP_COLOR, formatDate, generateColorOptions } from 'src/utils/helpers';
 
 const columns = [
-  { field: 'created_at', label: 'Date' },
+  {
+    field: 'created_at',
+    label: 'Date',
+    render: (row) => <Typography variant="h6" fontWeight="400">{row.formatted_created_at}</Typography>
+  },
+  {
+    field: 'pickup_date',
+    label: 'Pick Up Date',
+    render: (row) => <Typography variant="h6" fontWeight="400">{row.formatted_pickup_date}</Typography>
+  },
   { field: 'order_id', label: 'Order ID', bold: true },
   { field: 'customer_tag', label: 'Customer Tag' },
   {
@@ -66,7 +75,8 @@ const OrderHistory = () => {
 
         const formatted = res.data.map((order) => ({
           ...order,
-          created_at: formatDate(order.created_at),
+          formatted_created_at: formatDate(order.created_at),
+          formatted_pickup_date: order.pickup_date ? formatDate(order.pickup_date) : '—',
           customer_tag: order.customer_tag || '—',
         }));
         setAllOrders(formatted); // store full data
@@ -88,7 +98,8 @@ const OrderHistory = () => {
       order.order_status?.toLowerCase().includes(q) ||
       order.color?.toLowerCase().includes(q) ||
       order.channel_type?.toLowerCase().includes(q) ||
-      order.created_at?.toLowerCase().includes(q) ||
+      order.formatted_created_at?.toLowerCase().includes(q) ||
+      order.formatted_pickup_date?.toLowerCase().includes(q) ||
       order.customer_tag?.toLowerCase().includes(q)
     );
   });

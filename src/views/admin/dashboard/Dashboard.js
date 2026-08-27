@@ -27,7 +27,8 @@ const Dashboard = () => {
       const res = await orderService.getAllOrders();
       const formatted = res.data.map((o) => ({
         ...o,
-        created_at: formatDate(o.created_at),
+        formatted_created_at: formatDate(o.created_at),
+        formatted_pickup_date: o.pickup_date ? formatDate(o.pickup_date) : '—',
         final_length: `${o.final_length} ft`,
       }));
       setAllOrders(formatted);
