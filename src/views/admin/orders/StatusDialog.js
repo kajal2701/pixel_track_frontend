@@ -60,7 +60,7 @@ const DIALOG_CONFIG = {
 // ═══════════════════════════════════════════════════════════════════
 // StatusDialog
 // ═══════════════════════════════════════════════════════════════════
-const StatusDialog = ({ open, type, order, onClose, onConfirm, onOverrideModification, onOrderUpdated, loading }) => {
+const StatusDialog = ({ open, type, order, onClose, onConfirm, onOverrideModification, loading }) => {
   const [updatingProduct, setUpdatingProduct] = useState(false);
   const [productUpdated, setProductUpdated] = useState(false);
   const config = DIALOG_CONFIG[type];
@@ -146,9 +146,6 @@ const StatusDialog = ({ open, type, order, onClose, onConfirm, onOverrideModific
       const updatedOrder = await orderService.updateOrderDetails(order.id, { color: selectedColorLabel });
       toast.success('Product color updated successfully!');
       setProductUpdated(true);
-      if (onOrderUpdated) {
-        onOrderUpdated(updatedOrder.data);
-      }
     } catch (err) {
       toast.error(err.message || 'Failed to update product color.');
       console.error('Failed to update product color:', err);

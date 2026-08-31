@@ -146,10 +146,6 @@ const Orders = () => {
   // ── Status dialog handlers ───────────────────────────────
   const openStatusDialog = (type, order) => setStatusDialog({ open: true, type, order });
   const closeStatusDialog = () => setStatusDialog({ open: false, type: null, order: null });
-  const handleOrderUpdated = (updatedOrder) => {
-    setStatusDialog(prev => ({ ...prev, order: updatedOrder }));
-    fetchOrders(); // Refresh background list
-  };
   const openProductionDialog = (order, inventoryResult) =>
     setProductionDialog({ open: true, order, inventoryResult });
   const closeProductionDialog = () =>
@@ -326,7 +322,7 @@ const Orders = () => {
       toast.success('Approval overridden successfully.');
       await fetchOrders();
       if (response && response.data) {
-        handleOrderUpdated(response.data);
+        setStatusDialog(prev => ({ ...prev, order: response.data }));
       }
     } catch (err) {
       toast.error(err.message || 'Failed to override approval.');
@@ -695,7 +691,6 @@ const Orders = () => {
         onClose={closeStatusDialog}
         onConfirm={handleStatusConfirm}
         onOverrideModification={onOverrideModification}
-        onOrderUpdated={handleOrderUpdated}
         loading={actionLoading}
       />
 
