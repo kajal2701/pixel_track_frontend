@@ -398,5 +398,12 @@ export default function components(theme) {
         },
       },
     },
+    MuiContainer: {
+      styleOverrides: {
+        root: {
+          maxWidth: '100% !important',
+        },
+      },
+    },
   };
 }
