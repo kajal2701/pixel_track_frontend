@@ -43,13 +43,14 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
     const term = searchQuery.toLowerCase();
     return [
       order.order_id,
+      order.customer_tag,
       order.contact_name,
       order.company_name,
       order.order_status,
       order.final_length,
       order.formatted_created_at,
       order.formatted_pickup_date,
-    ].some((f) => f?.toString().toLowerCase().includes(term));
+    ].some((f) => f?.toString()?.toLowerCase().includes(term));
   });
 
   // Action Handlers
