@@ -40,7 +40,7 @@ const columns = [
   { field: 'contact_name', label: 'Customer', bold: true, width: '150px', minWidth: '150px' },
   { field: 'company_name', label: 'Company', muted: true, width: '170px', minWidth: '170px' },
   { field: 'color', label: 'Color', type: 'chip', chipColor: () => 'primary', width: '120px', minWidth: '120px' },
-  { field: 'final_length', label: 'Final Order', bold: true, width: '130px', minWidth: '130px' },
+  { field: 'final_length', label: 'Final Order', bold: true, width: '130px', minWidth: '130px', sortType: 'numeric' },
   { field: 'notes', label: 'Notes', width: '180px', minWidth: '180px' },
   { field: 'actions', label: 'Actions', width: '160px', minWidth: '160px' },
 ];

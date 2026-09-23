@@ -210,6 +210,7 @@ const CustomerForm = ({ customer, onSubmit, loading, isEdit = false, onCancel })
             <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>Email *</Typography>
             <TextField
               fullWidth type="email" variant="outlined" placeholder="Enter email address"
+              autoComplete="off"
               {...register('email', {
                 required: 'Email is required',
                 pattern: { value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, message: 'Enter a valid email' },
@@ -307,99 +308,99 @@ const CustomerForm = ({ customer, onSubmit, loading, isEdit = false, onCancel })
           {PRICING_CATEGORIES.map(({ key: cat, label }) => {
             const { icon: Icon, color } = CATEGORY_UI[cat];
             return (
-            <Grid item xs={12} md={6} key={cat}>
-              <Box
-                sx={{
-                  border: `1px solid`,
-                  borderColor: pricingErrors[`${cat}_min`] ? 'error.main' : `${color}.light`,
-                  borderRadius: '12px',
-                  p: 2.5,
-                  backgroundColor: pricingErrors[`${cat}_min`] ? 'error.lighter' : `${color}.lighter`,
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                {/* Category Header */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                  <Icon sx={{ color: `${color}.main`, fontSize: 20 }} />
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600, color: `${color}.dark` }}>
-                    {label} Pricing
-                  </Typography>
-                </Box>
+              <Grid item xs={12} md={6} key={cat}>
+                <Box
+                  sx={{
+                    border: `1px solid`,
+                    borderColor: pricingErrors[`${cat}_min`] ? 'error.main' : `${color}.light`,
+                    borderRadius: '12px',
+                    p: 2.5,
+                    backgroundColor: pricingErrors[`${cat}_min`] ? 'error.lighter' : `${color}.lighter`,
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  {/* Category Header */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                    <Icon sx={{ color: `${color}.main`, fontSize: 20 }} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: `${color}.dark` }}>
+                      {label} Pricing
+                    </Typography>
+                  </Box>
 
-                {/* Size rows */}
-                {CHANNEL_PRICING_OPTIONS.map(({ key, label: sizeLabel }) => {
-                  const entry = channelPricing[cat]?.[key] || { price: '', enabled: true };
-                  const hasError = !!pricingErrors[`${cat}_${key}`];
+                  {/* Size rows */}
+                  {CHANNEL_PRICING_OPTIONS.map(({ key, label: sizeLabel }) => {
+                    const entry = channelPricing[cat]?.[key] || { price: '', enabled: true };
+                    const hasError = !!pricingErrors[`${cat}_${key}`];
 
-                  return (
-                    <Box
-                      key={key}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1.5,
-                        mb: 1.5,
-                        opacity: entry.enabled ? 1 : 0.5,
-                        transition: 'opacity 0.2s ease',
-                      }}
-                    >
-                      {/* Toggle */}
-                      <Switch
-                        size="small"
-                        checked={!!entry.enabled}
-                        onChange={() => handleToggleChange(cat, key)}
-                        color={color}
-                      />
-
-                      {/* Size label */}
-                      <Typography
-                        variant="body2"
+                    return (
+                      <Box
+                        key={key}
                         sx={{
-                          fontWeight: 500,
-                          minWidth: 120,
-                          color: entry.enabled ? 'text.primary' : 'text.disabled',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1.5,
+                          mb: 1.5,
+                          opacity: entry.enabled ? 1 : 0.5,
+                          transition: 'opacity 0.2s ease',
                         }}
                       >
-                        {sizeLabel}
-                      </Typography>
+                        {/* Toggle */}
+                        <Switch
+                          size="small"
+                          checked={!!entry.enabled}
+                          onChange={() => handleToggleChange(cat, key)}
+                          color={color}
+                        />
 
-                      {/* Price input */}
-                      <TextField
-                        size="small"
-                        type="number"
-                        variant="outlined"
-                        placeholder="0.00"
-                        value={entry.price}
-                        onChange={(e) => handlePriceChange(cat, key, e.target.value)}
-                        disabled={!entry.enabled}
-                        inputProps={{ min: 0.01, step: '0.01' }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Typography variant="body2" color="text.secondary">$/ft</Typography>
-                            </InputAdornment>
-                          ),
-                        }}
-                        error={hasError}
-                        helperText={hasError ? 'Price required' : ''}
-                        sx={{
-                          flex: 1,
-                          '& .MuiOutlinedInput-root': { borderRadius: '8px' },
-                        }}
-                      />
-                    </Box>
-                  );
-                })}
+                        {/* Size label */}
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: 500,
+                            minWidth: 120,
+                            color: entry.enabled ? 'text.primary' : 'text.disabled',
+                          }}
+                        >
+                          {sizeLabel}
+                        </Typography>
 
-                {/* Min-one-enabled error */}
-                {pricingErrors[`${cat}_min`] && (
-                  <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
-                    At least one size must be enabled for {label}
-                  </Typography>
-                )}
-              </Box>
-            </Grid>
-          );
+                        {/* Price input */}
+                        <TextField
+                          size="small"
+                          type="number"
+                          variant="outlined"
+                          placeholder="0.00"
+                          value={entry.price}
+                          onChange={(e) => handlePriceChange(cat, key, e.target.value)}
+                          disabled={!entry.enabled}
+                          inputProps={{ min: 0.01, step: '0.01' }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Typography variant="body2" color="text.secondary">$/ft</Typography>
+                              </InputAdornment>
+                            ),
+                          }}
+                          error={hasError}
+                          helperText={hasError ? 'Price required' : ''}
+                          sx={{
+                            flex: 1,
+                            '& .MuiOutlinedInput-root': { borderRadius: '8px' },
+                          }}
+                        />
+                      </Box>
+                    );
+                  })}
+
+                  {/* Min-one-enabled error */}
+                  {pricingErrors[`${cat}_min`] && (
+                    <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
+                      At least one size must be enabled for {label}
+                    </Typography>
+                  )}
+                </Box>
+              </Grid>
+            );
           })}
 
           {/* ── Actions ── */}

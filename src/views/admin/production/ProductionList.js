@@ -18,7 +18,7 @@ import DeleteProductionDialog from './DeleteProductionDialog';
 import StatusUpdateDialog from './StatusUpdateDialog';
 import productionService from '../../../services/productionService';
 import toast from 'react-hot-toast';
-import { getStatusColor, getTypeColor, ORDER_COLORS, TypeChipWithOrderColor } from '../../../utils/helpers';
+import { getStatusColor, getTypeColor, ORDER_COLORS, TypeChipWithOrderColor, formatDate } from '../../../utils/helpers';
 
 const ProductionList = () => {
   const { palette } = useTheme();
@@ -84,23 +84,30 @@ const ProductionList = () => {
 
   // ── Columns ──────────────────────────────────────────────────
   const columns = [
-    { field: 'id', label: 'ID', bold: true, width: '5%' },
-    { field: 'typeChip', label: 'Type', width: '12%' },
-    { field: 'customer_tag', label: 'Customer Tag', width: '12%' },
+    // { field: 'id', label: 'ID', bold: true, width: '60px', minWidth: '60px' },
+    { field: 'typeChip', label: 'Type', width: '220px', minWidth: '220px' },
+    { field: 'customer_tag', label: 'Customer Tag', width: '140px', minWidth: '140px' },
     {
-      field: 'target_state', label: 'Target', width: '10%', render: (row) => (
+      field: 'pickup_date',
+      label: 'Pick Up Date',
+      width: '160px',
+      minWidth: '160px',
+      render: (row) => <Typography variant="h6" fontWeight="400">{row.formatted_pickup_date}</Typography>
+    },
+    {
+      field: 'target_state', label: 'Target', width: '120px', minWidth: '120px', render: (row) => (
         <Stack direction="row" alignItems="center" gap={0.5}>
           <Typography variant="body1">{row.target_state}</Typography>
           {row.isAuto && <Chip label="Auto" size="small" color="info" variant="outlined" sx={{ height: 20, fontSize: '0.65rem' }} />}
         </Stack>
       )
     },
-    { field: 'rawMaterialDisplay', label: 'Raw Material', width: '18%' },
-    { field: 'qtyDisplay', label: 'Qty / Size', width: '12%' },
-    { field: 'channelDisplay', label: 'Ch. Length', width: '8%' },
-    { field: 'assignee_name', label: 'Assign', width: '10%' },
-    { field: 'statusChip', label: 'Status', type: 'chip', chipColor: (value) => getStatusColor(value), width: '10%' },
-    { field: 'actions', label: 'Actions', width: '12%' },
+    { field: 'rawMaterialDisplay', label: 'Raw Material', width: '200px', minWidth: '200px' },
+    { field: 'qtyDisplay', label: 'Qty / Size', width: '130px', minWidth: '130px' },
+    { field: 'channelDisplay', label: 'Ch. Length', width: '100px', minWidth: '100px' },
+    { field: 'assignee_name', label: 'Assign', width: '120px', minWidth: '120px' },
+    { field: 'statusChip', label: 'Status', type: 'chip', chipColor: (value) => getStatusColor(value), width: '120px', minWidth: '120px' },
+    { field: 'actions', label: 'Actions', width: '140px', minWidth: '140px' },
   ];
 
   // ── Order Color Grouping ─────────────────────────────────────
@@ -137,6 +144,7 @@ const ProductionList = () => {
     return {
       ...item,
       customer_tag: item.customer_tag || '—',
+      formatted_pickup_date: item.pickup_date ? formatDate(item.pickup_date) : '—',
       typeChip: <TypeChipWithOrderColor item={item} orderColor={orderColor} />,
       rawMaterialDisplay: item.raw_material_color
         ? `${item.raw_material_type || ''} — ${item.raw_material_color} (${item.raw_material_color_code || ''})`

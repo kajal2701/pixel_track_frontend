@@ -95,6 +95,28 @@ const invoiceService = {
     }
   },
 
+  // ── Customer Portal Methods ─────────────────────────────────────
+
+  // Get invoices for a specific customer (excludes Draft)
+  getCustomerInvoices: async (customerId) => {
+    try {
+      const response = await apiClient.get(`/invoices/customer/${customerId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Network error occurred' };
+    }
+  },
+
+  // Get single invoice with ownership validation
+  getCustomerInvoiceById: async (invoiceId, customerId) => {
+    try {
+      const response = await apiClient.get(`/invoices/${invoiceId}/customer/${customerId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Network error occurred' };
+    }
+  },
+
 };
 
 export default invoiceService;

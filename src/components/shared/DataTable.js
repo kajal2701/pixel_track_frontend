@@ -194,6 +194,8 @@ const DataTable = ({
   const sortedRows = React.useMemo(() => {
     let sortableRows = [...rows];
     if (sortConfig.key) {
+      const colDef = finalColumns.find(c => c.field === sortConfig.key);
+      
       sortableRows.sort((a, b) => {
         const aValue = a[sortConfig.key];
         const bValue = b[sortConfig.key];
@@ -201,6 +203,12 @@ const DataTable = ({
         // Handle null/undefined values
         if (aValue == null) return 1;
         if (bValue == null) return -1;
+
+        if (colDef && colDef.sortType === 'numeric') {
+          const aNum = parseFloat(String(aValue).replace(/[^\d.-]/g, '')) || 0;
+          const bNum = parseFloat(String(bValue).replace(/[^\d.-]/g, '')) || 0;
+          return sortConfig.direction === 'asc' ? aNum - bNum : bNum - aNum;
+        }
 
         // Convert to string for comparison
         const aStr = String(aValue).toLowerCase();
@@ -216,7 +224,7 @@ const DataTable = ({
       });
     }
     return sortableRows;
-  }, [rows, sortConfig]);
+  }, [rows, sortConfig, finalColumns]);
 
   // Ensure page remains in valid bounds when rows count changes
   React.useEffect(() => {

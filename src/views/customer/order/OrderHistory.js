@@ -27,6 +27,8 @@ const columns = [
   },
   { field: 'order_id', label: 'Order ID', bold: true },
   { field: 'customer_tag', label: 'Customer Tag' },
+  { field: 'color', label: 'Color' },
+  { field: 'final_length', label: 'Final Length', sortType: 'numeric' },
   {
     field: 'order_status',
     label: 'Status',

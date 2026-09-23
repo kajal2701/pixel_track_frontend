@@ -237,7 +237,7 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
       render: (row) => <Typography variant="h6" fontWeight="400">{row.formatted_pickup_date}</Typography>
     },
     { field: 'contact_name', label: 'Customer', bold: true, width: '130px' },
-    { field: 'final_length', label: 'Length', bold: true, width: '100px' },
+    { field: 'final_length', label: 'Length', bold: true, width: '100px', sortType: 'numeric' },
     {
       field: 'created_at',
       label: 'Created Date',

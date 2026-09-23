@@ -232,6 +232,12 @@ const customerMenuItems = [
     icon: IconTicket,
     href: '/order/history',
   },
+  {
+    id: uniqueId(),
+    title: 'My Invoices',
+    icon: IconCurrencyDollar,
+    href: '/invoices',
+  },
 ];
 
 // Function to get menu items based on user type

@@ -98,6 +98,7 @@ const UserForm = ({ user, onSubmit, loading, isEdit = false, onCancel }) => {
               fullWidth
               variant="outlined"
               placeholder="Enter username"
+              autoComplete="off"
               {...register('username', {
                 required: 'Username is required',
                 minLength: { value: 3, message: 'Username must be at least 3 characters' },
@@ -138,6 +139,7 @@ const UserForm = ({ user, onSubmit, loading, isEdit = false, onCancel }) => {
               type={showPassword ? 'text' : 'password'}
               variant="outlined"
               placeholder={isEdit ? 'Leave blank to keep current password' : 'Enter password'}
+              autoComplete="new-password"
               {...register('password', {
                 ...(!isEdit && { required: 'Password is required' }),
                 minLength: { value: 6, message: 'Password must be at least 6 characters' },

@@ -60,6 +60,9 @@ const OrderHistory = Loadable(lazy(() => import('../views/customer/order/OrderHi
 const ModificationResolve = Loadable(lazy(() => import('../views/customer/order/ModificationResolve')));
 const EditOrder = Loadable(lazy(() => import('../views/customer/order/EditOrder')));
 
+// ── NEW: Customer invoice pages ──────────────────────────────────
+const CustomerInvoices = Loadable(lazy(() => import('../views/customer/invoices/CustomerInvoices')));
+
 
 const Router = [
   // ── Blank layout: auth pages ────────────────────────────────────────────
@@ -111,6 +114,9 @@ const Router = [
       { path: '/order/new', element: <ProtectedRoute allowedUserType="customer"><PlaceOrder /></ProtectedRoute> },
       { path: '/order/history', element: <ProtectedRoute allowedUserType="customer"><OrderHistory /></ProtectedRoute> },
       { path: '/order/edit/:id', element: <ProtectedRoute allowedUserType="customer"><EditOrder /></ProtectedRoute> },
+
+      // ── NEW: Customer invoice routes ───────────────────────────────────
+      { path: '/invoices', element: <ProtectedRoute allowedUserType="customer"><CustomerInvoices /></ProtectedRoute> },
 
       // ── EXISTING: kept exactly as before ──────────────────────────────
       { path: '/user-profile', element: <UserProfile /> },

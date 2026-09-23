@@ -82,12 +82,14 @@ const CompletedOrdersTable = ({
       field: 'total_length',
       label: 'Total Length',
       width: '12%',
+      sortType: 'numeric',
     },
     {
       field: 'final_length',
       label: 'Final Length',
       bold: true,
       width: '12%',
+      sortType: 'numeric',
     },
     {
       field: 'completion_date',

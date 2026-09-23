@@ -17,6 +17,12 @@ const SidebarItems = () => {
   const hideMenu = lgUp ? customizer.isCollapse && !customizer.isSidebarHover : '';
   const dispatch = useDispatch();
   const [menuItems, setMenuItems] = useState([]);
+  // Accordion state: only one top-level collapsible menu open at a time
+  const [openMenuId, setOpenMenuId] = useState(null);
+
+  const handleToggleMenu = (menuId) => {
+    setOpenMenuId((prev) => (prev === menuId ? null : menuId));
+  };
 
   // Update menu items when user type changes
   useEffect(() => {
@@ -36,7 +42,7 @@ const SidebarItems = () => {
     };
 
     window.addEventListener('storage', handleStorageChange);
-    
+
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
@@ -60,6 +66,8 @@ const SidebarItems = () => {
                 pathDirect={pathDirect}
                 hideMenu={hideMenu}
                 key={item.id}
+                openMenuId={openMenuId}
+                onToggleMenu={handleToggleMenu}
                 onClick={() => {
                   if (!lgUp) {
                     dispatch(closeMobileSidebar());
@@ -78,6 +86,7 @@ const SidebarItems = () => {
                 hideMenu={hideMenu}
                 key={item.id}
                 onClick={() => {
+                  setOpenMenuId(null);
                   if (!lgUp) {
                     dispatch(closeMobileSidebar());
                   }

@@ -8,15 +8,17 @@ import NavItem from '../NavItem';
 import { IconChevronDown, IconChevronUp } from '@tabler/icons';
 import { useTranslation } from 'react-i18next';
 
-const NavCollapse = ({ menu, level, pathWithoutLastPart, pathDirect, onClick, hideMenu }) => {
+const NavCollapse = ({ menu, level, pathWithoutLastPart, pathDirect, onClick, hideMenu, openMenuId, onToggleMenu }) => {
   const customizer = useSelector((state) => state.customizer);
   const Icon = menu.icon;
   const theme = useTheme();
   const { pathname } = useLocation();
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
 
-  
+  // For nested (level > 1) menus, use local state; for top-level, use parent-controlled accordion
+  const [localOpen, setLocalOpen] = useState(false);
+  const isTopLevel = level === 1 && onToggleMenu;
+  const open = isTopLevel ? openMenuId === menu.id : localOpen;
 
   const menuIcon = level > 1
     ? <Icon stroke={1.5} size="1rem" />
@@ -26,20 +28,27 @@ const NavCollapse = ({ menu, level, pathWithoutLastPart, pathDirect, onClick, hi
   const isAnyChildActive = menu.children?.some((item) => item.href === pathname);
 
   // ── isActive = open OR any child is the current route ─────
-  // This is the single source of truth for highlighting
   const isActive = open || isAnyChildActive;
 
   React.useEffect(() => {
-    // ✅ Don't reset to false first — check children directly
+    // Auto-open menu if a child route is active
     const hasActiveChild = menu.children?.some((item) => item.href === pathname);
     if (hasActiveChild) {
-      setOpen(true);
+      if (isTopLevel) {
+        onToggleMenu(menu.id);
+      } else {
+        setLocalOpen(true);
+      }
     }
-    // Only close if no child is active AND we're not on a sub-path of this menu
-    if (!hasActiveChild && !pathname.startsWith(menu.href + '/') && !pathname === menu.href) {
-      setOpen(false);
+  }, [pathname, menu.children, menu.href]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleClick = () => {
+    if (isTopLevel) {
+      onToggleMenu(menu.id);
+    } else {
+      setLocalOpen((prev) => !prev);
     }
-  }, [pathname, menu.children, menu.href]);
+  };
 
   const ListItemStyled = styled(ListItem)(() => ({
     marginBottom: '2px',
@@ -57,14 +66,14 @@ const NavCollapse = ({ menu, level, pathWithoutLastPart, pathDirect, onClick, hi
       ? 'white'
       : theme.palette.text.secondary,
 
-   '&:hover': {
-  backgroundColor: isActive && level < 2
-    ? '#142B21'           // custom dark green on hover when active
-    : 'rgba(27,58,45,0.08)', // very subtle green tint when not active
-  color: isActive && level < 2
-    ? 'white'
-    : '#1B3A2D',
-},
+    '&:hover': {
+      backgroundColor: isActive && level < 2
+        ? '#142B21'           // custom dark green on hover when active
+        : 'rgba(27,58,45,0.08)', // very subtle green tint when not active
+      color: isActive && level < 2
+        ? 'white'
+        : '#1B3A2D',
+    },
 
     // ✅ Remove `selected` prop style conflict — we control bg manually
     '&.Mui-selected': {
@@ -108,7 +117,7 @@ const NavCollapse = ({ menu, level, pathWithoutLastPart, pathDirect, onClick, hi
       <ListItemStyled
         button
         component="li"
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={handleClick}
         // ✅ Pass isActive to selected so MUI selected style also matches
         selected={isActive}
       >
@@ -129,12 +138,14 @@ const NavCollapse = ({ menu, level, pathWithoutLastPart, pathDirect, onClick, hi
 };
 
 NavCollapse.propTypes = {
-  menu:                PropTypes.object,
-  level:               PropTypes.number,
-  pathDirect:          PropTypes.any,
+  menu: PropTypes.object,
+  level: PropTypes.number,
+  pathDirect: PropTypes.any,
   pathWithoutLastPart: PropTypes.any,
-  hideMenu:            PropTypes.any,
-  onClick:             PropTypes.func,
+  hideMenu: PropTypes.any,
+  onClick: PropTypes.func,
+  openMenuId: PropTypes.string,
+  onToggleMenu: PropTypes.func,
 };
 
 export default NavCollapse;
