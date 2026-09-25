@@ -27,6 +27,7 @@ const DeliveryOptions = ({
   setValue,
   customerAddress,
   colorOptions,
+  channelType,
 }) => {
   const color = useWatch({ control, name: 'color' });
   const channel_length = useWatch({ control, name: 'channelLength' });
@@ -45,14 +46,14 @@ const DeliveryOptions = ({
     if (deliveryMethod !== 'pickup') return;
 
     if (!color || !channel_length || !totalPieces) {
-      setMinPickupDate(getMinPickupDate(false)); // Default safely if incomplete data
+      setMinPickupDate(getMinPickupDate(false, channelType)); // Default safely if incomplete data
       return;
     }
 
     const selectedColorOption = colorOptions?.find(opt => opt.value === color);
     if (selectedColorOption?.isGroupCollapsed) {
       // For grouped colors, we skip inventory check and assume production is needed
-      setMinPickupDate(getMinPickupDate(false));
+      setMinPickupDate(getMinPickupDate(false, channelType));
       return;
     }
 
@@ -68,17 +69,17 @@ const DeliveryOptions = ({
 
         const isReadySatisfied = response.data?.isReadySatisfied || false;
         if (isSubscribed) {
-          setMinPickupDate(getMinPickupDate(isReadySatisfied));
+          setMinPickupDate(getMinPickupDate(isReadySatisfied, channelType));
         }
       } catch (err) {
         console.error('Failed to check inventory for pickup date:', err);
-        if (isSubscribed) setMinPickupDate(getMinPickupDate(false));
+        if (isSubscribed) setMinPickupDate(getMinPickupDate(false, channelType));
       }
     };
 
     checkStock();
     return () => { isSubscribed = false; };
-  }, [color, channel_length, totalPieces, deliveryMethod, colorOptions]);
+  }, [color, channel_length, totalPieces, deliveryMethod, colorOptions, channelType]);
 
   // Ensure pickupDate value is never earlier than calculated minPickupDate
   useEffect(() => {
@@ -86,6 +87,13 @@ const DeliveryOptions = ({
       setValue('pickupDate', minPickupDate);
     }
   }, [minPickupDate, deliveryMethod, setValue]);
+
+  // Ensure estimatedDeliveryDate updates when channelType changes
+  useEffect(() => {
+    if (deliveryMethod === 'delivery') {
+      setValue('estimatedDeliveryDate', new Date(getEstimatedDeliveryDate(channelType)));
+    }
+  }, [channelType, deliveryMethod, setValue]);
 
   return (
     <ParentCard title="Delivery Options">
@@ -141,13 +149,13 @@ const DeliveryOptions = ({
               render={({ field }) => (
                 <DatePicker
                   {...field}
-                  minDate={new Date(getEstimatedDeliveryDate())}
+                  minDate={new Date(getEstimatedDeliveryDate(channelType))}
 
                   renderInput={(params) => (
                     <TextField
                       {...params}
                       fullWidth
-                      helperText="Delivery within 5 business days"
+                      helperText={channelType === 'Commercial' ? 'Delivery within 10 business days' : 'Delivery within 5 business days'}
                       inputProps={{
                         ...params.inputProps,
                         readOnly: true,

@@ -113,7 +113,7 @@ const PlaceOrder = () => {
       } else if (deliveryMethodValue === 'delivery') {
         pickupDateValue = data.estimatedDeliveryDate
           ? format(new Date(data.estimatedDeliveryDate), 'yyyy-MM-dd')
-          : getEstimatedDeliveryDate();
+          : getEstimatedDeliveryDate(data.channelType);
       }
 
       const payload = {
@@ -177,6 +177,7 @@ const PlaceOrder = () => {
             setValue={setValue}
             customerAddress={liveCustomer?.delivery_address}
             colorOptions={colorOptions}
+            channelType={channelType}
           />
 
           {/* Buttons */}

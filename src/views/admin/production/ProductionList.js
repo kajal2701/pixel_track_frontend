@@ -9,7 +9,7 @@ import {
   PlayArrow, CheckCircle, Cancel as CancelIcon,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import PageContainer from '../../../components/container/PageContainer';
 import ParentCard from '../../../components/shared/ParentCard';
 import ChildCard from '../../../components/shared/ChildCard';
@@ -23,10 +23,11 @@ import { getStatusColor, getTypeColor, ORDER_COLORS, TypeChipWithOrderColor, for
 const ProductionList = () => {
   const { palette } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [production, setProduction] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(location.state?.search || '');
   const [filterStatus, setFilterStatus] = useState('all');
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -84,7 +85,7 @@ const ProductionList = () => {
 
   // ── Columns ──────────────────────────────────────────────────
   const columns = [
-    // { field: 'id', label: 'ID', bold: true, width: '60px', minWidth: '60px' },
+    { field: 'id', label: 'ID', bold: true, width: '60px', minWidth: '60px' },
     { field: 'typeChip', label: 'Type', width: '220px', minWidth: '220px' },
     { field: 'customer_tag', label: 'Customer Tag', width: '140px', minWidth: '140px' },
     {

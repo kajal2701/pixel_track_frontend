@@ -457,8 +457,10 @@ export const addBusinessDays = (date, days) => {
   return result;
 };
 
-export const getEstimatedDeliveryDate = () => {
-  const date = addBusinessDays(new Date(), 5);
+export const getEstimatedDeliveryDate = (channelType) => {
+  // Commercial: 10 business days, Residential: 5 business days
+  const daysToAdd = channelType === 'Commercial' ? 10 : 5;
+  const date = addBusinessDays(new Date(), daysToAdd);
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
@@ -479,7 +481,12 @@ export const getSummaryCardsData = (counts) => [
 ];
 
 // Calculate minimum pickup date based on stock and time cutoff
-export const getMinPickupDate = (isReadySatisfied) => {
+export const getMinPickupDate = (isReadySatisfied, channelType) => {
+  if (channelType === 'Commercial') {
+    // Commercial: 10 business days (skip Sat/Sun)
+    return addBusinessDays(new Date(), 10);
+  }
+  // Residential: existing business day logic
   const currentHour = new Date().getHours();
   const daysToAdd = (currentHour < 12 && isReadySatisfied) ? 1 : 2;
   return addBusinessDays(new Date(), daysToAdd);

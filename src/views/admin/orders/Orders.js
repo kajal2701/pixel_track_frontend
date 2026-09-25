@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Button, TextField, InputAdornment,
-  IconButton, Stack, Card, CircularProgress, Chip,
+  IconButton, Stack, Card, CircularProgress, Chip, Tooltip,
 } from '@mui/material';
-import { Search, Add, Check, Close, Delete, CheckCircle, LocalShipping, Store, LocationOn } from '@mui/icons-material';
+import { Search, Add, Check, Close, Delete, CheckCircle, LocalShipping, Store, LocationOn, Layers, Assignment } from '@mui/icons-material';
 import { useTheme, alpha } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -395,6 +395,7 @@ const Orders = () => {
         <NotesCell order={order} onOpenNotes={openNotesDialog} />
       </Box>
     ),
+
     // Location column for Ready orders
     location: (
       <Stack direction="row" alignItems="center" spacing={0.5}>
@@ -587,6 +588,57 @@ const Orders = () => {
                 label: 'Dispatch Info',
                 width: '220px',
                 minWidth: '220px',
+              });
+            } else if (status === 'Awaiting production') {
+              // Insert Production ID column before Notes
+              const notesIdx = tableColumns.findIndex(c => c.field === 'notes');
+              tableColumns.splice(notesIdx > -1 ? notesIdx : tableColumns.length, 0, {
+                field: 'linked_production_id',
+                label: 'Batch Production',
+                width: '150px',
+                minWidth: '150px',
+                sortValue: (row) => {
+                  const hasProduction = !!row.linked_production_id;
+                  const isBatch = hasProduction && row.linked_order_count > 1;
+                  return isBatch ? row.linked_production_id : '';
+                },
+                render: (row) => {
+                  const hasProduction = !!row.linked_production_id;
+                  const isBatch = hasProduction && row.linked_order_count > 1;
+
+                  if (!hasProduction) return <Typography variant="body2" color="text.secondary">—</Typography>;
+
+                  return (
+                    <Box onClick={(e) => e.stopPropagation()} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Tooltip title={isBatch ? "Batch Production" : "Individual Production"} placement="top">
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          {isBatch ? (
+                            <Layers sx={{ fontSize: 18, color: 'warning.main' }} />
+                          ) : (
+                            <Assignment sx={{ fontSize: 18, color: 'error.main' }} />
+                          )}
+                        </Box>
+                      </Tooltip>
+                      {isBatch ? (
+                        <Box
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate('/admin/production', { state: { search: String(row.linked_production_id) } });
+                          }}
+                          sx={{ cursor: 'pointer', display: 'inline-block' }}
+                        >
+                          <Typography variant="body2" fontWeight={600} color="primary.main" sx={{ textDecoration: 'underline' }}>
+                            {row.linked_production_id}
+                          </Typography>
+                        </Box>
+                      ) : (
+                        <Typography variant="body2" fontWeight={600} color="text.secondary">
+                          —
+                        </Typography>
+                      )}
+                    </Box>
+                  );
+                }
               });
             }
             return (

@@ -121,7 +121,7 @@ const OrderDetailModal = ({ open, onClose, order, colorOptions }) => {
             <DetailRow label="Total Pieces" value={order.total_pieces} />
           </Grid>
           <Grid item xs={6}>
-            <DetailRow label="Final Length" value={order.final_length ? `${order.final_length} ft` : '—'} />
+            <DetailRow label="Final Length" value={order.final_length ? `${order.final_length}` : '—'} />
           </Grid>
           <Grid item xs={6}>
             <DetailRow label="Customer Name" value={order.customer_tag} />

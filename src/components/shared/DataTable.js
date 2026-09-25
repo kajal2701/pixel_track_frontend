@@ -195,12 +195,13 @@ const DataTable = ({
     let sortableRows = [...rows];
     if (sortConfig.key) {
       const colDef = finalColumns.find(c => c.field === sortConfig.key);
-      
+
       sortableRows.sort((a, b) => {
-        const aValue = a[sortConfig.key];
-        const bValue = b[sortConfig.key];
+        const aValue = colDef && colDef.sortValue ? colDef.sortValue(a) : a[sortConfig.key];
+        const bValue = colDef && colDef.sortValue ? colDef.sortValue(b) : b[sortConfig.key];
 
         // Handle null/undefined values
+        if (aValue == null && bValue == null) return 0;
         if (aValue == null) return 1;
         if (bValue == null) return -1;
 

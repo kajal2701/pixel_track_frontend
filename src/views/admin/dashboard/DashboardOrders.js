@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Box, TextField, InputAdornment, IconButton, Stack, CircularProgress, Select, MenuItem, FormControl, InputLabel, Typography } from '@mui/material';
+import { Box, TextField, InputAdornment, IconButton, Stack, CircularProgress, Select, MenuItem, FormControl, InputLabel, Typography, Tooltip } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { Search, Add, Check, Close, Delete, LocalShipping, CheckCircle } from '@mui/icons-material';
+import { Search, Add, Check, Close, Delete, LocalShipping, CheckCircle, Layers, Assignment } from '@mui/icons-material';
 
 import ParentCard from '../../../components/shared/ParentCard';
 import DataTable from '../../../components/shared/DataTable';
@@ -46,10 +46,12 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
       order.customer_tag,
       order.contact_name,
       order.company_name,
+      order.color,
       order.order_status,
       order.final_length,
       order.formatted_created_at,
       order.formatted_pickup_date,
+      order.linked_production_id,
     ].some((f) => f?.toString()?.toLowerCase().includes(term));
   });
 
@@ -227,7 +229,67 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
 
   // Table Columns
   const columns = [
-    { field: 'order_id', label: 'Order #', bold: true, width: '160px', minWidth: '160px' },
+    {
+      field: 'order_id',
+      label: 'Order #',
+      bold: true,
+      width: '160px',
+      minWidth: '160px',
+      render: (row) => {
+        const hasProduction = !!row.linked_production_id;
+        const isBatch = hasProduction && row.linked_order_count > 1;
+
+        if (row.order_status !== 'Awaiting production' || !hasProduction) {
+          return <Typography variant="h6" fontWeight="600">{row.order_id}</Typography>;
+        }
+
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Typography variant="h6" fontWeight="600">{row.order_id}</Typography>
+            <Tooltip title={isBatch ? "Batch Production" : "Individual Production"} placement="top">
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                {isBatch ? (
+                  <Layers sx={{ fontSize: 18, color: 'warning.main' }} />
+                ) : (
+                  <Assignment sx={{ fontSize: 18, color: 'error.main' }} />
+                )}
+              </Box>
+            </Tooltip>
+          </Box>
+        );
+      }
+    },
+    {
+      field: 'linked_production_id',
+      label: 'Batch Production',
+      width: '140px',
+      minWidth: '140px',
+      sortValue: (row) => {
+        const hasProduction = !!row.linked_production_id;
+        const isBatch = hasProduction && row.linked_order_count > 1;
+        return isBatch ? row.linked_production_id : '';
+      },
+      render: (row) => {
+        const hasProduction = !!row.linked_production_id;
+        const isBatch = hasProduction && row.linked_order_count > 1;
+
+        if (!hasProduction || !isBatch) return <Typography variant="h6" color="text.secondary">—</Typography>;
+
+        return (
+          <Box
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate('/admin/production', { state: { search: String(row.linked_production_id) } });
+            }}
+            sx={{ cursor: 'pointer', display: 'inline-block' }}
+          >
+            <Typography variant="h6" fontWeight="600" color="primary.main" sx={{ textDecoration: 'underline' }}>
+              {row.linked_production_id}
+            </Typography>
+          </Box>
+        );
+      }
+    },
     { field: 'customer_tag', label: 'Customer Tag', bold: true, width: '130px' },
     {
       field: 'pickup_date',
@@ -237,6 +299,7 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
       render: (row) => <Typography variant="h6" fontWeight="400">{row.formatted_pickup_date}</Typography>
     },
     { field: 'contact_name', label: 'Customer', bold: true, width: '130px' },
+    { field: 'color', label: 'Color', type: 'chip', chipColor: () => 'info', width: '250px', minWidth: '250px' },
     { field: 'final_length', label: 'Length', bold: true, width: '100px', sortType: 'numeric' },
     {
       field: 'created_at',
@@ -257,7 +320,8 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
         };
         return map[status] || 'default';
       },
-      width: '130px'
+      width: '180px',
+      minWidth: '180px',
     },
     { field: 'notes', label: 'Notes', width: '150px' },
     { field: 'actions', label: 'Actions', width: '180px' },
@@ -380,6 +444,29 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
               <MenuItem value="Cancelled">Cancelled</MenuItem>
             </Select>
           </FormControl>
+
+          <Box sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            gap: 0.5,
+            px: 2,
+            py: 0.5,
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'grey.50',
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 1,
+            minWidth: 180
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Layers sx={{ fontSize: 16, color: 'warning.main' }} />
+              <Typography variant="caption" fontWeight={600} color="text.secondary">Batch Production</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Assignment sx={{ fontSize: 16, color: 'error.main' }} />
+              <Typography variant="caption" fontWeight={600} color="text.secondary">Individual Production</Typography>
+            </Box>
+          </Box>
         </Stack>
 
         {loading ? (
