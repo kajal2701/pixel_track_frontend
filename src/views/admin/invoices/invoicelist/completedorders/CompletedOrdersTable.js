@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import { Typography, Checkbox } from '@mui/material';
 import DataTable from '../../../../../components/shared/DataTable';
@@ -50,56 +49,62 @@ const CompletedOrdersTable = ({
           onChange={handleSelectAllClick}
         />
       ),
-      width: '5%',
+      width: '50px',
     },
     {
       field: 'order_id',
       label: 'Order ID',
       bold: true,
-      width: '12%',
+      width: '150px',
+      minWidth: '150px',
     },
     {
       field: 'customer_tag',
       label: 'Customer Tag',
-      width: '12%',
+      width: '150px',
+      minWidth: '150px',
     },
     {
       field: 'company_name',
       label: 'Company Name',
-      width: '15%',
+      width: '160px',
     },
     {
-      field: 'color',
-      label: 'Color',
-      width: '12%',
+      field: 'pickup_date',
+      label: 'Pick Up Date',
+      width: '150px',
+      minWidth: '150px',
+      sortValue: (row) => row.pickup_date_raw || '',
     },
+    { field: 'color', label: 'Color', type: 'chip', chipColor: () => 'info', width: '250px', minWidth: '250px' },
     {
       field: 'channel_type',
       label: 'Channel',
-      width: '12%',
+      width: '120px',
     },
     {
       field: 'total_length',
       label: 'Total Length',
-      width: '12%',
+      width: '120px',
       sortType: 'numeric',
     },
     {
       field: 'final_length',
       label: 'Final Length',
       bold: true,
-      width: '12%',
+      width: '120px',
       sortType: 'numeric',
     },
     {
       field: 'completion_date',
       label: 'Order Complete Date',
-      width: '12%',
+      width: '180px',
+      minWidth: '180px',
     },
     {
       field: 'status',
       label: 'Status',
-      width: '8%',
+      width: '100px',
     },
   ];
 
@@ -123,6 +128,8 @@ const CompletedOrdersTable = ({
       total_length: order.total_length ? `${order.total_length} ft` : '—',
       final_length: order.final_length ? `${order.final_length} ft` : '—',
       completion_date: formatDate(order.updated_at || order.created_at),
+      pickup_date: order.pickup_date ? formatDate(order.pickup_date) : '—',
+      pickup_date_raw: order.pickup_date || '',
       status: (
         <Typography variant="body2" fontWeight={600} color="success.main">
           {order.order_status}
