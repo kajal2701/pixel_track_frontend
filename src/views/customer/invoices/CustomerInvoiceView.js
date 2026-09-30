@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box, Typography, CircularProgress, Paper, Table, TableBody, TableCell, TableContainer, TableRow, Button,
-  TableHead, Grid, Stack, Divider,
+  TableHead, Grid, Stack, Divider, Chip,
 } from '@mui/material';
 import { Phone, Email, LocationOn, ArrowBack } from '@mui/icons-material';
 import toast from 'react-hot-toast';
@@ -242,6 +242,7 @@ const CustomerInvoiceView = () => {
                 <TableRow sx={{ bgcolor: '#f4f6fa' }}>
                   <TableCell sx={{ fontWeight: 700, py: 1.5 }}>#</TableCell>
                   <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Description</TableCell>
+                  <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Customer Tag</TableCell>
                   <TableCell sx={{ fontWeight: 700, py: 1.5, textAlign: 'right', whiteSpace: 'nowrap' }}>Qty / Length</TableCell>
                   <TableCell sx={{ fontWeight: 700, py: 1.5, textAlign: 'right', whiteSpace: 'nowrap' }}>Unit Price</TableCell>
                   <TableCell sx={{ fontWeight: 700, py: 1.5, textAlign: 'right' }}>Total</TableCell>
@@ -264,6 +265,11 @@ const CustomerInvoiceView = () => {
                           Order: {order.order_id} | Type: {order.channel_type || '—'} | Number of Holes: {order.hole_distance || '—'} | Pieces: {order.total_pieces || '—'}
                         </Typography>
                       </TableCell>
+                      <TableCell sx={{ py: 1.5 }}>
+                        {order.customer_tag ? (
+                          <Chip label={order.customer_tag} size="small" variant="outlined" color="primary" />
+                        ) : '—'}
+                      </TableCell>
                       <TableCell sx={{ py: 1.5, textAlign: 'right', whiteSpace: 'nowrap' }}>
                         {order.final_length ? `${parseFloat(order.final_length).toFixed(2)} ft` : '—'}
                       </TableCell>
@@ -285,6 +291,7 @@ const CustomerInvoiceView = () => {
                         {item.description || 'Extra Work Item'}
                       </Typography>
                     </TableCell>
+                    <TableCell sx={{ py: 1.5 }}>—</TableCell>
                     <TableCell sx={{ py: 1.5, textAlign: 'right' }}>
                       {item.qty || 1}
                     </TableCell>

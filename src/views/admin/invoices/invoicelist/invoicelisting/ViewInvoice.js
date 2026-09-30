@@ -211,6 +211,7 @@ const ViewInvoice = () => {
                 <TableRow sx={{ bgcolor: '#f4f6fa' }}>
                   <TableCell sx={{ fontWeight: 700, py: 1.5 }}>#</TableCell>
                   <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Description</TableCell>
+                  <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Customer Tag</TableCell>
                   <TableCell sx={{ fontWeight: 700, py: 1.5, textAlign: 'right', whiteSpace: 'nowrap' }}>Qty / Length</TableCell>
                   <TableCell sx={{ fontWeight: 700, py: 1.5, textAlign: 'right', whiteSpace: 'nowrap' }}>Unit Price</TableCell>
                   <TableCell sx={{ fontWeight: 700, py: 1.5, textAlign: 'right' }}>Total</TableCell>
@@ -233,6 +234,11 @@ const ViewInvoice = () => {
                           Order: {order.order_id} | Type: {order.channel_type || '—'} | Number of Holes: {order.hole_distance || '—'} | Pieces: {order.total_pieces || '—'}
                         </Typography>
                       </TableCell>
+                      <TableCell sx={{ py: 1.5 }}>
+                        {order.customer_tag ? (
+                          <Chip label={order.customer_tag} size="small" variant="outlined" color="primary" />
+                        ) : '—'}
+                      </TableCell>
                       <TableCell sx={{ py: 1.5, textAlign: 'right', whiteSpace: 'nowrap' }}>
                         {order.final_length ? `${parseFloat(order.final_length).toFixed(2)} ft` : '—'}
                       </TableCell>
@@ -254,6 +260,7 @@ const ViewInvoice = () => {
                         {item.description || 'Extra Work Item'}
                       </Typography>
                     </TableCell>
+                    <TableCell sx={{ py: 1.5 }}>—</TableCell>
                     <TableCell sx={{ py: 1.5, textAlign: 'right' }}>
                       {item.qty || 1}
                     </TableCell>
