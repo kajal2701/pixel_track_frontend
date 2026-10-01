@@ -49,6 +49,7 @@
     "slick-carousel": "^1.8.1",
     "stylis-plugin-rtl": "^2.0.2",
     "web-vitals": "^2.1.4",
+    "xlsx": "^0.18.5",
     "yup": "^0.32.11"
   },
   "devDependencies": {

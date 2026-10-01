@@ -5,6 +5,9 @@ import { Box, TextField, InputAdornment, IconButton, Stack, CircularProgress, Se
 import { useTheme } from '@mui/material/styles';
 import { Search, Add, Check, Close, Delete, LocalShipping, CheckCircle, Layers, Assignment } from '@mui/icons-material';
 
+import { exportToExcel } from '../../../utils/exportToExcel';
+import ExportButton from '../../../components/shared/ExportButton';
+
 import ParentCard from '../../../components/shared/ParentCard';
 import DataTable from '../../../components/shared/DataTable';
 
@@ -407,10 +410,28 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
       </Stack>
     )
   }));
+  const exportColumns = [
+    { field: 'order_id', label: 'Order #' },
+    { field: 'linked_production_id', label: 'Batch Production' },
+    { field: 'customer_tag', label: 'Customer Tag' },
+    { field: 'formatted_pickup_date', label: 'Pick Up Date' },
+    { field: 'contact_name', label: 'Customer' },
+    { field: 'color', label: 'Color' },
+    { field: 'final_length', label: 'Length' },
+    { field: 'formatted_created_at', label: 'Created Date' },
+    { field: 'order_status', label: 'Status' },
+  ];
 
   return (
     <>
-      <ParentCard title="Orders Management">
+      <ParentCard title={
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+          <Box component="span">Orders Management</Box>
+          <ExportButton
+            onClick={() => exportToExcel(filteredOrders, exportColumns, 'Orders', 'Orders.xlsx')}
+          />
+        </Box>
+      }>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mb={3}>
           <TextField
             fullWidth
