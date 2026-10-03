@@ -417,7 +417,7 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
     { field: 'formatted_pickup_date', label: 'Pick Up Date' },
     { field: 'contact_name', label: 'Customer' },
     { field: 'color', label: 'Color' },
-    { field: 'final_length', label: 'Length' },
+    { field: 'final_length', label: 'Length (In Feet)' },
     { field: 'formatted_created_at', label: 'Created Date' },
     { field: 'order_status', label: 'Status' },
   ];
@@ -428,7 +428,22 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           <Box component="span">Orders Management</Box>
           <ExportButton
-            onClick={() => exportToExcel(filteredOrders, exportColumns, 'Orders', 'Orders.xlsx')}
+            onClick={() => {
+              const exportData = filteredOrders.map(order => {
+                let lengthVal = order.final_length;
+                if (typeof lengthVal === 'string') {
+                  const numStr = lengthVal.replace(/[^0-9.]/g, '');
+                  if (numStr !== '') {
+                    lengthVal = parseFloat(numStr);
+                  }
+                }
+                return {
+                  ...order,
+                  final_length: lengthVal
+                };
+              });
+              exportToExcel(exportData, exportColumns, 'Orders', 'Orders.xlsx');
+            }}
           />
         </Box>
       }>
