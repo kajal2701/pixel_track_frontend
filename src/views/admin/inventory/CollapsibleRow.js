@@ -29,7 +29,7 @@ const CollapsibleRow = ({ row, onEdit, onDelete, userRole, onTransferSuccess }) 
       details: [
         { label: 'Quantity', value: row.fullRoll_qty },
         {
-          label: 'Size', value: (() => {
+          label: 'Full Roll Size', value: (() => {
             if (!row.fullRoll_size) return '—';
             const sizeNum = parseFloat(row.fullRoll_size);
             const slitCount = parseInt(6) || 0;
@@ -38,6 +38,21 @@ const CollapsibleRow = ({ row, onEdit, onDelete, userRole, onTransferSuccess }) 
               return `${total} ft`;
             }
             return row.fullRoll_size;
+          })()
+        },
+        {
+          label: 'Available Full Roll', value: (() => {
+            if (row.fullRoll_feet !== undefined && row.fullRoll_feet !== null) {
+              const feetStr = `${parseFloat(row.fullRoll_feet).toFixed(1)} ft`;
+              const availQty = row.fullRoll_available_qty !== undefined ? row.fullRoll_available_qty : row.fullRoll_qty;
+              const sizeNum = parseFloat(row.fullRoll_size || 0);
+              const fullRollTotalSize = sizeNum > 0 ? (sizeNum * 6).toFixed(0) : '—';
+              if (availQty !== undefined && fullRollTotalSize !== '—') {
+                return `${feetStr} (${availQty} * ${fullRollTotalSize})`;
+              }
+              return feetStr;
+            }
+            return '—';
           })()
         },
         { label: 'Possible Production', value: calculateProductionDetails(row.fullRoll_size, row.fullRoll_qty, 'Full Roll') },
@@ -116,15 +131,20 @@ const CollapsibleRow = ({ row, onEdit, onDelete, userRole, onTransferSuccess }) 
               let displayValue = s.qty;
 
               // Show total feet for Full Roll and Slitted
-              if (s.label === 'Full Roll' && row.fullRoll_size && row.fullRoll_qty) {
-                const totalFeet = (parseFloat(row.fullRoll_size) * 6 * parseFloat(row.fullRoll_qty)).toFixed(1);
+              if (s.label === 'Full Roll' && (row.fullRoll_feet !== undefined || (row.fullRoll_size && row.fullRoll_qty))) {
+                const totalFeet = row.fullRoll_feet !== undefined
+                  ? parseFloat(row.fullRoll_feet).toFixed(1)
+                  : (parseFloat(row.fullRoll_size) * 6 * parseFloat(row.fullRoll_qty)).toFixed(1);
                 displayValue = `${totalFeet} ft`;
               } else if (s.label === 'Slitted' && row.slitted_size && row.slitted_qty) {
                 const totalFeet = (parseFloat(row.slitted_size) * parseFloat(row.slitted_qty)).toFixed(1);
                 displayValue = `${totalFeet} ft`;
               } else if (s.label === 'Ready Channel') {
-                const readyFeet = (row.ready_variants || []).reduce((acc, v) => acc + (parseFloat(v.length || 0) * parseInt(v.pieces || 0)), 0);
-                if (readyFeet > 0) {
+                const readyFeet = (row.ready_variants || []).reduce((acc, v) => {
+                  const pcs = v.available_pieces !== undefined ? v.available_pieces : Math.max(0, parseInt(v.pieces || 0) - (parseFloat(v.holdQTy) || 0));
+                  return acc + (parseFloat(v.length || 0) * pcs);
+                }, 0);
+                if (readyFeet > 0 || s.qty > 0) {
                   displayValue = `${s.qty} pcs : ${readyFeet.toFixed(1)} ft`;
                 }
               }
@@ -199,7 +219,7 @@ const CollapsibleRow = ({ row, onEdit, onDelete, userRole, onTransferSuccess }) 
                               <IconButton
                                 size="small"
                                 sx={{ color: palette.info.main }}
-                                onClick={(e) => { e.stopPropagation(); onEdit(stage.itemId); }}
+                                onClick={(e) => { e.stopPropagation(); onEdit(stage.itemId, { stageLabel: stage.label, stage }); }}
                                 title={`Edit ${stage.label}`}
                               >
                                 <Edit fontSize="small" />
@@ -264,8 +284,11 @@ const CollapsibleRow = ({ row, onEdit, onDelete, userRole, onTransferSuccess }) 
                                       const ft = parseFloat(variant.length || 0);
                                       const holes = variant.hole_distance || Math.round(ft * 1.5);
                                       const inches = Math.round(ft * 12);
-                                      const totalFt = (ft * parseInt(variant.pieces || 0)).toFixed(1);
-                                      return `${holes}H - ${inches}" (${ft} ft) | ${variant.pieces} pcs | ${totalFt} ft`;
+                                      const availablePcs = variant.available_pieces !== undefined
+                                        ? variant.available_pieces
+                                        : Math.max(0, parseInt(variant.pieces || 0) - (parseFloat(variant.holdQTy) || 0));
+                                      const totalFt = (ft * availablePcs).toFixed(1);
+                                      return `${holes}H - ${inches}" (${ft} ft) | ${availablePcs} pcs | ${totalFt} ft`;
                                     })()}
                                   </Typography>
                                   <Stack direction="row" spacing={0.5}>
@@ -290,7 +313,7 @@ const CollapsibleRow = ({ row, onEdit, onDelete, userRole, onTransferSuccess }) 
                                     <IconButton
                                       size="small"
                                       sx={{ color: palette.info.main }}
-                                      onClick={(e) => { e.stopPropagation(); onEdit(variant.id); }}
+                                      onClick={(e) => { e.stopPropagation(); onEdit(variant.id, { stageLabel: 'Ready Channel', variant }); }}
                                       title={`Edit Ready Channel ${variant.length ?? ''}ft`}
                                     >
                                       <Edit fontSize="small" />

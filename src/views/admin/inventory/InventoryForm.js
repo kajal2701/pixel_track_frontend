@@ -9,9 +9,9 @@ import {
   FormHelperText,
   CircularProgress,
   Chip,
-  Stack,
+  Stack
 } from '@mui/material';
-import { Save, Cancel } from '@mui/icons-material';
+import { Save, Cancel, Lock, InfoOutlined } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { useForm, Controller } from 'react-hook-form';
 import CustomTextField from '../../../components/forms/theme-elements/CustomTextField';
@@ -116,11 +116,63 @@ const FormSelectField = ({ control, name, label, rules, id, options, displayEmpt
 // ════════════════════════════════════════════════════════════════
 // InventoryForm
 // ════════════════════════════════════════════════════════════════
-const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }) => {
+const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading, holdContext }) => {
   const { palette } = useTheme();
 
   const [allProducts, setAllProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(false);
+
+  // Compute breakdown (physical, held, available) based on holdContext or initialValues
+  const stockInfo = useMemo(() => {
+    if (!isEditing || !initialValues) return null;
+
+    const type = initialValues.inventory_type;
+    const groupRow = holdContext?.groupRow;
+    const variantCtx = holdContext?.extraContext?.variant;
+
+    if (type === 'Full Roll') {
+      const rawQty = initialValues.quantity != null ? parseFloat(initialValues.quantity) : (groupRow?.fullRoll_raw_qty ?? 0);
+      const heldFeet = parseFloat(initialValues.held_feet || groupRow?.fullRoll_held_feet || 0);
+      const sizeNum = parseFloat(initialValues.size || groupRow?.fullRoll_size || 0);
+      const heldRolls = sizeNum > 0 && heldFeet > 0 ? parseFloat((heldFeet / sizeNum).toFixed(2)) : 0;
+      const availableRolls = groupRow?.fullRoll_available_qty !== undefined
+        ? groupRow.fullRoll_available_qty
+        : Math.max(0, rawQty - heldRolls);
+      return {
+        type: 'Full Roll',
+        physical: `${rawQty} rolls`,
+        held: `${heldRolls} rolls`,
+        available: `${availableRolls} rolls`,
+        hasHold: heldFeet > 0 || heldRolls > 0,
+      };
+    } else if (type === 'Slitted') {
+      const rawQty = initialValues.quantity != null ? parseFloat(initialValues.quantity) : (groupRow?.slitted_total_qty ?? 0);
+      const heldQty = parseFloat(initialValues.held_quantity || groupRow?.slitted_held_qty || 0);
+      const availableQty = Math.max(0, rawQty - heldQty);
+
+      return {
+        type: 'Slitted',
+        physical: `${rawQty} pcs`,
+        held: `${heldQty} pcs`,
+        available: `${availableQty} pcs`,
+        hasHold: heldQty > 0,
+      };
+    } else if (type === 'Ready Channel') {
+      const rawPcs = variantCtx?.pieces ?? (initialValues.pieces != null ? parseFloat(initialValues.pieces) : 0);
+      const heldPcs = parseFloat(variantCtx?.holdQTy ?? initialValues.held_pieces ?? initialValues.held_quantity ?? 0);
+      const availPcs = Math.max(0, rawPcs - heldPcs);
+
+      return {
+        type: 'Ready Channel',
+        physical: `${rawPcs} pcs`,
+        held: `${heldPcs} pcs`,
+        available: `${availPcs} pcs`,
+        hasHold: heldPcs > 0,
+      };
+    }
+
+    return null;
+  }, [isEditing, initialValues, holdContext]);
 
   const processedInitialValues = useMemo(() => {
     if (!initialValues) return null;
@@ -289,9 +341,41 @@ const InventoryForm = ({ initialValues, onSubmit, onCancel, isEditing, loading }
         <Grid container columnSpacing={3}>
           {/* ── Section: Basic Information ── */}
           <Grid item xs={12}>
-            <Typography variant="h6" sx={{ mb: 2, color: palette.primary.main, fontWeight: 600 }}>
-              Inventory Information
-            </Typography>
+            <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} mb={2} spacing={1}>
+              <Typography variant="h6" sx={{ color: palette.primary.main, fontWeight: 600 }}>
+                Inventory Information
+              </Typography>
+
+              {stockInfo && (
+                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap alignItems="center">
+                  <Chip
+                    icon={<InfoOutlined fontSize="small" />}
+                    label={`Physical: ${stockInfo.physical}`}
+                    size="small"
+                    variant="outlined"
+                    color="default"
+                    sx={{ fontWeight: 600 }}
+                  />
+                  {stockInfo.hasHold && (
+                    <Chip
+                      icon={<Lock fontSize="small" />}
+                      label={`Hold: ${stockInfo.held}`}
+                      size="small"
+                      color="warning"
+                      sx={{ fontWeight: 600 }}
+                    />
+                  )}
+                  <Chip
+                    label={`Available: ${stockInfo.available}`}
+                    size="small"
+                    color="success"
+                    sx={{ fontWeight: 600 }}
+                  />
+                </Stack>
+              )}
+            </Stack>
+
+
           </Grid>
 
           <FormSelectField

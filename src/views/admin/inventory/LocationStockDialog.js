@@ -67,12 +67,19 @@ const LocationStockDialog = ({ open, onClose, variant }) => {
         <Box sx={{ bgcolor: 'grey.50', p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center">
             <Typography variant="subtitle2" fontWeight={600} color="text.secondary">
-              Total Pieces
+              Available Pieces (without hold)
             </Typography>
             <Typography variant="subtitle1" fontWeight={700} color="primary">
-              {variant.pieces} pcs
+              {variant.available_pieces !== undefined ? variant.available_pieces : Math.max(0, parseInt(variant.pieces || 0) - (parseFloat(variant.holdQTy) || 0))} pcs
             </Typography>
           </Stack>
+          {(parseFloat(variant.holdQTy) || 0) > 0 && (
+            <Stack direction="row" justifyContent="space-between" alignItems="center" mt={0.5}>
+              <Typography variant="caption" color="warning.main" fontWeight={500}>
+                Held Pieces: {variant.holdQTy} pcs (Total: {variant.pieces} pcs)
+              </Typography>
+            </Stack>
+          )}
         </Box>
       </DialogContent>
     </Dialog>

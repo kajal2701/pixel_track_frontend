@@ -71,9 +71,13 @@ export const groupBySupplierColor = (items) => {
         color_name: item.color_name,
         color_code: item.color_code,
         fullRoll_qty: 0,
+        fullRoll_available_qty: 0,
+        fullRoll_raw_qty: 0,
         fullRoll_size: '',
         fullRoll_state: null,
         fullRoll_feet: 0,
+        fullRoll_total_feet: 0,
+        fullRoll_held_feet: 0,
         fullRoll_id: null,
         fullRoll_channel_length: '',
         fullRoll_location: '',
@@ -84,7 +88,11 @@ export const groupBySupplierColor = (items) => {
         slitted_id: null,
         slitted_channel_length: '',
         slitted_location: '',
+        slitted_held_qty: 0,
+        slitted_total_qty: 0,
         ready_pieces: 0,
+        ready_total_pieces: 0,
+        ready_held_pieces: 0,
         ready_state: null,
         ready_variants: [],
         ids: [],
@@ -96,23 +104,50 @@ export const groupBySupplierColor = (items) => {
 
     if (item.inventory_type === 'Full Roll') {
       const q = parseFloat(item.quantity) || 0;
-      group.fullRoll_qty += q;
+      const sizeNum = parseFloat(item.size) || 0;
+      const heldFeet = parseFloat(item.held_feet) || 0;
+      const heldQty = parseFloat(item.held_quantity) || 0;
+
+      // Single roll size (each roll is sizeNum ft)
+      // Total size across all rolls = sizeNum * q
+      const totalRollFeet = sizeNum * q;
+      // Held feet could be from held_feet or held whole rolls * sizeNum
+      const totalHeldFeet = heldFeet > 0 ? heldFeet : (heldQty > 0 ? heldQty * sizeNum : 0);
+      const availableFeet = Math.max(0, totalRollFeet - totalHeldFeet);
+
+      group.fullRoll_raw_qty += q;
+      // Available rolls equivalent (e.g., if full roll size is 98ft, available roll count = Math.round(availableFeet / sizeNum))
+      const exactAvailQty = sizeNum > 0 ? parseFloat((availableFeet / sizeNum).toFixed(2)) : q;
+      group.fullRoll_available_qty = (group.fullRoll_available_qty || 0) + exactAvailQty;
+      group.fullRoll_qty += sizeNum > 0 ? Math.round(availableFeet / sizeNum) : q;
+      group.fullRoll_total_feet += totalRollFeet;
+      group.fullRoll_held_feet += totalHeldFeet;
+      group.fullRoll_available_feet = (group.fullRoll_available_feet || 0) + availableFeet;
+
       if (item.size) {
         group.fullRoll_size = `${Number(parseFloat(item.size).toFixed(2))} ft`;
       }
       group.fullRoll_state = item.state || group.fullRoll_state;
-      group.fullRoll_feet += parseFloat(item.possible_feet) || 0;
+      // Full Roll produces 6 slitted rolls, so possible channel feet = availableFeet * 6
+      group.fullRoll_feet += availableFeet * 6;
       group.fullRoll_id = item.id;
       group.fullRoll_channel_length = item.channel_length || group.fullRoll_channel_length;
       group.fullRoll_location = item.location || group.fullRoll_location || 'Warehouse';
     } else if (item.inventory_type === 'Slitted') {
-      const q = parseFloat(item.quantity) || 0;
-      group.slitted_qty += q;
+      const rawQty = parseFloat(item.quantity) || 0;
+      const heldQty = parseFloat(item.held_quantity !== undefined && item.held_quantity !== null ? item.held_quantity : item.held_pieces) || 0;
+      const availableQty = Math.max(0, rawQty - heldQty);
+
+      group.slitted_qty += availableQty;
+      group.slitted_total_qty = (group.slitted_total_qty || 0) + rawQty;
+      group.slitted_held_qty = (group.slitted_held_qty || 0) + heldQty;
+
       if (item.size) {
         group.slitted_size = `${Number(parseFloat(item.size).toFixed(2))} ft`;
       }
       group.slitted_state = item.state || group.slitted_state;
-      group.slitted_feet += parseFloat(item.possible_feet) || 0;
+      const sizeNum = parseFloat(item.size) || 0;
+      group.slitted_feet += availableQty * sizeNum;
       group.slitted_id = item.id;
       group.slitted_channel_length = item.channel_length || group.slitted_channel_length;
       group.slitted_location = item.location || group.slitted_location || 'Warehouse';
@@ -121,17 +156,24 @@ export const groupBySupplierColor = (items) => {
       const itemLength = parseFloat(item.length);
       const formattedLength = Number.isNaN(itemLength) ? null : parseFloat(itemLength.toFixed(2));
       const holeDistance = item.hole_distance || '—';
+      const holdQTy = parseFloat(item.held_pieces !== undefined && item.held_pieces !== null ? item.held_pieces : item.held_quantity) || 0;
+      const availablePieces = Math.max(0, readyPieces - holdQTy);
 
-      group.ready_pieces += readyPieces;
+      group.ready_pieces += availablePieces;
+      group.ready_total_pieces = (group.ready_total_pieces || 0) + readyPieces;
+      group.ready_held_pieces = (group.ready_held_pieces || 0) + holdQTy;
       group.ready_state = item.state || group.ready_state;
       group.ready_variants.push({
         id: item.id,
         pieces: readyPieces,
+        available_pieces: availablePieces,
         length: formattedLength,
         hole_distance: holeDistance,
         state: item.state || null,
         location: item.location || 'Warehouse',
         location_stock: item.location_stock || null,
+        holdQTy,
+        avaibleForOthers: availablePieces
       });
     }
   });

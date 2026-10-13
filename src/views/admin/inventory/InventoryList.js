@@ -99,8 +99,16 @@ const InventoryList = () => {
     : filtered;
 
   // ── Edit handler — navigate to edit page ──
-  const handleEdit = (itemId) => {
-    navigate(`/admin/inventory/edit/${itemId}`);
+  const handleEdit = (itemId, extraContext = null) => {
+    const rawItem = allInventory.find((i) => i.id === itemId);
+    const groupRow = grouped.find((g) => g.ids?.includes(itemId));
+    navigate(`/admin/inventory/edit/${itemId}`, {
+      state: {
+        rawItem,
+        groupRow,
+        extraContext,
+      },
+    });
   };
 
   // ── Delete handlers ──

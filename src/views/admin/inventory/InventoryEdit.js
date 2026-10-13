@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography, Button, CircularProgress } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import PageContainer from '../../../components/container/PageContainer';
 import inventoryService from 'src/services/inventoryService';
@@ -12,10 +12,13 @@ const InventoryEdit = () => {
   const theme = useTheme();
   const { palette } = theme;
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams();
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
   const [inventoryItem, setInventoryItem] = useState(null);
+
+  const holdContext = location.state || null;
 
   // ── Fetch inventory item data ──
   useEffect(() => {
@@ -94,6 +97,7 @@ const InventoryEdit = () => {
             onCancel={handleCancel}
             isEditing={true}
             loading={loading}
+            holdContext={holdContext}
           />
         ) : (
           <Typography variant="body1" color="error">
