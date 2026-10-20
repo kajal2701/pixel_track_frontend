@@ -89,7 +89,7 @@ const EditInvoice = () => {
       const rowErrs = {};
       if (!row.description || !row.description.trim()) rowErrs.description = 'Description is required';
       if (!row.qty || parseFloat(row.qty) <= 0) rowErrs.qty = 'Qty must be > 0';
-      if (!row.unit_price || parseFloat(row.unit_price) <= 0) rowErrs.unit_price = 'Price must be > 0';
+      if (row.unit_price === '' || row.unit_price === undefined || row.unit_price === null || parseFloat(row.unit_price) === 0) rowErrs.unit_price = 'Price is required';
       if (Object.keys(rowErrs).length > 0) errs[row.id] = rowErrs;
     });
     setExtraWorkErrors(errs);

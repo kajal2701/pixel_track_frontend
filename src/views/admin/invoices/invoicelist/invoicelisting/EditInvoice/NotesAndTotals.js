@@ -66,7 +66,7 @@ const NotesAndTotals = ({
             $ {mainTotal.toFixed(2)}
           </Typography>
         </Box>
-        {extraTotal > 0 && (
+        {extraTotal != 0 && (
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
             <Typography variant="body1" color="text.secondary" sx={{ fontSize: '0.9rem' }}>
               Total Extra Work :

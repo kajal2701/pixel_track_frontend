@@ -123,7 +123,7 @@ const LineItemsTable = ({
                       error={!!rowErrors.unit_price}
                       helperText={rowErrors.unit_price || ''}
                       sx={{ width: 100 }}
-                      inputProps={{ min: 0, step: 0.01 }}
+                      inputProps={{ step: 0.01 }}
                     />
                   </TableCell>
                   <TableCell sx={{ ...cell, textAlign: 'right' }}>
