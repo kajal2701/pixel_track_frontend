@@ -57,6 +57,7 @@ export const PIXEL_TRACK = {
   province: 'AB T6W 5M7',
   email: 'info@pixeltracks.ca',
   phone: '+1 (780) 938-4509',
+  gst: "GST/HST: 769453028RT0001"
 };
 
 export const generateColorOptions = (products, options = { grouped: false }) => {

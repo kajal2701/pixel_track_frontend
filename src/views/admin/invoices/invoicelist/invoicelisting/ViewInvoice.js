@@ -159,10 +159,13 @@ const ViewInvoice = () => {
                 <Typography variant="body2" fontWeight={600} sx={{ fontSize: '1.25rem', my: 1 }}>
                   {PIXEL_TRACK.name}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.95rem' }}>{PIXEL_TRACK.address}</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.95rem' }}>{PIXEL_TRACK.city} {PIXEL_TRACK.province}</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.95rem' }}>{PIXEL_TRACK.email}</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.95rem' }}>{PIXEL_TRACK.phone}</Typography>
+                <Stack spacing={0.75}>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.95rem' }}>{PIXEL_TRACK.address}</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.95rem' }}>{PIXEL_TRACK.city} {PIXEL_TRACK.province}</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.95rem' }}>{PIXEL_TRACK.email}</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.95rem' }}>{PIXEL_TRACK.phone}</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.95rem' }}>{PIXEL_TRACK.gst}</Typography>
+                </Stack>
               </Box>
             </Grid>
 
@@ -173,11 +176,13 @@ const ViewInvoice = () => {
                 <Typography variant="body2" fontWeight={600} sx={{ fontSize: '1.25rem', my: 1 }}>
                   {invoice.contact_name || 'Valued Customer'}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 0.2, fontSize: '0.95rem' }}>
-                  {invoice.company_name || '—'}
-                </Typography>
-                {invoice.email && <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.95rem' }}>{invoice.email}</Typography>}
-                {invoice.phone && <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.95rem' }}>{invoice.phone}</Typography>}
+                <Stack spacing={0.75}>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.95rem' }}>
+                    {invoice.company_name || '—'}
+                  </Typography>
+                  {invoice.email && <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.95rem' }}>{invoice.email}</Typography>}
+                  {invoice.phone && <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.95rem' }}>{invoice.phone}</Typography>}
+                </Stack>
 
                 <Box sx={{ mt: 3 }}>
                   <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.95rem' }}>
