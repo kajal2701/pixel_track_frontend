@@ -74,17 +74,20 @@ const CustomerInvoices = () => {
       label: 'Invoice #',
       bold: true,
       width: '22%',
+      minWidth: 140,
     },
     {
       field: 'created_at',
       label: 'Date',
       width: '18%',
+      minWidth: 120,
     },
     {
       field: 'total_amount',
       label: 'Amount',
       bold: true,
       width: '18%',
+      minWidth: 110,
     },
     {
       field: 'status',
@@ -92,11 +95,13 @@ const CustomerInvoices = () => {
       type: 'chip',
       chipColor: getInvoiceStatusColor,
       width: '18%',
+      minWidth: 120,
     },
     {
       field: 'actions',
       label: 'Actions',
       width: '12%',
+      minWidth: 80,
     },
   ];
 
@@ -152,10 +157,7 @@ const CustomerInvoices = () => {
 
       {/* ── Table ── */}
       <ParentCard title="Invoices">
-        <Box sx={{
-          '& .MuiTableContainer-root': { overflowX: 'hidden !important' },
-          '& table': { tableLayout: 'fixed', width: '100%' },
-        }}>
+        <Box>
           <DataTable
             rows={rows}
             columns={columns}

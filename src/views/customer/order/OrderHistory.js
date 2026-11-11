@@ -18,22 +18,25 @@ const columns = [
   {
     field: 'created_at',
     label: 'Date',
+    minWidth: 120,
     render: (row) => <Typography variant="h6" fontWeight="400">{row.formatted_created_at}</Typography>
   },
   {
     field: 'pickup_date',
     label: 'Pick Up Date',
+    minWidth: 120,
     render: (row) => <Typography variant="h6" fontWeight="400">{row.formatted_pickup_date}</Typography>
   },
-  { field: 'order_id', label: 'Order ID', bold: true },
-  { field: 'customer_tag', label: 'Customer Tag' },
-  { field: 'color', label: 'Color' },
-  { field: 'final_length', label: 'Final Length', sortType: 'numeric' },
+  { field: 'order_id', label: 'Order ID', bold: true, minWidth: 120 },
+  { field: 'customer_tag', label: 'Customer Tag', minWidth: 120 },
+  { field: 'color', label: 'Color', minWidth: 100 },
+  { field: 'final_length', label: 'Final Length', sortType: 'numeric', minWidth: 110 },
   {
     field: 'order_status',
     label: 'Status',
     type: 'chip',
     chipColor: STATUS_CHIP_COLOR,
+    minWidth: 120,
   },
 ];
 
@@ -160,10 +163,7 @@ const OrderHistory = () => {
 
       {/* ── Table ── */}
       <ParentCard title="Order History">
-        <Box sx={{
-          '& .MuiTableContainer-root': { overflowX: 'hidden !important' },
-          '& table': { tableLayout: 'fixed', width: '100%' },
-        }}>
+        <Box>
           <DataTable
             rows={filteredOrders}
             columns={columns}
