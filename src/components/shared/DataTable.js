@@ -67,7 +67,19 @@ const renderCell = (col, row, globalIdx) => {
 
   if (col.type === 'chip') {
     const color = col.chipColor ? col.chipColor(value) : 'default';
-    return <Chip label={value} color={color} size="small" sx={{ borderRadius: '6px' }} />;
+    const isPaletteColor = ['default', 'primary', 'secondary', 'error', 'info', 'success', 'warning'].includes(color);
+
+    return (
+      <Chip
+        label={value}
+        size="small"
+        color={isPaletteColor ? color : undefined}
+        sx={{
+          borderRadius: '6px',
+          ...(!isPaletteColor && color && { bgcolor: color, color: '#fff' }),
+        }}
+      />
+    );
   }
 
   if (col.prefix) {
@@ -105,10 +117,21 @@ const DataTable = ({
   onSelectRow,
   onSelectAll,
   getRowId = (row) => row.id,
+  // Server-side pagination props
+  serverSide = false,
+  totalCount = 0,
+  serverPage = 0,
+  serverRowsPerPage = 10,
+  onServerPageChange,
+  onServerRowsPerPageChange,
 }) => {
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(defaultRows);
   const [sortConfig, setSortConfig] = React.useState({ key: null, direction: 'asc' });
+
+  // Use server or local pagination values
+  const activePage = serverSide ? serverPage : page;
+  const activeRowsPerPage = serverSide ? serverRowsPerPage : rowsPerPage;
 
   const finalColumns = React.useMemo(() => {
     let cols = [...columns];
@@ -190,8 +213,9 @@ const DataTable = ({
     setSortConfig({ key: field, direction });
   };
 
-  // Sort rows based on sortConfig
+  // Sort rows based on sortConfig (skip when server-side)
   const sortedRows = React.useMemo(() => {
+    if (serverSide) return rows;
     let sortableRows = [...rows];
     if (sortConfig.key) {
       const colDef = finalColumns.find(c => c.field === sortConfig.key);
@@ -227,20 +251,26 @@ const DataTable = ({
     return sortableRows;
   }, [rows, sortConfig, finalColumns]);
 
-  // Ensure page remains in valid bounds when rows count changes
+  // Ensure page remains in valid bounds when rows count changes (client-side only)
   React.useEffect(() => {
+    if (serverSide) return;
     if (rowsPerPage > 0 && sortedRows.length > 0) {
       const maxPage = Math.max(0, Math.ceil(sortedRows.length / rowsPerPage) - 1);
       if (page > maxPage) {
         setPage(maxPage);
       }
     }
-  }, [sortedRows.length, rowsPerPage, page]);
+  }, [sortedRows.length, rowsPerPage, page, serverSide]);
 
-  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - sortedRows.length) : 0;
-  const visibleRows = rowsPerPage > 0
-    ? sortedRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-    : sortedRows;
+  const paginationCount = serverSide ? totalCount : sortedRows.length;
+  const emptyRows = serverSide
+    ? 0
+    : (page > 0 ? Math.max(0, (1 + page) * rowsPerPage - sortedRows.length) : 0);
+  const visibleRows = serverSide
+    ? rows
+    : (rowsPerPage > 0
+      ? sortedRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+      : sortedRows);
 
   // Calculate total minWidth from columns
   const totalMinWidth = finalColumns.reduce((sum, col) => {
@@ -318,7 +348,9 @@ const DataTable = ({
               ) : (
                 <>
                   {visibleRows.map((row, rowIdx) => {
-                    const globalIdx = (rowsPerPage > 0 ? page * rowsPerPage : 0) + rowIdx + 1;
+                    const globalIdx = serverSide
+                      ? (serverPage * serverRowsPerPage + rowIdx + 1)
+                      : ((rowsPerPage > 0 ? page * rowsPerPage : 0) + rowIdx + 1);
                     return (
                       <TableRow
                         key={row.id ?? rowIdx}
@@ -354,16 +386,27 @@ const DataTable = ({
               <TableFooter>
                 <TableRow>
                   <TablePagination
-                    rowsPerPageOptions={[5, 10, 25, { label: 'All', value: -1 }]}
+                    rowsPerPageOptions={serverSide ? [5, 10, 25] : [5, 10, 25, { label: 'All', value: -1 }]}
                     colSpan={finalColumns.length}
-                    count={rows.length}
-                    rowsPerPage={rowsPerPage}
-                    page={page}
+                    count={paginationCount}
+                    rowsPerPage={activeRowsPerPage}
+                    page={activePage}
                     SelectProps={{ native: true }}
-                    onPageChange={(e, newPage) => setPage(newPage)}
+                    onPageChange={(e, newPage) => {
+                      if (serverSide && onServerPageChange) {
+                        onServerPageChange(newPage);
+                      } else {
+                        setPage(newPage);
+                      }
+                    }}
                     onRowsPerPageChange={(e) => {
-                      setRowsPerPage(parseInt(e.target.value, 10));
-                      setPage(0);
+                      const newVal = parseInt(e.target.value, 10);
+                      if (serverSide && onServerRowsPerPageChange) {
+                        onServerRowsPerPageChange(newVal);
+                      } else {
+                        setRowsPerPage(newVal);
+                        setPage(0);
+                      }
                     }}
                     ActionsComponent={TablePaginationActions}
                   />
@@ -405,6 +448,13 @@ DataTable.propTypes = {
   onSelectRow: PropTypes.func,
   onSelectAll: PropTypes.func,
   getRowId: PropTypes.func,
+  // Server-side pagination
+  serverSide: PropTypes.bool,
+  totalCount: PropTypes.number,
+  serverPage: PropTypes.number,
+  serverRowsPerPage: PropTypes.number,
+  onServerPageChange: PropTypes.func,
+  onServerRowsPerPageChange: PropTypes.func,
 };
 
 export default DataTable;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Box, TextField, InputAdornment, IconButton, Stack, CircularProgress, Select, MenuItem, FormControl, InputLabel, Typography, Tooltip } from '@mui/material';
@@ -13,6 +13,7 @@ import DataTable from '../../../components/shared/DataTable';
 
 import orderService from '../../../services/orderService';
 import productionService from '../../../services/productionService';
+import { formatDate } from '../../../utils/helpers';
 
 import StatusDialog from '../orders/StatusDialog';
 import NotesDialog from '../orders/NotesDialog';
@@ -21,15 +22,22 @@ import ProductionRequestDialog from '../orders/ProductionRequestDialog';
 import DispatchDialog from '../orders/DispatchDialog';
 import OrderDetailModal from '../../customer/order/OrderDetailModal';
 
-const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
+const DashboardOrders = ({ onStatsUpdate }) => {
   const { palette } = useTheme();
   const navigate = useNavigate();
 
+  // Server-side pagination state
+  const [orders, setOrders] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(0); // 0-indexed for MUI
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Dashboard Filters
+  // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // Dialog States
   const [statusDialog, setStatusDialog] = useState({ open: false, type: null, order: null });
@@ -38,25 +46,71 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
   const [dispatchDialog, setDispatchDialog] = useState({ open: false, order: null });
   const [detailModal, setDetailModal] = useState({ open: false, order: null });
 
-  // Filtered Orders for the Table
-  const filteredOrders = allOrders.filter(order => {
-    if (statusFilter !== 'All' && order.order_status !== statusFilter) return false;
-    if (!searchQuery) return true;
+  // Debounce search input
+  const debounceRef = useRef(null);
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(0); // Reset to first page on search change
+    }, 300);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [searchQuery]);
 
-    const term = searchQuery.toLowerCase();
-    return [
-      order.order_id,
-      order.customer_tag,
-      order.contact_name,
-      order.company_name,
-      order.color,
-      order.order_status,
-      order.final_length,
-      order.formatted_created_at,
-      order.formatted_pickup_date,
-      order.linked_production_id,
-    ].some((f) => f?.toString()?.toLowerCase().includes(term));
-  });
+  // Fetch paginated orders
+  const fetchOrders = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = {
+        page: page + 1, // API uses 1-indexed pages
+        limit: rowsPerPage,
+      };
+      if (statusFilter !== 'All') params.status = statusFilter;
+      if (debouncedSearch) params.search = debouncedSearch;
+
+      const res = await orderService.getOrdersPaginated(params);
+
+      const formatted = res.data.map((o) => ({
+        ...o,
+        formatted_created_at: formatDate(o.created_at),
+        formatted_pickup_date: o.pickup_date ? formatDate(o.pickup_date) : '—',
+        final_length: `${o.final_length} ft`,
+      }));
+      setOrders(formatted);
+      setTotalCount(res.pagination.total);
+
+      // Update stats in parent
+      if (onStatsUpdate && res.summary) {
+        const s = res.summary;
+        onStatsUpdate({
+          totalOrders: s.total,
+          pendingOrders: s.pending,
+          completedOrders: s.completed,
+          processingOrders: s.total - s.pending - s.completed - s.cancelled,
+          totalCustomers: 892,
+          totalRevenue: 45678.50,
+          lowStockItems: 12,
+          outOfStockItems: 3,
+        });
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to fetch orders.');
+    } finally {
+      setLoading(false);
+    }
+  }, [page, rowsPerPage, statusFilter, debouncedSearch, onStatsUpdate]);
+
+  useEffect(() => { fetchOrders(); }, [fetchOrders]);
+
+  // Reset page when status filter changes
+  useEffect(() => { setPage(0); }, [statusFilter]);
+
+  // Page change handlers for DataTable
+  const handleServerPageChange = (newPage) => setPage(newPage);
+  const handleServerRowsPerPageChange = (newRowsPerPage) => {
+    setRowsPerPage(newRowsPerPage);
+    setPage(0);
+  };
 
   // Action Handlers
   const openStatusDialog = (type, order) => setStatusDialog({ open: true, type, order });
@@ -230,6 +284,33 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
     }
   };
 
+  // Export handler: fetches ALL matching records for export
+  const handleExport = async () => {
+    try {
+      const params = {};
+      if (statusFilter !== 'All') params.status = statusFilter;
+      if (debouncedSearch) params.search = debouncedSearch;
+
+      const res = await orderService.getAllOrders(params);
+      const exportData = res.data.map((o) => {
+        let lengthVal = o.final_length;
+        if (typeof lengthVal === 'string') {
+          const numStr = lengthVal.replace(/[^0-9.]/g, '');
+          if (numStr !== '') lengthVal = parseFloat(numStr);
+        }
+        return {
+          ...o,
+          formatted_created_at: formatDate(o.created_at),
+          formatted_pickup_date: o.pickup_date ? formatDate(o.pickup_date) : '—',
+          final_length: lengthVal,
+        };
+      });
+      exportToExcel(exportData, exportColumns, 'Orders', 'Orders.xlsx');
+    } catch (err) {
+      toast.error(err.message || 'Failed to export orders.');
+    }
+  };
+
   // Table Columns
   const columns = [
     {
@@ -318,8 +399,8 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
       chipColor: (status) => {
         const map = {
           Pending: 'warning', Confirmed: 'success', 'Awaiting production': 'primary',
-          'Awaiting material': 'secondary', Ready: 'info', 'Ready for Pickup/Delivery': 'success',
-          Completed: 'success', Cancelled: 'error'
+          'Awaiting material': 'secondary', Ready: 'info', 'Ready for Pickup/Delivery': '#00897B',
+          Completed: '#6D4C41', Cancelled: 'error'
         };
         return map[status] || 'default';
       },
@@ -410,6 +491,7 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
       </Stack>
     )
   }));
+
   const exportColumns = [
     { field: 'order_id', label: 'Order #' },
     { field: 'linked_production_id', label: 'Batch Production' },
@@ -427,24 +509,7 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
       <ParentCard title={
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           <Box component="span">Orders Management</Box>
-          <ExportButton
-            onClick={() => {
-              const exportData = filteredOrders.map(order => {
-                let lengthVal = order.final_length;
-                if (typeof lengthVal === 'string') {
-                  const numStr = lengthVal.replace(/[^0-9.]/g, '');
-                  if (numStr !== '') {
-                    lengthVal = parseFloat(numStr);
-                  }
-                }
-                return {
-                  ...order,
-                  final_length: lengthVal
-                };
-              });
-              exportToExcel(exportData, exportColumns, 'Orders', 'Orders.xlsx');
-            }}
-          />
+          <ExportButton onClick={handleExport} />
         </Box>
       }>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mb={3}>
@@ -511,10 +576,16 @@ const DashboardOrders = ({ allOrders, loading, fetchOrders }) => {
           </Box>
         ) : (
           <DataTable
-            rows={buildRows(filteredOrders)}
+            rows={buildRows(orders)}
             columns={columns}
-            defaultRows={10}
+            defaultRows={rowsPerPage}
             emptyMessage="No orders found."
+            serverSide
+            totalCount={totalCount}
+            serverPage={page}
+            serverRowsPerPage={rowsPerPage}
+            onServerPageChange={handleServerPageChange}
+            onServerRowsPerPageChange={handleServerRowsPerPageChange}
             onRowClick={(row) => {
               if (row.order_status === 'Completed' || row.order_status === 'Awaiting production') {
                 openDetailModal(row);

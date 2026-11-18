@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Box, Typography, Button, TextField, InputAdornment,
   IconButton, Stack, Card, CircularProgress, Chip, Tooltip,
@@ -50,16 +50,25 @@ const BCrumb = [
   { title: 'Orders' },
 ];
 
+const PAGINATED_STATUSES = ['Completed'];
+
 const Orders = () => {
   const { palette } = useTheme();
   const navigate = useNavigate();
 
   // ── State ────────────────────────────────────────────────
-  const [allOrders, setAllOrders] = useState([]);
+  const [activeOrders, setActiveOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [selectedReadyOrderIds, setSelectedReadyOrderIds] = useState([]);
   const [bulkConfirmDialog, setBulkConfirmDialog] = useState(false);
+  const [summary, setSummary] = useState({
+    total: 0, pending: 0, confirmed: 0, awaitingProduction: 0,
+    awaitingMaterial: 0, ready: 0, readyForPickup: 0,
+    completed: 0, cancelled: 0,
+  });
+
+  // Per-status search terms
   const [searchTerms, setSearchTerms] = useState({
     Pending: '',
     Confirmed: '',
@@ -71,51 +80,128 @@ const Orders = () => {
     Cancelled: ''
   });
 
+  // Server-side pagination state only for Completed orders
+  const [paginatedTables, setPaginatedTables] = useState({
+    Completed: { data: [], total: 0, page: 0, rowsPerPage: 5, loading: false },
+  });
+  const [debouncedSearch, setDebouncedSearch] = useState({ Completed: '' });
+
   // Status dialog
   const [statusDialog, setStatusDialog] = useState({ open: false, type: null, order: null });
-
   // Notes dialog
   const [notesDialog, setNotesDialog] = useState({ open: false, order: null });
-  const [productionDialog, setProductionDialog] = useState({
-    open: false,
-    order: null,
-    inventoryResult: null,
-  });
+  const [productionDialog, setProductionDialog] = useState({ open: false, order: null, inventoryResult: null });
   const [detailModal, setDetailModal] = useState({ open: false, order: null });
+  // Dispatch dialog
+  const [dispatchDialog, setDispatchDialog] = useState({ open: false, order: null });
 
-  // ── Fetch once on mount ──────────────────────────────────
-  useEffect(() => { fetchOrders(); }, []);
+  // ── Debounce search for paginated statuses (Completed) ──────
+  const debounceTimers = useRef({});
+  useEffect(() => {
+    if (debounceTimers.current['Completed']) clearTimeout(debounceTimers.current['Completed']);
+    debounceTimers.current['Completed'] = setTimeout(() => {
+      setDebouncedSearch({ Completed: searchTerms['Completed'] });
+      setPaginatedTables((prev) => ({
+        ...prev,
+        Completed: { ...prev.Completed, page: 0 },
+      }));
+    }, 300);
 
-  const fetchOrders = async () => {
+    return () => {
+      if (debounceTimers.current['Completed']) clearTimeout(debounceTimers.current['Completed']);
+    };
+  }, [searchTerms['Completed']]);
+
+  // ── Format order helper ──────────────────────────────────
+  const formatOrder = (o) => ({
+    ...o,
+    formatted_created_at: formatDate(o.created_at),
+    formatted_pickup_date: o.pickup_date ? formatDate(o.pickup_date) : '—',
+    final_length: `${o.final_length} ft`,
+  });
+
+  // ── Fetch active orders (all non-Completed orders, including Cancelled) ──
+  const fetchActiveOrders = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await orderService.getAllOrders();
-      const formatted = res.data.map((o) => ({
-        ...o,
-        formatted_created_at: formatDate(o.created_at),
-        formatted_pickup_date: o.pickup_date ? formatDate(o.pickup_date) : '—',
-        final_length: `${o.final_length} ft`,
-      }));
-      setAllOrders(formatted);
+      // Concurrently fetch active orders and full summary
+      const [res, summaryRes] = await Promise.all([
+        orderService.getAllOrders({ exclude_status: 'Completed' }),
+        orderService.getOrdersPaginated({ page: 1, limit: 1 }),
+      ]);
+
+      setActiveOrders(res.data.map(formatOrder));
+      if (summaryRes.summary) {
+        setSummary(summaryRes.summary);
+      }
     } catch (err) {
       toast.error(err.message || 'Failed to fetch orders.');
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // ── Fetch single paginated status (Completed) ─────────────
+  const fetchPaginatedOrders = useCallback(async (status, page, rowsPerPage, search) => {
+    setPaginatedTables((prev) => ({
+      ...prev,
+      [status]: { ...prev[status], loading: true },
+    }));
+
+    try {
+      const res = await orderService.getOrdersPaginated({
+        page: page + 1,
+        limit: rowsPerPage,
+        status,
+        search: search || undefined,
+      });
+
+      setPaginatedTables((prev) => ({
+        ...prev,
+        [status]: {
+          ...prev[status],
+          data: res.data.map(formatOrder),
+          total: res.pagination?.total || 0,
+          loading: false,
+        },
+      }));
+    } catch (err) {
+      toast.error(err.message || `Failed to fetch ${status.toLowerCase()} orders.`);
+      setPaginatedTables((prev) => ({
+        ...prev,
+        [status]: { ...prev[status], loading: false },
+      }));
+    }
+  }, []);
+
+  // ── Mount / Dependency triggers ──────────────────────────
+  useEffect(() => { fetchActiveOrders(); }, [fetchActiveOrders]);
+
+  useEffect(() => {
+    fetchPaginatedOrders('Completed', paginatedTables.Completed.page, paginatedTables.Completed.rowsPerPage, debouncedSearch.Completed);
+  }, [fetchPaginatedOrders, paginatedTables.Completed.page, paginatedTables.Completed.rowsPerPage, debouncedSearch.Completed]);
+
+  // ── Refresh everything after an action ──────────────────
+  const refreshAll = async () => {
+    await Promise.all([
+      fetchActiveOrders(),
+      fetchPaginatedOrders('Completed', paginatedTables.Completed.page, paginatedTables.Completed.rowsPerPage, debouncedSearch.Completed),
+    ]);
   };
 
   const handleSearchChange = (status, value) => {
     setSearchTerms((prev) => ({ ...prev, [status]: value }));
   };
 
+  // Client-side filter for active statuses
   const getFilteredOrders = (status) => {
     const term = searchTerms[status].toLowerCase();
-    return allOrders.filter((order) => {
+    return activeOrders.filter((order) => {
       if (order.order_status !== status) return false;
       if (!term) return true;
-
       return [
         order.order_id,
+        order.customer_tag,
         order.contact_name,
         order.company_name,
         order.color,
@@ -129,18 +215,7 @@ const Orders = () => {
     });
   };
 
-  const counts = {
-    total: allOrders.length,
-    pending: allOrders.filter((o) => o.order_status === 'Pending').length,
-    confirmed: allOrders.filter((o) => o.order_status === 'Confirmed').length,
-    awaitingProduction: allOrders.filter((o) => o.order_status === 'Awaiting production').length,
-    awaitingMaterial: allOrders.filter((o) => o.order_status === 'Awaiting material').length,
-    ready: allOrders.filter((o) => o.order_status === 'Ready').length,
-    readyForPickup: allOrders.filter((o) => o.order_status === 'Ready for Pickup/Delivery').length,
-    completed: allOrders.filter((o) => o.order_status === 'Completed').length,
-    cancelled: allOrders.filter((o) => o.order_status === 'Cancelled').length,
-  };
-
+  const counts = summary;
   const summaryCardsData = getSummaryCardsData(counts);
 
   // ── Status dialog handlers ───────────────────────────────
@@ -154,8 +229,6 @@ const Orders = () => {
   const openDetailModal = (order) => setDetailModal({ open: true, order });
   const closeDetailModal = () => setDetailModal({ open: false, order: null });
 
-  // Dispatch dialog
-  const [dispatchDialog, setDispatchDialog] = useState({ open: false, order: null });
   const openDispatchDialog = (order) => setDispatchDialog({ open: true, order });
   const closeDispatchDialog = () => setDispatchDialog({ open: false, order: null });
 
@@ -164,7 +237,7 @@ const Orders = () => {
     try {
       await orderService.updateStatus(order.id, 'Ready for Pickup/Delivery', location, sourceLocations, assignedTechId);
       toast.success(`Order ${order.order_id} dispatched for ${order.delivery_method === 'pickup' ? 'pickup' : 'delivery'}`);
-      await fetchOrders();
+      await refreshAll();
       closeDispatchDialog();
     } catch (err) {
       toast.error(err.message || 'Failed to dispatch order.');
@@ -194,12 +267,12 @@ const Orders = () => {
     if (selectedReadyOrderIds.length === 0) return;
     setActionLoading(true);
     try {
-      const selectedOrders = allOrders.filter((o) => selectedReadyOrderIds.includes(o.id));
+      const selectedOrders = activeOrders.filter((o) => selectedReadyOrderIds.includes(o.id));
       await Promise.all(selectedOrders.map((o) => orderService.updateStatus(o.id, 'Completed')));
       toast.success(`${selectedOrders.length} order(s) marked as Completed.`);
       setSelectedReadyOrderIds([]);
       setBulkConfirmDialog(false);
-      await fetchOrders();
+      await refreshAll();
     } catch (err) {
       toast.error(err.message || 'Failed to complete selected orders.');
     } finally {
@@ -222,7 +295,7 @@ const Orders = () => {
       try {
         await orderService.deleteOrder(order.id);
         toast.success(`Order ${order.order_id} deleted.`);
-        await fetchOrders();
+        await refreshAll();
         closeStatusDialog();
       } catch (err) {
         toast.error(err.message || 'Failed to delete order.');
@@ -237,7 +310,7 @@ const Orders = () => {
       try {
         await orderService.requestModification(order.id, options.payload);
         toast.success(`Modification applied`);
-        await fetchOrders();
+        await refreshAll();
         closeStatusDialog();
       } catch (err) {
         toast.error('Failed to request modification.');
@@ -254,7 +327,7 @@ const Orders = () => {
         const awaitingMaterialStatus = 'Awaiting material';
         await orderService.updateStatus(order.id, awaitingMaterialStatus);
         toast.success(`Order ${order.order_id} → ${awaitingMaterialStatus}`);
-        await fetchOrders();
+        await refreshAll();
         closeStatusDialog();
         navigate('/admin/inventory');
       } catch (err) {
@@ -278,7 +351,7 @@ const Orders = () => {
       try {
         await orderService.confirmOrder(order.id);
         toast.success(`Order ${order.order_id} → Confirmed`);
-        await fetchOrders();
+        await refreshAll();
         closeStatusDialog();
       } catch (err) {
         toast.error(err.message || 'Failed to confirm order.');
@@ -295,7 +368,7 @@ const Orders = () => {
     try {
       await orderService.updateStatus(order.id, newStatus);
       toast.success(`Order ${order.order_id} → ${newStatus}`);
-      await fetchOrders();
+      await refreshAll();
       const updatedOrder = { ...order, order_status: newStatus };
       closeStatusDialog();
 
@@ -320,7 +393,7 @@ const Orders = () => {
     try {
       const response = await orderService.overrideModification(order.id);
       toast.success('Approval overridden successfully.');
-      await fetchOrders();
+      await refreshAll();
       if (response && response.data) {
         setStatusDialog(prev => ({ ...prev, order: response.data }));
       }
@@ -339,7 +412,7 @@ const Orders = () => {
     try {
       await orderService.updateNotes(order.id, notes);
       toast.success('Notes saved.');
-      await fetchOrders();
+      await refreshAll();
       closeNotesDialog();
     } catch (err) {
       toast.error(err.message || 'Failed to save notes.');
@@ -377,7 +450,7 @@ const Orders = () => {
       // Then move to Awaiting production
       const awaitingProductionStatus = 'Awaiting production';
       await orderService.updateStatus(order.id, awaitingProductionStatus);
-      await fetchOrders();
+      await refreshAll();
       closeProductionDialog();
       navigate('/admin/production');
     } catch (err) {
@@ -496,6 +569,43 @@ const Orders = () => {
     ),
   }));
 
+  // Helper to get rows and props for a status table
+  const getTableProps = (status) => {
+    if (PAGINATED_STATUSES.includes(status)) {
+      const current = paginatedTables[status] || { data: [], total: 0, page: 0, rowsPerPage: 5, loading: false };
+      return {
+        rows: buildRows(current.data),
+        isServerSide: true,
+        totalCount: current.total,
+        serverPage: current.page,
+        serverRowsPerPage: current.rowsPerPage,
+        onServerPageChange: (newPage) => {
+          setPaginatedTables((prev) => ({
+            ...prev,
+            [status]: { ...prev[status], page: newPage },
+          }));
+        },
+        onServerRowsPerPageChange: (newRowsPerPage) => {
+          setPaginatedTables((prev) => ({
+            ...prev,
+            [status]: { ...prev[status], rowsPerPage: newRowsPerPage, page: 0 },
+          }));
+        },
+        tableLoading: current.loading,
+      };
+    }
+    return {
+      rows: buildRows(getFilteredOrders(status)),
+      isServerSide: false,
+      totalCount: 0,
+      serverPage: 0,
+      serverRowsPerPage: 5,
+      onServerPageChange: undefined,
+      onServerRowsPerPageChange: undefined,
+      tableLoading: false,
+    };
+  };
+
   return (
     <PageContainer description="Confirm and manage customer orders">
       <Breadcrumb title="Orders" items={BCrumb} />
@@ -565,7 +675,9 @@ const Orders = () => {
       ) : (
         <Stack spacing={4} id="tables-container">
           {ORDER_TABLE_DATA.map(({ status, title, subtitle, color }) => {
-            const currentRows = buildRows(getFilteredOrders(status));
+            const isPaginated = PAGINATED_STATUSES.includes(status);
+            const tableProps = getTableProps(status);
+            const currentRows = tableProps.rows;
             const themeColor = palette[color].main;
             const tableId = `table-${status.replace(/\s+/g, '-')}`;
 
@@ -705,22 +817,35 @@ const Orders = () => {
                       size="small"
                     />
                   </Box>
-                  <DataTable
-                    rows={currentRows}
-                    columns={tableColumns}
-                    defaultRows={5}
-                    emptyMessage={`No ${title.toLowerCase()} found.`}
-                    selectable={status === 'Ready for Pickup/Delivery'}
-                    selectedIds={selectedReadyOrderIds}
-                    onSelectRow={handleSelectReadyRow}
-                    onSelectAll={handleSelectAllReadyRows}
-                    getRowId={(row) => row.id}
-                    onRowClick={(row) => {
-                      if (status === 'Completed' || row.order_status === 'Completed' || status === 'Awaiting production' || row.order_status === 'Awaiting production') {
-                        openDetailModal(row);
-                      }
-                    }}
-                  />
+                  {tableProps.tableLoading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+                      <CircularProgress size={30} />
+                    </Box>
+                  ) : (
+                    <DataTable
+                      rows={currentRows}
+                      columns={tableColumns}
+                      defaultRows={5}
+                      emptyMessage={`No ${title.toLowerCase()} found.`}
+                      selectable={status === 'Ready for Pickup/Delivery'}
+                      selectedIds={selectedReadyOrderIds}
+                      onSelectRow={handleSelectReadyRow}
+                      onSelectAll={handleSelectAllReadyRows}
+                      getRowId={(row) => row.id}
+                      onRowClick={(row) => {
+                        if (status === 'Completed' || row.order_status === 'Completed' || status === 'Awaiting production' || row.order_status === 'Awaiting production') {
+                          openDetailModal(row);
+                        }
+                      }}
+                      // Server-side pagination props (only for Completed)
+                      serverSide={tableProps.isServerSide}
+                      totalCount={tableProps.totalCount}
+                      serverPage={tableProps.serverPage}
+                      serverRowsPerPage={tableProps.serverRowsPerPage}
+                      onServerPageChange={tableProps.onServerPageChange}
+                      onServerRowsPerPageChange={tableProps.onServerRowsPerPageChange}
+                    />
+                  )}
                 </Box>
               </Card>
             );

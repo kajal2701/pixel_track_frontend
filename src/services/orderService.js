@@ -36,10 +36,23 @@ const orderService = {
       throw error.response?.data || { message: 'Network error occurred' };
     }
   },
-  getAllOrders: async () => {
+  getAllOrders: async (params = {}) => {
     try {
-      const response = await apiClient.get('/orders');
+      const response = await apiClient.get('/orders', { params });
       return response.data; // { data: [...], summary: {...} }
+    } catch (error) {
+      throw error.response?.data || { message: 'Network error occurred' };
+    }
+  },
+
+  getOrdersPaginated: async ({ page = 1, limit = 10, status, search, exclude_status } = {}) => {
+    try {
+      const params = { page, limit };
+      if (status) params.status = status;
+      if (search) params.search = search;
+      if (exclude_status) params.exclude_status = exclude_status;
+      const response = await apiClient.get('/orders', { params });
+      return response.data; // { data, summary, pagination }
     } catch (error) {
       throw error.response?.data || { message: 'Network error occurred' };
     }
