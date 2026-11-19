@@ -124,6 +124,10 @@ const DataTable = ({
   serverRowsPerPage = 10,
   onServerPageChange,
   onServerRowsPerPageChange,
+  serverSortBy,
+  serverSortOrder,
+  onServerSortChange,
+  sortableFields,
 }) => {
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(defaultRows);
@@ -201,10 +205,32 @@ const DataTable = ({
     return cols;
   }, [columns, showSrNo, selectable, selectedIds, rows, getRowId, onSelectAll, onSelectRow]);
 
+  const isFieldSortable = (field) => {
+    if (field === 'actions' || field === 'sr_no' || field === 'select_checkbox') return false;
+    // Only restrict sortable fields when serverSide is enabled and sortableFields is provided
+    if (serverSide && sortableFields && Array.isArray(sortableFields)) {
+      return sortableFields.includes(field);
+    }
+    return true;
+  };
+
   // Handle sorting
   const handleSort = (field) => {
-    // Don't sort actions, sr_no, or select_checkbox column
-    if (field === 'actions' || field === 'sr_no' || field === 'select_checkbox') return;
+    if (!isFieldSortable(field)) return;
+
+    if (serverSide) {
+      const currentKey = serverSortBy !== undefined ? serverSortBy : sortConfig.key;
+      const currentDir = serverSortOrder !== undefined ? String(serverSortOrder).toLowerCase() : sortConfig.direction;
+      let direction = 'asc';
+      if (currentKey === field && currentDir === 'asc') {
+        direction = 'desc';
+      }
+      setSortConfig({ key: field, direction });
+      if (onServerSortChange) {
+        onServerSortChange(field, direction);
+      }
+      return;
+    }
 
     let direction = 'asc';
     if (sortConfig.key === field && sortConfig.direction === 'asc') {
@@ -301,39 +327,45 @@ const DataTable = ({
           >
             <TableHead>
               <TableRow>
-                {finalColumns.map((col) => (
-                  <TableCell
-                    key={col.field}
-                    sx={{
-                      width: col.width || col.minWidth,
-                      minWidth: col.minWidth,
-                      cursor: (col.field !== 'actions' && col.field !== 'sr_no' && col.field !== 'select_checkbox') ? 'pointer' : 'default',
-                      '&:hover': (col.field !== 'actions' && col.field !== 'sr_no' && col.field !== 'select_checkbox') ? {
-                        backgroundColor: 'action.hover',
-                      } : {},
-                    }}
-                    onClick={() => handleSort(col.field)}
-                  >
-                    {col.renderHeader ? col.renderHeader() : (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography variant="h6">{col.label}</Typography>
-                        {col.field !== 'actions' && col.field !== 'sr_no' && col.field !== 'select_checkbox' && (
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            {sortConfig.key === col.field ? (
-                              sortConfig.direction === 'asc' ? (
-                                <ArrowUpwardIcon sx={{ fontSize: 16, color: 'primary.main' }} />
+                {finalColumns.map((col) => {
+                  const sortable = isFieldSortable(col.field);
+                  const activeKey = serverSide && serverSortBy !== undefined ? serverSortBy : sortConfig.key;
+                  const activeDir = serverSide && serverSortOrder !== undefined ? String(serverSortOrder).toLowerCase() : sortConfig.direction;
+
+                  return (
+                    <TableCell
+                      key={col.field}
+                      sx={{
+                        width: col.width || col.minWidth,
+                        minWidth: col.minWidth,
+                        cursor: sortable ? 'pointer' : 'default',
+                        '&:hover': sortable ? {
+                          backgroundColor: 'action.hover',
+                        } : {},
+                      }}
+                      onClick={() => handleSort(col.field)}
+                    >
+                      {col.renderHeader ? col.renderHeader() : (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography variant="h6">{col.label}</Typography>
+                          {sortable && (
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              {activeKey === col.field ? (
+                                activeDir === 'asc' ? (
+                                  <ArrowUpwardIcon sx={{ fontSize: 16, color: 'primary.main' }} />
+                                ) : (
+                                  <ArrowDownwardIcon sx={{ fontSize: 16, color: 'primary.main' }} />
+                                )
                               ) : (
-                                <ArrowDownwardIcon sx={{ fontSize: 16, color: 'primary.main' }} />
-                              )
-                            ) : (
-                              <SortIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                            )}
-                          </Box>
-                        )}
-                      </Box>
-                    )}
-                  </TableCell>
-                ))}
+                                <SortIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                              )}
+                            </Box>
+                          )}
+                        </Box>
+                      )}
+                    </TableCell>
+                  );
+                })}
               </TableRow>
             </TableHead>
             <TableBody>

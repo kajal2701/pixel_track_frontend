@@ -45,12 +45,14 @@ const orderService = {
     }
   },
 
-  getOrdersPaginated: async ({ page = 1, limit = 10, status, search, exclude_status } = {}) => {
+  getOrdersPaginated: async ({ page = 1, limit = 10, status, search, exclude_status, sort_by, sort_order } = {}) => {
     try {
       const params = { page, limit };
       if (status) params.status = status;
       if (search) params.search = search;
       if (exclude_status) params.exclude_status = exclude_status;
+      if (sort_by) params.sort_by = sort_by;
+      if (sort_order) params.sort_order = sort_order;
       const response = await apiClient.get('/orders', { params });
       return response.data; // { data, summary, pagination }
     } catch (error) {

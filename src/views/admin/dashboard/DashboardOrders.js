@@ -39,6 +39,10 @@ const DashboardOrders = ({ onStatsUpdate }) => {
   const [statusFilter, setStatusFilter] = useState('All');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
+  // Sorting state (order_id, created_at, pickup_date, final_length)
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState('desc');
+
   // Dialog States
   const [statusDialog, setStatusDialog] = useState({ open: false, type: null, order: null });
   const [notesDialog, setNotesDialog] = useState({ open: false, order: null });
@@ -64,6 +68,8 @@ const DashboardOrders = ({ onStatsUpdate }) => {
       const params = {
         page: page + 1, // API uses 1-indexed pages
         limit: rowsPerPage,
+        sort_by: sortBy,
+        sort_order: sortOrder,
       };
       if (statusFilter !== 'All') params.status = statusFilter;
       if (debouncedSearch) params.search = debouncedSearch;
@@ -98,7 +104,7 @@ const DashboardOrders = ({ onStatsUpdate }) => {
     } finally {
       setLoading(false);
     }
-  }, [page, rowsPerPage, statusFilter, debouncedSearch, onStatsUpdate]);
+  }, [page, rowsPerPage, statusFilter, debouncedSearch, sortBy, sortOrder, onStatsUpdate]);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
@@ -109,6 +115,11 @@ const DashboardOrders = ({ onStatsUpdate }) => {
   const handleServerPageChange = (newPage) => setPage(newPage);
   const handleServerRowsPerPageChange = (newRowsPerPage) => {
     setRowsPerPage(newRowsPerPage);
+    setPage(0);
+  };
+  const handleServerSortChange = (newSortBy, newSortOrder) => {
+    setSortBy(newSortBy);
+    setSortOrder(newSortOrder);
     setPage(0);
   };
 
@@ -586,6 +597,10 @@ const DashboardOrders = ({ onStatsUpdate }) => {
             serverRowsPerPage={rowsPerPage}
             onServerPageChange={handleServerPageChange}
             onServerRowsPerPageChange={handleServerRowsPerPageChange}
+            serverSortBy={sortBy}
+            serverSortOrder={sortOrder}
+            onServerSortChange={handleServerSortChange}
+            sortableFields={['order_id', 'created_at', 'pickup_date', 'final_length']}
             onRowClick={(row) => {
               if (row.order_status === 'Completed' || row.order_status === 'Awaiting production') {
                 openDetailModal(row);

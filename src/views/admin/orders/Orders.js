@@ -82,7 +82,7 @@ const Orders = () => {
 
   // Server-side pagination state only for Completed orders
   const [paginatedTables, setPaginatedTables] = useState({
-    Completed: { data: [], total: 0, page: 0, rowsPerPage: 5, loading: false },
+    Completed: { data: [], total: 0, page: 0, rowsPerPage: 5, loading: false, sortBy: 'created_at', sortOrder: 'desc' },
   });
   const [debouncedSearch, setDebouncedSearch] = useState({ Completed: '' });
 
@@ -142,7 +142,7 @@ const Orders = () => {
   }, []);
 
   // ── Fetch single paginated status (Completed) ─────────────
-  const fetchPaginatedOrders = useCallback(async (status, page, rowsPerPage, search) => {
+  const fetchPaginatedOrders = useCallback(async (status, page, rowsPerPage, search, sortBy = 'created_at', sortOrder = 'desc') => {
     setPaginatedTables((prev) => ({
       ...prev,
       [status]: { ...prev[status], loading: true },
@@ -154,6 +154,8 @@ const Orders = () => {
         limit: rowsPerPage,
         status,
         search: search || undefined,
+        sort_by: sortBy,
+        sort_order: sortOrder,
       });
 
       setPaginatedTables((prev) => ({
@@ -163,6 +165,8 @@ const Orders = () => {
           data: res.data.map(formatOrder),
           total: res.pagination?.total || 0,
           loading: false,
+          sortBy,
+          sortOrder,
         },
       }));
     } catch (err) {
@@ -178,14 +182,35 @@ const Orders = () => {
   useEffect(() => { fetchActiveOrders(); }, [fetchActiveOrders]);
 
   useEffect(() => {
-    fetchPaginatedOrders('Completed', paginatedTables.Completed.page, paginatedTables.Completed.rowsPerPage, debouncedSearch.Completed);
-  }, [fetchPaginatedOrders, paginatedTables.Completed.page, paginatedTables.Completed.rowsPerPage, debouncedSearch.Completed]);
+    fetchPaginatedOrders(
+      'Completed',
+      paginatedTables.Completed.page,
+      paginatedTables.Completed.rowsPerPage,
+      debouncedSearch.Completed,
+      paginatedTables.Completed.sortBy,
+      paginatedTables.Completed.sortOrder,
+    );
+  }, [
+    fetchPaginatedOrders,
+    paginatedTables.Completed.page,
+    paginatedTables.Completed.rowsPerPage,
+    debouncedSearch.Completed,
+    paginatedTables.Completed.sortBy,
+    paginatedTables.Completed.sortOrder,
+  ]);
 
   // ── Refresh everything after an action ──────────────────
   const refreshAll = async () => {
     await Promise.all([
       fetchActiveOrders(),
-      fetchPaginatedOrders('Completed', paginatedTables.Completed.page, paginatedTables.Completed.rowsPerPage, debouncedSearch.Completed),
+      fetchPaginatedOrders(
+        'Completed',
+        paginatedTables.Completed.page,
+        paginatedTables.Completed.rowsPerPage,
+        debouncedSearch.Completed,
+        paginatedTables.Completed.sortBy,
+        paginatedTables.Completed.sortOrder,
+      ),
     ]);
   };
 
@@ -208,9 +233,11 @@ const Orders = () => {
         order.order_status,
         order.formatted_created_at,
         order.formatted_pickup_date,
+        order.pickup_date,
         order.final_length,
         order.additional_notes,
         order.customer_notes,
+        order.linked_production_id,
       ].some((f) => f?.toString().toLowerCase().includes(term));
     });
   };
@@ -572,13 +599,21 @@ const Orders = () => {
   // Helper to get rows and props for a status table
   const getTableProps = (status) => {
     if (PAGINATED_STATUSES.includes(status)) {
-      const current = paginatedTables[status] || { data: [], total: 0, page: 0, rowsPerPage: 5, loading: false };
+      const current = paginatedTables[status] || { data: [], total: 0, page: 0, rowsPerPage: 5, loading: false, sortBy: 'created_at', sortOrder: 'desc' };
       return {
         rows: buildRows(current.data),
         isServerSide: true,
         totalCount: current.total,
         serverPage: current.page,
         serverRowsPerPage: current.rowsPerPage,
+        serverSortBy: current.sortBy || 'created_at',
+        serverSortOrder: current.sortOrder || 'desc',
+        onServerSortChange: (newSortBy, newSortOrder) => {
+          setPaginatedTables((prev) => ({
+            ...prev,
+            [status]: { ...prev[status], sortBy: newSortBy, sortOrder: newSortOrder, page: 0 },
+          }));
+        },
         onServerPageChange: (newPage) => {
           setPaginatedTables((prev) => ({
             ...prev,
@@ -600,6 +635,9 @@ const Orders = () => {
       totalCount: 0,
       serverPage: 0,
       serverRowsPerPage: 5,
+      serverSortBy: undefined,
+      serverSortOrder: undefined,
+      onServerSortChange: undefined,
       onServerPageChange: undefined,
       onServerRowsPerPageChange: undefined,
       tableLoading: false,
@@ -837,13 +875,17 @@ const Orders = () => {
                           openDetailModal(row);
                         }
                       }}
-                      // Server-side pagination props (only for Completed)
+                      // Server-side pagination & sorting props (only for Completed)
                       serverSide={tableProps.isServerSide}
                       totalCount={tableProps.totalCount}
                       serverPage={tableProps.serverPage}
                       serverRowsPerPage={tableProps.serverRowsPerPage}
                       onServerPageChange={tableProps.onServerPageChange}
                       onServerRowsPerPageChange={tableProps.onServerRowsPerPageChange}
+                      serverSortBy={tableProps.serverSortBy}
+                      serverSortOrder={tableProps.serverSortOrder}
+                      onServerSortChange={tableProps.onServerSortChange}
+                      sortableFields={['order_id', 'created_at', 'pickup_date', 'final_length']}
                     />
                   )}
                 </Box>
